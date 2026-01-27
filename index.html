@@ -3391,7 +3391,73 @@ function renderQuestions(qList) {
             </div>
         `;
     }
+    function goToFirstUnsolved() {
+    // 1. Kontroller
+    if (!currentSectionKey) {
+        alert("Lütfen önce bir bölüm seçiniz.");
+        return;
+    }
+
+    // 2. Aktif Listeyi Belirle
+    let activeList = [];
+    if (currentSectionKey === 'mistakes') {
+        const mistakeQuestions = allQuestions.filter(q => wrongBank.includes(q.id));
+        const mistakeAi = generatedQuestions.filter(q => wrongBank.includes(q.id));
+        activeList = [...mistakeQuestions, ...mistakeAi];
+    } else if (currentSectionKey === 'ai') {
+        activeList = [...generatedQuestions].reverse();
+    } else {
+        const secData = sections.find(s => s.key === currentSectionKey);
+        if(secData) {
+            activeList = allQuestions.filter(q => q.id >= secData.start && q.id <= secData.end);
+        }
+    }
+
+    if (!activeList || activeList.length === 0) {
+        alert("Bu bölümde soru yok.");
+        return;
+    }
+
+    // 3. İlk Çözülmemiş Soruyu Bul
+    const targetIndex = activeList.findIndex(q => !progressData[q.id]);
+
+    if (targetIndex === -1) {
+        alert("Tebrikler! Bu bölümdeki tüm sorular çözülmüş.");
+        return;
+    }
+
+    const targetQuestion = activeList[targetIndex];
+
+    // 4. LİMİT GÜNCELLEME VE ZORLA ÇİZDİRME (Hata Çözümü Burası)
+    // Eğer soru limitin dışındaysa limiti artır, içindeyse bile listeyi tazele.
+    if (renderLimit <= targetIndex + 5) {
+        renderLimit = targetIndex + 10; // Soruyu kapsayacak kadar genişlet
+    }
     
+    // Listeyi MUTLAKA yeniden çizdiriyoruz ki kartın HTML'de olduğundan %100 emin olalım
+    renderQuestions(activeList);
+
+    // 5. Kaydırma İşlemi (DOM çizimi için minik gecikme şart)
+    setTimeout(() => {
+        const element = document.getElementById(`card-${targetQuestion.id}`);
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            // Görsel Efekt
+            element.style.transition = "background-color 0.5s ease";
+            const originalBg = getComputedStyle(element).backgroundColor;
+            element.style.backgroundColor = "#fff3cd"; // Sarı ışık yak
+            
+            setTimeout(() => {
+                element.style.backgroundColor = originalBg; // Eski haline dön
+            }, 1000);
+        } else {
+            console.error("KRİTİK HATA: Kart ID yine bulunamadı ->", targetQuestion.id);
+            // Acil durum: Manuel scroll dene
+            window.location.hash = `card-${targetQuestion.id}`;
+        }
+    }, 200); // Süreyi biraz artırdık (200ms) ki tarayıcı çizmeyi bitirsin
+}
 
     function formatQuestionText(text) {
         return text.replace(/___/g, "__________");
