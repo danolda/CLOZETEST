@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YDS Grammar Mega Test (250 Soru)</title>
+    <title>YDS Mega Test + Google Gemini AI</title>
     <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- İkonlar -->
@@ -18,6 +18,7 @@
             --wrong-color: #dc3545;
             --correct-color: #198754;
             --hover-bg: #f8f9fa;
+            --ai-color: #4285F4; /* Google Blue */
         }
 
         [data-theme="dark"] {
@@ -27,6 +28,7 @@
             --border-color: #333;
             --active-color: #bb86fc;
             --hover-bg: #2c2c2c;
+            --ai-color: #8ab4f8;
         }
 
         body { background-color: var(--bg-body); color: var(--text-color); font-family: 'Segoe UI', sans-serif; transition: 0.3s; }
@@ -42,32 +44,23 @@
         .sidebar-mistakes { border: 1px solid var(--wrong-color); color: var(--wrong-color); background: rgba(220, 53, 69, 0.05); font-weight: bold; }
         .sidebar-mistakes.active { background: var(--wrong-color); color: white; }
 
+        .sidebar-ai { border: 1px solid var(--ai-color); color: var(--ai-color); background: rgba(66, 133, 244, 0.1); font-weight: bold; }
+        .sidebar-ai.active { background: var(--ai-color); color: white; }
+
         /* Şık Tasarımı */
         .option-row {
-            display: flex;
-            align-items: center;
-            padding: 10px;
-            margin-bottom: 8px;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
+            display: flex; align-items: center; padding: 10px; margin-bottom: 8px;
+            border: 1px solid var(--border-color); border-radius: 8px; cursor: pointer; transition: all 0.2s;
         }
-        .option-row:hover {
-            background-color: var(--hover-bg);
-            transform: translateX(5px);
-        }
+        .option-row:hover { background-color: var(--hover-bg); transform: translateX(5px); }
         
         .btn-circle {
-            width: 35px; height: 35px; border-radius: 50%; 
-            display: flex; align-items: center; justify-content: center;
+            width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
             font-weight: bold; margin-right: 15px; flex-shrink: 0;
             border: 2px solid #6c757d; color: #6c757d; background: transparent;
         }
-        
         .option-text { font-size: 1rem; }
 
-        /* Cevap Durumları */
         .opt-correct { border-color: var(--correct-color) !important; background-color: rgba(25, 135, 84, 0.1) !important; }
         .opt-correct .btn-circle { background-color: var(--correct-color); color: white; border-color: var(--correct-color); }
         
@@ -75,30 +68,67 @@
         .opt-wrong .btn-circle { background-color: var(--wrong-color); color: white; border-color: var(--wrong-color); }
 
         .tip-box { 
-            background-color: rgba(255, 193, 7, 0.15); 
-            border-left: 5px solid #ffc107; 
-            padding: 15px; 
-            border-radius: 4px;
-            margin-top: 15px;
-            display: none; 
-            color: var(--text-color);
+            background-color: rgba(255, 193, 7, 0.15); border-left: 5px solid #ffc107; padding: 15px; 
+            border-radius: 4px; margin-top: 15px; display: none; color: var(--text-color);
         }
         
         .question-text { font-size: 1.15rem; font-weight: 500; margin-bottom: 1.5rem; line-height: 1.6; }
-        .hidden { display: none !important; }
-        
-        /* Disable clicks after answer */
         .disabled-opts { pointer-events: none; opacity: 0.8; }
+        
+        /* AI Loading */
+        .btn-ai-gen { color: var(--ai-color); border-color: var(--ai-color); }
+        .btn-ai-gen:hover { background-color: var(--ai-color); color: white; }
+        
+        .spinner-overlay {
+            position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.5); 
+            z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white;
+        }
     </style>
 </head>
 <body>
 
+<!-- Loader -->
+<div id="loadingOverlay" class="spinner-overlay d-none">
+    <div class="spinner-border text-info" style="width: 3rem; height: 3rem;" role="status"></div>
+    <h4 class="mt-3">Google Gemini Soruları Hazırlıyor...</h4>
+    <p>Lütfen bekleyiniz, işlem 3-5 saniye sürebilir.</p>
+</div>
+
+<!-- API Key Modal -->
+<div class="modal fade" id="apiModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content" style="background-color: var(--bg-card); color: var(--text-color);">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-google"></i> Gemini Ayarları</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="small text-muted">
+                    Soru üretebilmek için Google AI Studio'dan (Gemini) ücretsiz bir API anahtarı almalısınız.
+                    <a href="https://aistudio.google.com/app/apikey" target="_blank">Anahtarı buradan alabilirsiniz.</a>
+                </p>
+                <div class="mb-3">
+                    <label class="form-label">Google Gemini API Key</label>
+                    <input type="password" id="apiKeyInput" class="form-control" placeholder="AIzaSy...">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+                <button type="button" class="btn btn-primary" onclick="saveApiKey()">Kaydet</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <nav class="navbar navbar-expand-lg border-bottom px-3 bg-body-tertiary">
     <div class="container-fluid">
-        <a class="navbar-brand fw-bold text-primary" href="#"><i class="bi bi-mortarboard-fill"></i> YDS Mega Test</a>
+        <a class="navbar-brand fw-bold text-primary" href="#"><i class="bi bi-mortarboard-fill"></i> YDS Mega + Gemini</a>
         <div class="d-flex gap-2">
+            <button class="btn btn-outline-primary btn-sm" onclick="openSettings()">
+                <i class="bi bi-gear-fill"></i> API Ayarı
+            </button>
             <button class="btn btn-outline-danger btn-sm" onclick="fullReset()">
-                <i class="bi bi-trash"></i> Tümünü Sıfırla
+                <i class="bi bi-trash"></i> Sıfırla
             </button>
             <button class="btn btn-outline-secondary btn-sm" onclick="toggleTheme()">
                 <i class="bi bi-moon-stars-fill" id="themeIcon"></i>
@@ -125,7 +155,7 @@
                     <div class="d-flex gap-2 align-items-center">
                         <span id="progress-badge" class="badge bg-secondary">0/0</span>
                         <button class="btn btn-sm btn-outline-warning" onclick="resetCurrentSection()">
-                            <i class="bi bi-arrow-counterclockwise"></i> Bu Bölümü Sıfırla
+                            <i class="bi bi-arrow-counterclockwise"></i> Temizle
                         </button>
                     </div>
                 </div>
@@ -140,6 +170,7 @@
 
 <script>
     /* ================= VERİLER (HAM METİN) ================= */
+    // NOT: Tüm 250 soruluk metni buraya yapıştırdım.
     const rawQuestionsText = `
 Section: Prepositions & Collocations (1–70)
 1) She insisted ___ paying for the damage, even though it wasn't her fault.
@@ -2174,53 +2205,43 @@ TIP: Main clause: would have V3 (burada would).
 241:E  242:A  243:C  244:C  245:A  246:C  247:C  248:A  249:E  250:A
 `;
 
-    // Global Değişkenler
     let allQuestions = [];
+    let generatedQuestions = [];
     let currentSectionKey = null;
     let wrongBank = [];
-    let progressData = {}; // { qId: "correct" | "wrong" }
+    let progressData = {}; 
+    let userApiKey = "";
 
-    // Bölüm Tanımları
     const sections = [
-        { key: "sec1", title: "Prepositions & Collocations (1-70)", start: 1, end: 70 },
-        { key: "sec2", title: "Conjunctions & Linkers (71-130)", start: 71, end: 130 },
-        { key: "sec3", title: "Relative Clauses (131-190)", start: 131, end: 190 },
-        { key: "sec4", title: "Tense & Modals (191-250)", start: 191, end: 250 }
+        { key: "sec1", title: "Prepositions & Collocations", start: 1, end: 70 },
+        { key: "sec2", title: "Conjunctions & Linkers", start: 71, end: 130 },
+        { key: "sec3", title: "Relative Clauses", start: 131, end: 190 },
+        { key: "sec4", title: "Tense & Modals", start: 191, end: 250 }
     ];
 
     window.onload = function() {
         if(localStorage.getItem('yds_theme') === 'dark') document.body.setAttribute('data-theme', 'dark');
+        // Anahtar adını yds_gemini_key olarak değiştirdim
+        userApiKey = localStorage.getItem('yds_gemini_key') || "";
         loadData();
         renderMenu();
     };
 
-    // --- VERİ PARSE İŞLEMİ ---
     function loadData() {
-        // 1. Cevap Anahtarını Parse Et
         const answerMap = {};
         const ansRegex = /(\d+):([A-E])/g;
         let match;
-        while ((match = ansRegex.exec(rawAnswersText)) !== null) {
-            answerMap[match[1]] = match[2];
-        }
+        while ((match = ansRegex.exec(rawAnswersText)) !== null) answerMap[match[1]] = match[2];
 
-        // 2. Soruları Parse Et
         const lines = rawQuestionsText.split('\n');
         let currentQ = null;
         
         lines.forEach(line => {
             line = line.trim();
             if (!line) return;
-            
-            // Yeni soru başlangıcı tespiti: "1) " gibi
             if (/^\d+\)/.test(line)) {
-                if (currentQ) saveQuestion(currentQ, answerMap);
-                currentQ = { 
-                    id: parseInt(line.split(')')[0]), 
-                    text: line.split(')').slice(1).join(')').trim(), 
-                    options: {}, 
-                    tip: "" 
-                };
+                if (currentQ) { currentQ.correctAnswer = answerMap[currentQ.id]; allQuestions.push(currentQ); }
+                currentQ = { id: parseInt(line.split(')')[0]), text: line.split(')').slice(1).join(')').trim(), options: {}, tip: "" };
             } 
             else if (currentQ) {
                 if (line.startsWith('A)')) currentQ.options.A = line.substring(2).trim();
@@ -2231,27 +2252,17 @@ TIP: Main clause: would have V3 (burada would).
                 else if (line.startsWith('TIP:')) currentQ.tip = line.substring(4).trim();
             }
         });
-        if (currentQ) saveQuestion(currentQ, answerMap);
+        if (currentQ) { currentQ.correctAnswer = answerMap[currentQ.id]; allQuestions.push(currentQ); }
 
-        // 3. LocalStorage verilerini çek
-        const savedProgress = localStorage.getItem('yds_progress');
-        if(savedProgress) progressData = JSON.parse(savedProgress);
-
-        const savedMistakes = localStorage.getItem('yds_mistakes');
-        if(savedMistakes) wrongBank = JSON.parse(savedMistakes);
+        if(localStorage.getItem('yds_progress')) progressData = JSON.parse(localStorage.getItem('yds_progress'));
+        if(localStorage.getItem('yds_mistakes')) wrongBank = JSON.parse(localStorage.getItem('yds_mistakes'));
+        if(localStorage.getItem('yds_generated')) generatedQuestions = JSON.parse(localStorage.getItem('yds_generated'));
     }
 
-    function saveQuestion(q, ansMap) {
-        q.correctAnswer = ansMap[q.id];
-        allQuestions.push(q);
-    }
-
-    // --- UI RENDER ---
     function renderMenu() {
         const menu = document.getElementById('sidebar-menu');
         menu.innerHTML = "";
 
-        // Yanlışlar Butonu
         const mistakeBtn = document.createElement('div');
         mistakeBtn.className = "sidebar-item sidebar-mistakes";
         mistakeBtn.id = "menu-mistakes";
@@ -2259,7 +2270,15 @@ TIP: Main clause: would have V3 (burada would).
         mistakeBtn.onclick = () => showMistakes();
         menu.appendChild(mistakeBtn);
 
-        // Bölümler
+        const aiBtn = document.createElement('div');
+        aiBtn.className = "sidebar-item sidebar-ai";
+        aiBtn.id = "menu-ai";
+        aiBtn.innerHTML = `<span><i class="bi bi-stars"></i> YAPAY ZEKA</span> <span class="badge bg-primary" style="background-color: var(--ai-color) !important;">${generatedQuestions.length}</span>`;
+        aiBtn.onclick = () => showAiGenerated();
+        menu.appendChild(aiBtn);
+
+        menu.appendChild(document.createElement('hr'));
+
         sections.forEach(sec => {
             const div = document.createElement('div');
             div.className = "sidebar-item";
@@ -2272,13 +2291,9 @@ TIP: Main clause: would have V3 (burada would).
 
     function showSection(key) {
         currentSectionKey = key;
-        
-        document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
-        document.getElementById(`menu-${key}`).classList.add('active');
-
+        updateActiveMenu(`menu-${key}`);
         const secData = sections.find(s => s.key === key);
         document.getElementById('active-section-title').innerText = secData.title;
-        
         const filteredQ = allQuestions.filter(q => q.id >= secData.start && q.id <= secData.end);
         renderQuestions(filteredQ);
         updateProgressBadge(filteredQ);
@@ -2286,84 +2301,100 @@ TIP: Main clause: would have V3 (burada would).
 
     function showMistakes() {
         currentSectionKey = 'mistakes';
-        document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
-        document.getElementById('menu-mistakes').classList.add('active');
+        updateActiveMenu('menu-mistakes');
         document.getElementById('active-section-title').innerText = "Yanlış Cevapladığım Sorular";
+        const mistakeQuestions = allQuestions.filter(q => wrongBank.includes(q.id));
+        const mistakeAi = generatedQuestions.filter(q => wrongBank.includes(q.id));
+        const combined = [...mistakeQuestions, ...mistakeAi];
 
-        if(wrongBank.length === 0) {
+        if(combined.length === 0) {
+            document.getElementById('questions-area').innerHTML = `<div class="text-center py-5 text-muted">Henüz yanlış sorunuz yok.</div>`;
+            document.getElementById('progress-badge').innerText = "0";
+        } else {
+            renderQuestions(combined);
+            document.getElementById('progress-badge').innerText = `${combined.length}`;
+        }
+    }
+
+    function showAiGenerated() {
+        currentSectionKey = 'ai';
+        updateActiveMenu('menu-ai');
+        document.getElementById('active-section-title').innerText = "Senin İçin Oluşturulanlar (Gemini)";
+        
+        if(generatedQuestions.length === 0) {
             document.getElementById('questions-area').innerHTML = `
                 <div class="text-center py-5">
-                    <i class="bi bi-emoji-smile fs-1 text-success"></i><br>
-                    <p class="mt-2 text-muted">Harika! Şu an kayıtlı yanlış sorunuz yok.</p>
+                    <i class="bi bi-google fs-1" style="color: var(--ai-color);"></i>
+                    <p class="mt-3">Henüz yapay zeka ile soru üretmediniz.</p>
+                    <small class="text-muted">Soruların yanındaki <i class="bi bi-stars"></i> ikonuna basarak üretebilirsiniz.</small>
                 </div>`;
-            document.getElementById('progress-badge').innerText = "0 Soru";
+            document.getElementById('progress-badge').innerText = "0";
         } else {
-            const mistakeQuestions = allQuestions.filter(q => wrongBank.includes(q.id));
-            renderQuestions(mistakeQuestions);
-            document.getElementById('progress-badge').innerText = `${mistakeQuestions.length} Soru`;
+            renderQuestions([...generatedQuestions].reverse());
+            updateProgressBadge(generatedQuestions);
         }
+    }
+
+    function updateActiveMenu(id) {
+        document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
+        const el = document.getElementById(id);
+        if(el) el.classList.add('active');
     }
 
     function renderQuestions(qList) {
         const area = document.getElementById('questions-area');
         area.innerHTML = "";
         
-        // Eğer "Yanlışlarım" bölümündeysek, soruların daha önce çözülmüş durumunu (status) yok sayacağız.
-        // Böylece tertemiz/boş olarak gelir.
-        const isMistakeView = (currentSectionKey === 'mistakes');
+        const isCleanView = (currentSectionKey === 'mistakes');
 
         qList.forEach(q => {
-            // Eğer normal bölümse progressData'ya bak, yanlışlar bölümüyse null (temiz) yap.
             const savedStatus = progressData[q.id];
-            const status = isMistakeView ? null : savedStatus;
+            const status = isCleanView ? null : savedStatus;
             
-            let feedbackHTML = "";
-            let optionsHTML = "";
-            let tipDisplay = "none";
+            let feedbackHTML = "", optionsHTML = "", tipDisplay = "none";
 
-            // Eğer durumu varsa (çözülmüşse ve normal moddaysak)
             if (status) {
                 if (status === 'correct') {
-                    feedbackHTML = `<div class="mt-2 text-success fw-bold"><i class="bi bi-check-circle"></i> Doğru Bildiniz!</div>`;
+                    feedbackHTML = `<div class="mt-2 text-success fw-bold"><i class="bi bi-check-circle"></i> Doğru!</div>`;
                 } else {
-                    feedbackHTML = `<div class="mt-2 text-danger fw-bold"><i class="bi bi-x-circle"></i> Yanlış Cevap. Doğru: ${q.correctAnswer}</div>`;
+                    feedbackHTML = `<div class="mt-2 text-danger fw-bold"><i class="bi bi-x-circle"></i> Yanlış. Cevap: ${q.correctAnswer}</div>`;
                     tipDisplay = "block";
                 }
             }
 
-            // Şıkları Oluştur
             ['A', 'B', 'C', 'D', 'E'].forEach(opt => {
                 let rowClass = "";
-                // Eğer çözülmüşse renkleri bas
                 if (status) {
                     if (opt === q.correctAnswer) rowClass = "opt-correct";
                     else if (status === 'wrong' && progressData[q.id + '_selected'] === opt) rowClass = "opt-wrong";
                 }
-                
-                const optText = q.options[opt] || "---"; // Veri yoksa tire koy
-
                 optionsHTML += `
                 <div class="option-row ${rowClass} ${status ? 'disabled-opts' : ''}" onclick="checkAnswer(${q.id}, '${opt}')">
                     <div class="btn-circle">${opt}</div>
-                    <div class="option-text">${optText}</div>
+                    <div class="option-text">${q.options[opt] || "---"}</div>
                 </div>`;
             });
 
+            const aiButton = `
+                <button class="btn btn-sm btn-outline-primary btn-ai-gen ms-auto" onclick="generateAiQuestions(${q.id})" title="Gemini ile Benzer Soru Üret">
+                    <i class="bi bi-stars"></i>
+                </button>`;
+
             const html = `
-            <div class="card mb-4" id="card-${q.id}">
+            <div class="card mb-4 border-start-0" style="${q.isAi ? 'border-left: 5px solid var(--ai-color);' : ''}">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between mb-2">
-                        <span class="badge bg-secondary">Soru ${q.id}</span>
-                        ${status ? (status==='correct' ? '<span class="badge bg-success">Çözüldü</span>' : '<span class="badge bg-danger">Hatalı</span>') : ''}
+                    <div class="d-flex justify-content-between mb-2 align-items-center">
+                        <div>
+                            <span class="badge ${q.isAi ? 'bg-primary' : 'bg-secondary'}" style="${q.isAi ? 'background-color: var(--ai-color)!important;' : ''}">
+                                ${q.isAi ? 'Gemini AI' : 'Soru ' + q.id}
+                            </span>
+                            ${status ? (status==='correct' ? '<span class="badge bg-success ms-1">Çözüldü</span>' : '<span class="badge bg-danger ms-1">Hatalı</span>') : ''}
+                        </div>
+                        ${aiButton}
                     </div>
                     <p class="question-text">${formatQuestionText(q.text)}</p>
-                    
-                    <div id="opts-${q.id}">
-                        ${optionsHTML}
-                    </div>
-
+                    <div id="opts-${q.id}">${optionsHTML}</div>
                     <div id="feedback-${q.id}">${feedbackHTML}</div>
-                    
                     <div id="tip-${q.id}" class="tip-box" style="display: ${tipDisplay};">
                         <strong>İPUCU:</strong> ${q.tip}
                     </div>
@@ -2378,112 +2409,207 @@ TIP: Main clause: would have V3 (burada would).
     }
 
     function checkAnswer(qId, selectedOpt) {
-        const q = allQuestions.find(i => i.id === qId);
+        let q = allQuestions.find(i => i.id === qId);
+        if(!q) q = generatedQuestions.find(i => i.id === qId);
+        if(!q) return;
+
         const container = document.getElementById(`opts-${qId}`);
         const feedbackDiv = document.getElementById(`feedback-${qId}`);
         const tipDiv = document.getElementById(`tip-${qId}`);
         
-        // Tüm şıklara disabled bas ve renkleri ayarla
         const rows = container.querySelectorAll('.option-row');
         rows.forEach(row => {
             row.classList.add('disabled-opts');
             const btnText = row.querySelector('.btn-circle').innerText;
-            
-            if (btnText === q.correctAnswer) {
-                row.classList.add('opt-correct');
-            }
-            else if (btnText === selectedOpt && selectedOpt !== q.correctAnswer) {
-                row.classList.add('opt-wrong');
-            }
+            if (btnText === q.correctAnswer) row.classList.add('opt-correct');
+            else if (btnText === selectedOpt && selectedOpt !== q.correctAnswer) row.classList.add('opt-wrong');
         });
 
         const isCorrect = (selectedOpt === q.correctAnswer);
 
         if (isCorrect) {
-            feedbackDiv.innerHTML = `<div class="mt-2 text-success fw-bold"><i class="bi bi-check-circle"></i> Tebrikler, Doğru!</div>`;
+            feedbackDiv.innerHTML = `<div class="mt-2 text-success fw-bold"><i class="bi bi-check-circle"></i> Doğru!</div>`;
             tipDiv.style.display = 'none';
-            
-            // Eğer yanlışlar listesindeyse, doğru bildiği için siliyoruz
             if (wrongBank.includes(qId)) {
                 wrongBank = wrongBank.filter(id => id !== qId);
                 localStorage.setItem('yds_mistakes', JSON.stringify(wrongBank));
                 renderMenu(); 
             }
-            // Genel ilerlemeye doğru olarak kaydet
             progressData[qId] = 'correct';
-
         } else {
-            feedbackDiv.innerHTML = `<div class="mt-2 text-danger fw-bold"><i class="bi bi-x-circle"></i> Yanlış. Doğru Cevap: ${q.correctAnswer}</div>`;
+            feedbackDiv.innerHTML = `<div class="mt-2 text-danger fw-bold"><i class="bi bi-x-circle"></i> Yanlış. Cevap: ${q.correctAnswer}</div>`;
             tipDiv.style.display = 'block';
-            
-            // Yanlış bankasına ekle
             if (!wrongBank.includes(qId)) {
                 wrongBank.push(qId);
                 localStorage.setItem('yds_mistakes', JSON.stringify(wrongBank));
                 renderMenu();
             }
-            // Genel ilerlemeye yanlış olarak kaydet
             progressData[qId] = 'wrong';
             progressData[qId + '_selected'] = selectedOpt;
         }
 
-        // Genel progress kaydı
         localStorage.setItem('yds_progress', JSON.stringify(progressData));
-        
-        // Eğer normal bölümde isek sayacı güncelle
         if (currentSectionKey !== 'mistakes') {
-            const secData = sections.find(s => s.key === currentSectionKey);
-            const filteredQ = allQuestions.filter(q => q.id >= secData.start && q.id <= secData.end);
-            updateProgressBadge(filteredQ);
+            if(currentSectionKey === 'ai') updateProgressBadge(generatedQuestions);
+            else {
+                const secData = sections.find(s => s.key === currentSectionKey);
+                if(secData) {
+                    const filteredQ = allQuestions.filter(q => q.id >= secData.start && q.id <= secData.end);
+                    updateProgressBadge(filteredQ);
+                }
+            }
         }
     }
 
     function updateProgressBadge(qList) {
         let solved = 0;
-        qList.forEach(q => {
-            if (progressData[q.id]) solved++;
-        });
+        qList.forEach(q => { if (progressData[q.id]) solved++; });
         document.getElementById('progress-badge').innerText = `${solved} / ${qList.length}`;
     }
 
     function resetCurrentSection() {
-        if (!confirm("Bu bölümdeki ilerlemeniz silinecek. Emin misiniz?")) return;
-
+        if (!confirm("İlerleme silinsin mi?")) return;
+        
+        let targetIds = [];
         if (currentSectionKey === 'mistakes') {
             wrongBank = [];
             localStorage.setItem('yds_mistakes', JSON.stringify([]));
             showMistakes();
+        } else if (currentSectionKey === 'ai') {
+            if(confirm("AI soruları tamamen silinsin mi?")) {
+                generatedQuestions = [];
+                localStorage.removeItem('yds_generated');
+            }
+            generatedQuestions.forEach(q => targetIds.push(q.id));
         } else {
             const secData = sections.find(s => s.key === currentSectionKey);
             const qList = allQuestions.filter(q => q.id >= secData.start && q.id <= secData.end);
-            
-            qList.forEach(q => {
-                delete progressData[q.id];
-                delete progressData[q.id + '_selected'];
-            });
-            localStorage.setItem('yds_progress', JSON.stringify(progressData));
-            showSection(currentSectionKey);
+            qList.forEach(q => targetIds.push(q.id));
         }
+
+        targetIds.forEach(id => {
+            delete progressData[id];
+            delete progressData[id + '_selected'];
+        });
+        localStorage.setItem('yds_progress', JSON.stringify(progressData));
         renderMenu();
+        if(currentSectionKey === 'ai') showAiGenerated();
+        else if(currentSectionKey !== 'mistakes') showSection(currentSectionKey);
+    }
+
+    /* ================= GEMINI AI ENTEGRASYONU ================= */
+    
+    function openSettings() {
+        const modal = new bootstrap.Modal(document.getElementById('apiModal'));
+        document.getElementById('apiKeyInput').value = userApiKey;
+        modal.show();
+    }
+
+    function saveApiKey() {
+        const key = document.getElementById('apiKeyInput').value.trim();
+        if(key.length > 20) { // Basit doğrulama
+            userApiKey = key;
+            localStorage.setItem('yds_gemini_key', userApiKey);
+            alert("Gemini anahtarı kaydedildi!");
+            bootstrap.Modal.getInstance(document.getElementById('apiModal')).hide();
+        } else {
+            alert("Lütfen geçerli bir API anahtarı giriniz.");
+        }
+    }
+
+    async function generateAiQuestions(sourceId) {
+        if(!userApiKey) {
+            alert("Lütfen önce API Ayarları bölümünden Gemini anahtarınızı girin.");
+            openSettings();
+            return;
+        }
+
+        let sourceQ = allQuestions.find(q => q.id === sourceId);
+        if(!sourceQ) sourceQ = generatedQuestions.find(q => q.id === sourceId);
+
+        document.getElementById('loadingOverlay').classList.remove('d-none');
+
+        // Gemini 1.5 Flash - Hızlı ve Ücretsiz
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${userApiKey}`;
+        
+        const promptText = `
+            You are an expert English teacher preparing questions for the YDS exam.
+            I will give you a grammar multiple-choice question.
+            Your task is to generate 3 NEW, SIMILAR questions testing the SAME grammar rule (e.g., same preposition logic, same conjunction type, or same tense rule).
+            
+            SOURCE QUESTION:
+            "${sourceQ.text}"
+            Answer: ${sourceQ.correctAnswer}
+            Tip: ${sourceQ.tip}
+
+            OUTPUT REQUIREMENTS:
+            - Provide ONLY a strict JSON array.
+            - Keys must be: "text", "options" (A,B,C,D,E), "correctAnswer", "tip".
+            - The "text" should contain "___" for the blank.
+            - "tip" should be in Turkish.
+        `;
+
+        const requestBody = {
+            contents: [{
+                parts: [{ text: promptText }]
+            }],
+            generationConfig: {
+                response_mime_type: "application/json" // Gemini JSON Modu
+            }
+        };
+
+        try {
+            const response = await fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(requestBody)
+            });
+
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.error.message || "API Hatası");
+            }
+
+            const data = await response.json();
+            const rawText = data.candidates[0].content.parts[0].text;
+            const newQuestions = JSON.parse(rawText);
+
+            newQuestions.forEach(nq => {
+                const newId = 20000 + generatedQuestions.length + 1; // 20000'den başlat
+                generatedQuestions.push({
+                    id: newId,
+                    text: nq.text,
+                    options: nq.options,
+                    correctAnswer: nq.correctAnswer,
+                    tip: nq.tip + " (Gemini)",
+                    isAi: true
+                });
+            });
+
+            localStorage.setItem('yds_generated', JSON.stringify(generatedQuestions));
+            renderMenu();
+            alert(`${newQuestions.length} yeni soru Gemini tarafından üretildi!`);
+
+        } catch (error) {
+            console.error(error);
+            alert("Hata oluştu: " + error.message);
+        } finally {
+            document.getElementById('loadingOverlay').classList.add('d-none');
+        }
     }
 
     function fullReset() {
-        if (!confirm("TÜM ilerlemeniz ve yanlışlarınız silinecek. Emin misiniz?")) return;
-        localStorage.removeItem('yds_progress');
-        localStorage.removeItem('yds_mistakes');
+        if (!confirm("TÜM ilerlemeniz ve ayarlarınız silinecek. Emin misiniz?")) return;
+        localStorage.clear();
         location.reload();
     }
 
     function toggleTheme() {
         const body = document.body;
-        if(body.getAttribute('data-theme') === 'dark') { 
-            body.removeAttribute('data-theme'); 
-            localStorage.setItem('yds_theme', 'light'); 
-        } else { 
-            body.setAttribute('data-theme', 'dark'); 
-            localStorage.setItem('yds_theme', 'dark'); 
-        }
+        if(body.getAttribute('data-theme') === 'dark') { body.removeAttribute('data-theme'); localStorage.setItem('yds_theme', 'light'); }
+        else { body.setAttribute('data-theme', 'dark'); localStorage.setItem('yds_theme', 'dark'); }
     }
 </script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
