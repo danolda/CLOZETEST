@@ -1,0 +1,2495 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YDS Grammar Mega Test (250 Soru)</title>
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- İkonlar -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg-body: #f4f6f9;
+            --bg-card: #ffffff;
+            --text-color: #212529;
+            --border-color: #dee2e6;
+            --active-color: #0d6efd;
+            --wrong-color: #dc3545;
+            --correct-color: #198754;
+        }
+
+        [data-theme="dark"] {
+            --bg-body: #121212;
+            --bg-card: #1e1e1e;
+            --text-color: #e0e0e0;
+            --border-color: #333;
+            --active-color: #bb86fc;
+        }
+
+        body { background-color: var(--bg-body); color: var(--text-color); font-family: 'Segoe UI', sans-serif; transition: 0.3s; }
+        .card { background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        
+        .sidebar-item {
+            padding: 12px 15px; cursor: pointer; border-radius: 8px; margin-bottom: 8px;
+            transition: all 0.2s; border: 1px solid transparent; display: flex; justify-content: space-between; align-items: center;
+        }
+        .sidebar-item:hover { background-color: rgba(128,128,128,0.1); }
+        .sidebar-item.active { background-color: var(--active-color); color: #fff; font-weight: bold; }
+        
+        .sidebar-mistakes { border: 1px solid var(--wrong-color); color: var(--wrong-color); background: rgba(220, 53, 69, 0.05); font-weight: bold; }
+        .sidebar-mistakes.active { background: var(--wrong-color); color: white; }
+
+        .btn-option {
+            width: 45px; height: 45px; border-radius: 50%; padding: 0;
+            font-size: 1.1rem; font-weight: bold; margin: 0 5px;
+            border: 2px solid #6c757d; color: #6c757d; background: transparent;
+            transition: all 0.2s;
+        }
+        .btn-option:hover { transform: scale(1.1); background: rgba(108, 117, 125, 0.1); }
+        
+        .btn-correct { background-color: var(--correct-color) !important; color: white !important; border-color: var(--correct-color) !important; }
+        .btn-wrong { background-color: var(--wrong-color) !important; color: white !important; border-color: var(--wrong-color) !important; }
+
+        .tip-box { 
+            background-color: rgba(255, 193, 7, 0.15); 
+            border-left: 5px solid #ffc107; 
+            padding: 15px; 
+            border-radius: 4px;
+            margin-top: 15px;
+            display: none; /* Başlangıçta gizli */
+        }
+        
+        .question-text { font-size: 1.15rem; font-weight: 500; margin-bottom: 1.5rem; line-height: 1.6; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg border-bottom px-3 bg-body-tertiary">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold text-primary" href="#"><i class="bi bi-mortarboard-fill"></i> YDS Mega Test</a>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-danger btn-sm" onclick="fullReset()">
+                <i class="bi bi-trash"></i> Tümünü Sıfırla
+            </button>
+            <button class="btn btn-outline-secondary btn-sm" onclick="toggleTheme()">
+                <i class="bi bi-moon-stars-fill" id="themeIcon"></i>
+            </button>
+        </div>
+    </div>
+</nav>
+
+<div class="container py-4">
+    <div class="row">
+        <!-- SOL MENÜ -->
+        <div class="col-md-4 col-lg-3 mb-4">
+            <div class="card p-3 sticky-top" style="top: 20px;">
+                <h5 class="fw-bold mb-3 border-bottom pb-2">Bölümler</h5>
+                <div id="sidebar-menu">
+                    <!-- Menü JS ile dolacak -->
+                </div>
+            </div>
+        </div>
+
+        <!-- SAĞ İÇERİK -->
+        <div class="col-md-8 col-lg-9">
+            <div class="card p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4 id="active-section-title" class="fw-bold m-0 text-primary">Bölüm Seçiniz</h4>
+                    <div class="d-flex gap-2 align-items-center">
+                        <span id="progress-badge" class="badge bg-secondary">0/0</span>
+                        <button class="btn btn-sm btn-outline-warning" onclick="resetCurrentSection()">
+                            <i class="bi bi-arrow-counterclockwise"></i> Bu Bölümü Sıfırla
+                        </button>
+                    </div>
+                </div>
+                <hr>
+                <div id="questions-area">
+                    <!-- Sorular JS ile buraya gelecek -->
+                    <div class="text-center py-5 text-muted">Lütfen soldan bir bölüm seçin.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    /* ================= VERİLER (HAM METİN) ================= */
+    const rawQuestionsText = `
+Section: Prepositions & Collocations (1–70)
+1) She insisted ___ paying for the damage, even though it wasn't her fault.
+   A) at
+   B) to
+   C) for
+   D) with
+   E) on
+TIP: Kalıp → insist on + V-ing / noun.
+
+2) The committee approved ___ the proposal after minor revisions.
+   A) with
+   B) for
+   C) to
+   D) on
+   E) of
+TIP: Kalıp → approve of + noun/V-ing.
+
+3) His success largely depends ___ how well he manages time.
+   A) to
+   B) for
+   C) upon
+   D) in
+   E) with
+TIP: Kalıp → depend on/upon + noun/clause.
+
+4) The new policy applies ___ all temporary employees as well as full-time staff.
+   A) with
+   B) on
+   C) for
+   D) in
+   E) to
+TIP: apply to (uygulanmak) ↔ apply for (başvurmak).
+
+5) I’m not accustomed ___ driving in heavy traffic every day.
+   A) on
+   B) to
+   C) at
+   D) with
+   E) for
+TIP: be accustomed to + V-ing / noun.
+
+6) The scientist is best known ___ her work on renewable energy.
+   A) with
+   B) about
+   C) to
+   D) at
+   E) for
+TIP: be known/famous for + noun/V-ing.
+
+7) They blamed the accident ___ human error rather than mechanical failure.
+   A) with
+   B) for
+   C) at
+   D) to
+   E) on
+TIP: blame X on Y (suçu Y’ye atmak).
+
+8) He was charged ___ fraud and faced a lengthy trial.
+   A) about
+   B) to
+   C) for
+   D) of
+   E) with
+TIP: En doğal kalıp/bağlantıyı ara → doğru seçenek 'of'.
+
+9) This textbook is intended ___ students preparing for academic exams.
+   A) at
+   B) for
+   C) to
+   D) with
+   E) about
+TIP: intended for + hedef kitle; intended to + V (amaç).
+
+10) She apologized ___ not informing us earlier.
+   A) with
+   B) for
+   C) at
+   D) to
+   E) about
+TIP: apologize for + V-ing/noun; apologize to + kişi.
+
+11) The city is famous ___ its historic architecture.
+   A) with
+   B) of
+   C) for
+   D) to
+   E) at
+TIP: En doğal kalıp/bağlantıyı ara → doğru seçenek 'for'.
+
+12) Please refrain ___ using your phone during the briefing.
+   A) with
+   B) of
+   C) from
+   D) at
+   E) to
+TIP: refrain from + V-ing.
+
+13) He is capable ___ solving complex problems under pressure.
+   A) for
+   B) with
+   C) at
+   D) of
+   E) to
+TIP: capable of + V-ing/noun.
+
+14) The company specializes ___ medical devices.
+   A) in
+   B) on
+   C) for
+   D) to
+   E) at
+TIP: specialize in + alan.
+
+15) We strongly object ___ being treated unfairly.
+   A) at
+   B) for
+   C) to
+   D) with
+   E) about
+TIP: object to + V-ing/noun.
+
+16) This medication may result ___ severe drowsiness.
+   A) with
+   B) in
+   C) for
+   D) at
+   E) to
+TIP: result in + sonuç; result from + sebep.
+
+17) Her comments were not relevant ___ the topic under discussion.
+   A) on
+   B) with
+   C) to
+   D) for
+   E) in
+TIP: En doğal kalıp/bağlantıyı ara → doğru seçenek 'to'.
+
+18) The project consists ___ three phases, each with its own deadline.
+   A) of
+   B) from
+   C) to
+   D) in
+   E) for
+TIP: consist of + parçalar.
+
+19) He took pride ___ completing the task ahead of schedule.
+   A) in
+   B) on
+   C) with
+   D) for
+   E) at
+TIP: En doğal kalıp/bağlantıyı ara → doğru seçenek 'in'.
+
+20) The manager is responsible ___ ensuring workplace safety.
+   A) on
+   B) to
+   C) with
+   D) for
+   E) in
+TIP: responsible for + iş/sonuç; responsible to + kişi.
+
+21) They succeeded ___ reducing costs without lowering quality.
+   A) on
+   B) in
+   C) at
+   D) for
+   E) to
+TIP: succeed in + V-ing.
+
+22) I’m looking forward ___ hearing from you soon.
+   A) at
+   B) in
+   C) for
+   D) to
+   E) on
+TIP: En doğal kalıp/bağlantıyı ara → doğru seçenek 'to'.
+
+23) She is interested ___ pursuing a career in translation.
+   A) at
+   B) on
+   C) to
+   D) for
+   E) in
+TIP: be interested in + V-ing/noun.
+
+24) He was relieved ___ learn that nobody had been injured.
+   A) for
+   B) with
+   C) at
+   D) to
+   E) about
+TIP: be relieved to + V.
+
+25) We should take advantage ___ this opportunity while it lasts.
+   A) on
+   B) of
+   C) for
+   D) to
+   E) with
+TIP: take advantage of + fırsat.
+
+26) The lecture focused ___ the social effects of urbanization.
+   A) in
+   B) on
+   C) for
+   D) to
+   E) with
+TIP: focus on + konu.
+
+27) He is married ___ a lawyer who works abroad.
+   A) for
+   B) with
+   C) in
+   D) at
+   E) to
+TIP: be married to + kişi.
+
+28) The doctor warned him ___ the risks of smoking.
+   A) for
+   B) about
+   C) with
+   D) at
+   E) to
+TIP: warn someone about + risk/problem.
+
+29) Their decision was influenced ___ public opinion.
+   A) with
+   B) from
+   C) by
+   D) to
+   E) at
+TIP: Passive agent → influenced by + etken.
+
+30) The department is short ___ staff this month.
+   A) of
+   B) on
+   C) in
+   D) for
+   E) at
+TIP: be short of + şey (time, money, staff).
+
+31) She was absorbed ___ the novel and didn’t hear the doorbell.
+   A) at
+   B) in
+   C) for
+   D) to
+   E) on
+TIP: be absorbed in + aktivite/iş.
+
+32) The school provided students ___ free online resources.
+   A) for
+   B) at
+   C) with
+   D) about
+   E) to
+TIP: provide someone with + şey.
+
+33) He congratulated her ___ winning the scholarship.
+   A) for
+   B) at
+   C) to
+   D) on
+   E) with
+TIP: congratulate someone on + başarı.
+
+34) The police searched ___ the missing document for hours.
+   A) to
+   B) at
+   C) for
+   D) about
+   E) with
+TIP: search for + aranan şey.
+
+35) I disagree ___ you on this issue.
+   A) to
+   B) with
+   C) at
+   D) for
+   E) about
+TIP: disagree with someone; disagree on/about (konu).
+
+36) The child was punished ___ lying to his parents.
+   A) for
+   B) at
+   C) with
+   D) to
+   E) about
+TIP: punish someone for + V-ing/noun.
+
+37) The museum is within walking distance ___ the hotel.
+   A) to
+   B) at
+   C) of
+   D) from
+   E) on
+TIP: within walking distance of + yer.
+
+38) He has a strong influence ___ young readers.
+   A) at
+   B) for
+   C) in
+   D) to
+   E) on
+TIP: En doğal kalıp/bağlantıyı ara → doğru seçenek 'on'.
+
+39) We have to comply ___ the regulations to avoid penalties.
+   A) about
+   B) for
+   C) with
+   D) to
+   E) at
+TIP: comply with + kural/regulation.
+
+40) This device is prone ___ overheating if left in the sun.
+   A) for
+   B) to
+   C) with
+   D) on
+   E) at
+TIP: En doğal kalıp/bağlantıyı ara → doğru seçenek 'to'.
+
+41) She prevented her friend ___ making a serious mistake.
+   A) at
+   B) to
+   C) from
+   D) with
+   E) of
+TIP: prevent someone from + V-ing.
+
+42) The price increased ___ 10% in a single month.
+   A) by
+   B) with
+   C) for
+   D) at
+   E) to
+TIP: increase by + yüzde/ölçü; increase to + yeni seviye.
+
+43) The price increased ___ $50 after the update.
+   A) at
+   B) with
+   C) for
+   D) to
+   E) by
+TIP: increase to + yeni rakam (son seviye).
+
+44) He prefers tea ___ coffee in the morning.
+   A) to
+   B) over
+   C) than
+   D) with
+   E) from
+TIP: prefer A to B.
+
+45) The conference was postponed ___ the strike.
+   A) because of
+   B) unless
+   C) although
+   D) so that
+   E) whereas
+TIP: because of + noun; because + clause.
+
+46) She is aware ___ the fact that the deadline is tomorrow.
+   A) at
+   B) with
+   C) of
+   D) about
+   E) to
+TIP: be aware of + noun/clause.
+
+47) The new evidence may lead ___ a different conclusion.
+   A) to
+   B) at
+   C) with
+   D) in
+   E) for
+TIP: lead to + sonuç.
+
+48) The symptoms vary ___ one patient to another.
+   A) to
+   B) between
+   C) from
+   D) with
+   E) among
+TIP: vary from A to B.
+
+49) He was accused ___ spreading false information.
+   A) with
+   B) for
+   C) to
+   D) of
+   E) at
+TIP: be accused of + V-ing/noun.
+
+50) The solution is similar ___ the one we tried last year.
+   A) with
+   B) at
+   C) for
+   D) in
+   E) to
+TIP: similar to (not with).
+
+51) I’m satisfied ___ the results so far.
+   A) about
+   B) with
+   C) for
+   D) to
+   E) at
+TIP: satisfied with + sonuç.
+
+52) The town is famous not only ___ its beaches but also for its cuisine.
+   A) about
+   B) with
+   C) at
+   D) for
+   E) to
+TIP: En doğal kalıp/bağlantıyı ara → doğru seçenek 'for'.
+
+53) We ran ___ sugar, so the cake wasn’t ready.
+   A) down
+   B) into
+   C) off
+   D) out of
+   E) over
+TIP: run out of + isim (stok biter).
+
+54) He apologized ___ me for the misunderstanding.
+   A) at
+   B) for
+   C) about
+   D) with
+   E) to
+TIP: apologize to + kişi; apologize for + sebep.
+
+55) The professor is known ___ being strict but fair.
+   A) at
+   B) to
+   C) about
+   D) with
+   E) for
+TIP: be known/famous for + noun/V-ing.
+
+56) They agreed ___ the plan after a long discussion.
+   A) on
+   B) for
+   C) to
+   D) at
+   E) with
+TIP: agree on + plan/karar; agree with + kişi.
+
+57) She agreed ___ him that the method was risky.
+   A) at
+   B) with
+   C) to
+   D) for
+   E) on
+TIP: agree with + kişi; agree on + konu.
+
+58) He insisted ___ a refund, even without a receipt.
+   A) on
+   B) to
+   C) with
+   D) at
+   E) for
+TIP: Kalıp → insist on + V-ing / noun.
+
+59) The team is involved ___ several international projects.
+   A) at
+   B) on
+   C) for
+   D) to
+   E) in
+TIP: be involved in + faaliyet/proje.
+
+60) This program is designed ___ help students build vocabulary.
+   A) at
+   B) about
+   C) with
+   D) to
+   E) for
+TIP: designed to + V (amaç).
+
+61) The film is based ___ a true story.
+   A) for
+   B) in
+   C) to
+   D) at
+   E) on
+TIP: be based on + kaynak/temel.
+
+62) He is dependent ___ his parents for financial support.
+   A) at
+   B) for
+   C) with
+   D) to
+   E) on
+TIP: be dependent on + kişi/şey.
+
+63) We were shocked ___ the news.
+   A) by
+   B) to
+   C) with
+   D) at
+   E) for
+TIP: be shocked by + haber/olay.
+
+64) She is devoted ___ her work and rarely takes a day off.
+   A) with
+   B) for
+   C) on
+   D) to
+   E) at
+TIP: devoted to + V-ing/noun.
+
+65) The speaker referred ___ a recent study to support his claim.
+   A) for
+   B) on
+   C) to
+   D) at
+   E) with
+TIP: refer to + konu/şey.
+
+66) ___ he had prepared carefully, he still felt nervous during the interview.
+   A) Whereas
+   B) So
+   C) Although
+   D) Unless
+   E) Because
+TIP: although/even though + clause → zıtlık (ama).
+
+67) I’ll call you ___ I get home.
+   A) unless
+   B) even though
+   C) as soon as
+   D) whereas
+   E) despite
+TIP: as soon as = ... olur olmaz.
+
+68) We couldn’t enter the building ___ we didn’t have permission.
+   A) whereas
+   B) because
+   C) despite
+   D) unless
+   E) in case
+TIP: because + clause; because of + noun.
+
+69) He worked overtime, ___ he was exhausted by the end of the week.
+   A) whereas
+   B) unless
+   C) so
+   D) since
+   E) despite
+TIP: so = sonuç; so that = amaç.
+
+70) Take a jacket ___ it gets colder later.
+   A) in case
+   B) despite
+   C) unless
+   D) whereas
+   E) so that
+TIP: in case = olur da ... diye (ihtimale karşı).
+
+Section: Conjunctions & Linkers (71–130)
+71) She spoke quietly ___ nobody would overhear the conversation.
+   A) because
+   B) unless
+   C) despite
+   D) whereas
+   E) so that
+TIP: so that + clause → amaç (… diye).
+
+72) I won’t sign the contract ___ the terms are clarified.
+   A) unless
+   B) since
+   C) until
+   D) despite
+   E) whereas
+TIP: until + zaman → ... olana kadar.
+
+73) He is sociable, ___ his brother prefers to stay alone.
+   A) whereas
+   B) since
+   C) so that
+   D) unless
+   E) because
+TIP: whereas = karşılaştırmalı zıtlık.
+
+74) ___ the heavy traffic, we arrived on time.
+   A) Whereas
+   B) Despite
+   C) Since
+   D) Unless
+   E) Because
+TIP: despite/in spite of + noun/V-ing (not + clause).
+
+75) He left early ___ avoid missing the last bus.
+   A) to
+   B) because
+   C) unless
+   D) whereas
+   E) despite
+TIP: Amaç: to + V.
+
+76) Not only did she apologize, ___ she also offered a refund.
+   A) so
+   B) because
+   C) whereas
+   D) but
+   E) unless
+TIP: Bağlaç sorusu → ilişkiyi bul. Doğru: 'but'.
+
+77) ___ you study regularly, you’re unlikely to improve.
+   A) So that
+   B) Whereas
+   C) Although
+   D) Because
+   E) Unless
+TIP: unless = if not.
+
+78) I’ll lend you the book ___ you promise to return it tomorrow.
+   A) unless
+   B) provided that
+   C) because
+   D) despite
+   E) whereas
+TIP: provided that = şartıyla.
+
+79) The more you practice, ___ you become.
+   A) the more
+   B) the best
+   C) better
+   D) the better
+   E) best
+TIP: Bağlaç sorusu → ilişkiyi bul. Doğru: 'the better'.
+
+80) He didn’t call; ___, I decided to check on him.
+   A) unless
+   B) because
+   C) nevertheless
+   D) since
+   E) whereas
+TIP: nevertheless = yine de.
+
+81) ___ I respect her experience, I disagree with her conclusion.
+   A) So
+   B) While
+   C) Because
+   D) Since
+   E) Unless
+TIP: while = -iken / buna karşın (bağlama göre).
+
+82) We stayed inside ___ it was raining heavily.
+   A) because
+   B) despite
+   C) unless
+   D) in case
+   E) whereas
+TIP: because + clause; because of + noun.
+
+83) He promised to help; ___, he never showed up.
+   A) since
+   B) whereas
+   C) however
+   D) because
+   E) unless
+TIP: however = ancak/ama.
+
+84) She saved money ___ she could travel abroad.
+   A) unless
+   B) so that
+   C) whereas
+   D) despite
+   E) because
+TIP: so that + clause → amaç (… diye).
+
+85) ___ you hurry, you’ll miss the beginning of the film.
+   A) Unless
+   B) Whereas
+   C) Although
+   D) Since
+   E) Because
+TIP: unless = if not.
+
+86) He spoke slowly ___ everyone could follow his explanation.
+   A) so that
+   B) despite
+   C) because
+   D) unless
+   E) whereas
+TIP: so that + clause → amaç (… diye).
+
+87) I’ll wait here ___ you finish your call.
+   A) until
+   B) despite
+   C) because
+   D) whereas
+   E) unless
+TIP: until + zaman → ... olana kadar.
+
+88) ___ being inexperienced, she performed extremely well.
+   A) Since
+   B) Whereas
+   C) Despite
+   D) Unless
+   E) Because
+TIP: despite/in spite of + noun/V-ing (not + clause).
+
+89) He acted ___ he had never met us before.
+   A) whereas
+   B) because
+   C) as if
+   D) so that
+   E) unless
+TIP: as if = sanki (genelde past form).
+
+90) The experiment failed, ___ careful planning.
+   A) despite
+   B) so that
+   C) unless
+   D) because
+   E) since
+TIP: despite/in spite of + noun/V-ing (not + clause).
+
+91) I’ll take notes ___ I forget the details.
+   A) whereas
+   B) because
+   C) despite
+   D) unless
+   E) in case
+TIP: in case = olur da ... diye (ihtimale karşı).
+
+92) He didn’t just complain; ___, he demanded compensation.
+   A) in fact
+   B) since
+   C) unless
+   D) because
+   E) whereas
+TIP: Bağlaç sorusu → ilişkiyi bul. Doğru: 'in fact'.
+
+93) ___ the weather improves, the match will be cancelled.
+   A) Although
+   B) Whereas
+   C) Because
+   D) Unless
+   E) Since
+TIP: unless = if not.
+
+94) She didn’t go out, ___ she was feeling unwell.
+   A) whereas
+   B) despite
+   C) even though
+   D) unless
+   E) since
+TIP: Bağlaç sorusu → ilişkiyi bul. Doğru: 'since'.
+
+95) You can borrow my laptop ___ you handle it carefully.
+   A) unless
+   B) despite
+   C) because
+   D) as long as
+   E) whereas
+TIP: as long as = ... olduğu sürece.
+
+96) ___ he is busy, he always finds time to read.
+   A) Even though
+   B) So that
+   C) Whereas
+   D) Unless
+   E) Because
+TIP: although/even though + clause → zıtlık (ama).
+
+97) He missed the train; ___, he arrived late.
+   A) therefore
+   B) whereas
+   C) unless
+   D) in case
+   E) despite
+TIP: therefore = bu yüzden (resmi).
+
+98) We went for a walk ___ the cold wind.
+   A) in spite of
+   B) unless
+   C) since
+   D) because
+   E) whereas
+TIP: despite/in spite of + noun/V-ing (not + clause).
+
+99) He must be at work, ___ I saw his car outside.
+   A) despite
+   B) so that
+   C) whereas
+   D) unless
+   E) because
+TIP: because + clause; because of + noun.
+
+100) You should back up your files ___ you lose them.
+   A) because
+   B) otherwise
+   C) unless
+   D) despite
+   E) whereas
+TIP: otherwise = yoksa/aksi halde.
+
+101) She finished the task on time, ___ the tight schedule.
+   A) since
+   B) despite
+   C) because
+   D) whereas
+   E) unless
+TIP: despite/in spite of + noun/V-ing (not + clause).
+
+102) ___ it may seem simple, the method requires practice.
+   A) So
+   B) Although
+   C) Whereas
+   D) Unless
+   E) Because
+TIP: although/even though + clause → zıtlık (ama).
+
+103) Hardly had I sat down ___ the phone rang.
+   A) while
+   B) because
+   C) unless
+   D) when
+   E) than
+TIP: Bağlaç sorusu → ilişkiyi bul. Doğru: 'when'.
+
+104) No sooner had he arrived ___ the meeting started.
+   A) unless
+   B) while
+   C) than
+   D) because
+   E) when
+TIP: Bağlaç sorusu → ilişkiyi bul. Doğru: 'than'.
+
+105) He was tired; ___, he kept working.
+   A) because
+   B) whereas
+   C) since
+   D) nevertheless
+   E) unless
+TIP: nevertheless = yine de.
+
+106) ___ you have any questions, feel free to ask.
+   A) If
+   B) Despite
+   C) Although
+   D) Unless
+   E) Whereas
+TIP: Bağlaç sorusu → ilişkiyi bul. Doğru: 'If'.
+
+107) He didn’t answer the email, ___ he had read it.
+   A) unless
+   B) so that
+   C) because
+   D) whereas
+   E) even though
+TIP: although/even though + clause → zıtlık (ama).
+
+108) We can’t start the presentation ___ everyone is seated.
+   A) unless
+   B) because
+   C) whereas
+   D) despite
+   E) until
+TIP: until + zaman → ... olana kadar.
+
+109) She studies English every day; ___, her grammar is improving fast.
+   A) unless
+   B) as a result
+   C) despite
+   D) because
+   E) whereas
+TIP: Bağlaç sorusu → ilişkiyi bul. Doğru: 'as a result'.
+
+110) ___ you take regular breaks, you may lose concentration.
+   A) Although
+   B) Because
+   C) Unless
+   D) Since
+   E) Whereas
+TIP: unless = if not.
+
+111) He didn’t mention the problem, ___ he expected us to notice it.
+   A) since
+   B) unless
+   C) yet
+   D) because
+   E) whereas
+TIP: yet = ama yine de.
+
+112) You may leave early ___ you finish your work first.
+   A) because
+   B) whereas
+   C) unless
+   D) despite
+   E) provided that
+TIP: provided that = şartıyla.
+
+113) She kept training, ___ she was injured.
+   A) whereas
+   B) unless
+   C) even though
+   D) because
+   E) since
+TIP: although/even though + clause → zıtlık (ama).
+
+114) He spoke in a low voice ___ wake the baby.
+   A) whereas
+   B) because
+   C) unless
+   D) despite
+   E) so as not to
+TIP: Bağlaç sorusu → ilişkiyi bul. Doğru: 'so as not to'.
+
+115) ___ the price is high, demand remains strong.
+   A) Since
+   B) Because
+   C) Although
+   D) Whereas
+   E) Unless
+TIP: although/even though + clause → zıtlık (ama).
+
+116) He looked exhausted, ___ he refused to rest.
+   A) unless
+   B) since
+   C) but
+   D) whereas
+   E) because
+TIP: Bağlaç sorusu → ilişkiyi bul. Doğru: 'but'.
+
+117) You should read the instructions, ___ you might make mistakes.
+   A) despite
+   B) because
+   C) whereas
+   D) otherwise
+   E) unless
+TIP: otherwise = yoksa/aksi halde.
+
+118) She smiled, ___ she was actually disappointed.
+   A) although
+   B) whereas
+   C) because
+   D) unless
+   E) since
+TIP: although/even though + clause → zıtlık (ama).
+
+119) ___ I was walking home, I ran into an old friend.
+   A) Unless
+   B) While
+   C) Whereas
+   D) Because
+   E) Despite
+TIP: while = -iken / buna karşın (bağlama göre).
+
+120) He prefers to work alone ___ his colleagues like teamwork.
+   A) despite
+   B) unless
+   C) because
+   D) whereas
+   E) since
+TIP: whereas = karşılaştırmalı zıtlık.
+
+121) I’ll email you the file ___ I have finished editing it.
+   A) despite
+   B) once
+   C) because
+   D) whereas
+   E) unless
+TIP: once = ... olunca/olduktan sonra.
+
+122) ___ the shortage, the factory continued production.
+   A) Since
+   B) Whereas
+   C) Unless
+   D) Despite
+   E) Because
+TIP: despite/in spite of + noun/V-ing (not + clause).
+
+123) He didn’t attend the meeting, ___ did he send an apology.
+   A) so
+   B) because
+   C) but
+   D) yet
+   E) nor
+TIP: nor → inversion: nor did he...
+
+124) She can either call us now ___ send an email later.
+   A) nor
+   B) or
+   C) and
+   D) so
+   E) but
+TIP: either ... or ...
+
+125) The man ___ wallet was stolen reported it to the police.
+   A) whose
+   B) whom
+   C) where
+   D) which
+   E) who
+TIP: whose = sahiplik (…’ın).
+
+126) This is the book ___ I was telling you about.
+   A) what
+   B) that
+   C) whose
+   D) where
+   E) whom
+TIP: that = defining; only/first/superlative ile sık.
+
+127) The town ___ we spent our holidays is on the coast.
+   A) whom
+   B) what
+   C) which
+   D) whose
+   E) where
+TIP: where = yer.
+
+128) The reason ___ he resigned is still unclear.
+   A) what
+   B) which
+   C) whose
+   D) where
+   E) why
+TIP: reason why.
+
+129) The scientist, ___ won the award, thanked her team.
+   A) which
+   B) where
+   C) what
+   D) whose
+   E) who
+TIP: who = kişi (özne).
+
+130) I’ve found the file ___ you asked for.
+   A) whom
+   B) who
+   C) that
+   D) where
+   E) whose
+TIP: that = defining; only/first/superlative ile sık.
+
+Section: Relative Clauses & Reduced Structures (131–190)
+131) Anyone ___ wants to apply must submit a CV.
+   A) which
+   B) who
+   C) where
+   D) what
+   E) whose
+TIP: who = kişi (özne).
+
+132) The meeting ___ was scheduled for Monday has been cancelled.
+   A) scheduled
+   B) schedule
+   C) scheduling
+   D) schedules
+   E) to schedule
+TIP: V3 = pasif kısaltılmış relative.
+
+133) The documents ___ yesterday are on your desk.
+   A) to send
+   B) send
+   C) sends
+   D) sending
+   E) sent
+TIP: Relative ipuçlarını yakala. Doğru: 'sent'.
+
+134) The woman ___ next door is a surgeon.
+   A) live
+   B) lived
+   C) to live
+   D) living
+   E) lives
+TIP: V-ing = aktif kısaltılmış relative.
+
+135) The only thing ___ matters is honesty.
+   A) where
+   B) what
+   C) whose
+   D) that
+   E) whom
+TIP: that = defining; only/first/superlative ile sık.
+
+136) The first person ___ arrive should open the door.
+   A) being
+   B) to have
+   C) having
+   D) to be
+   E) to
+TIP: the first/only person to + V.
+
+137) The report, ___ was published last week, received criticism.
+   A) where
+   B) who
+   C) what
+   D) which
+   E) whose
+TIP: which = cansız/üst cümle; virgüllü yapı sık.
+
+138) The company ___ he works for is expanding rapidly.
+   A) what
+   B) where
+   C) whose
+   D) that
+   E) whom
+TIP: that = defining; only/first/superlative ile sık.
+
+139) The person to ___ you spoke is my supervisor.
+   A) what
+   B) whom
+   C) which
+   D) whose
+   E) where
+TIP: whom = kişi (nesne), özellikle preposition sonrası.
+
+140) The professor ___ lecture we attended is internationally known.
+   A) whom
+   B) who
+   C) where
+   D) which
+   E) whose
+TIP: whose = sahiplik (…’ın).
+
+141) The day ___ we met was raining heavily.
+   A) whose
+   B) where
+   C) what
+   D) when
+   E) which
+TIP: when = zaman.
+
+142) This is the best solution ___ we can offer right now.
+   A) whose
+   B) where
+   C) whom
+   D) that
+   E) what
+TIP: that = defining; only/first/superlative ile sık.
+
+143) The students ___ study consistently tend to succeed.
+   A) where
+   B) what
+   C) whose
+   D) who
+   E) which
+TIP: who = kişi (özne).
+
+144) The building ___ in 1920 is being restored.
+   A) to build
+   B) built
+   C) building
+   D) builds
+   E) build
+TIP: Relative ipuçlarını yakala. Doğru: 'built'.
+
+145) The woman ___ I met yesterday lives nearby.
+   A) whose
+   B) what
+   C) which
+   D) (who/that)
+   E) where
+TIP: Relative ipuçlarını yakala. Doğru: '(who/that)'.
+
+146) The subject ___ he is most interested in is linguistics.
+   A) whose
+   B) whom
+   C) what
+   D) where
+   E) that
+TIP: that = defining; only/first/superlative ile sık.
+
+147) The man from ___ I borrowed the book is a historian.
+   A) whose
+   B) what
+   C) where
+   D) which
+   E) whom
+TIP: whom = kişi (nesne), özellikle preposition sonrası.
+
+148) The island, ___ lies off the coast, is uninhabited.
+   A) what
+   B) which
+   C) where
+   D) whose
+   E) who
+TIP: which = cansız/üst cümle; virgüllü yapı sık.
+
+149) A dictionary is a tool ___ helps you understand meanings.
+   A) who
+   B) whom
+   C) whose
+   D) that
+   E) where
+TIP: that = defining; only/first/superlative ile sık.
+
+150) The only person ___ could solve the puzzle was her brother.
+   A) which
+   B) who
+   C) where
+   D) whose
+   E) whom
+TIP: who = kişi (özne).
+
+151) The film ___ we watched last night was based on a novel.
+   A) whom
+   B) what
+   C) that
+   D) where
+   E) whose
+TIP: that = defining; only/first/superlative ile sık.
+
+152) The woman ___ car was damaged called the insurance company.
+   A) whom
+   B) whose
+   C) where
+   D) who
+   E) which
+TIP: whose = sahiplik (…’ın).
+
+153) The house ___ roof collapsed was abandoned.
+   A) where
+   B) whose
+   C) which
+   D) whom
+   E) who
+TIP: whose = sahiplik (…’ın).
+
+154) This is the cafe ___ they make excellent desserts.
+   A) whom
+   B) what
+   C) whose
+   D) where
+   E) which
+TIP: where = yer.
+
+155) The project, ___ aimed to reduce costs, was successful.
+   A) who
+   B) what
+   C) where
+   D) which
+   E) whose
+TIP: which = cansız/üst cümle; virgüllü yapı sık.
+
+156) The applicant ___ interview went well was hired.
+   A) whom
+   B) which
+   C) whose
+   D) where
+   E) who
+TIP: whose = sahiplik (…’ın).
+
+157) The route ___ we took was longer than expected.
+   A) where
+   B) whom
+   C) whose
+   D) that
+   E) what
+TIP: that = defining; only/first/superlative ile sık.
+
+158) The engineer ___ designed the bridge received an award.
+   A) what
+   B) which
+   C) where
+   D) who
+   E) whose
+TIP: who = kişi (özne).
+
+159) The speech, ___ lasted nearly an hour, bored the audience.
+   A) whose
+   B) which
+   C) where
+   D) what
+   E) who
+TIP: which = cansız/üst cümle; virgüllü yapı sık.
+
+160) The village ___ I grew up has changed a lot.
+   A) where
+   B) which
+   C) whom
+   D) whose
+   E) what
+TIP: where = yer.
+
+161) The method ___ recommended by experts is very costly.
+   A) recommending
+   B) to recommend
+   C) recommended
+   D) recommend
+   E) recommends
+TIP: V3 = pasif kısaltılmış relative.
+
+162) The woman with ___ I discussed the issue is a consultant.
+   A) whose
+   B) what
+   C) which
+   D) whom
+   E) where
+TIP: whom = kişi (nesne), özellikle preposition sonrası.
+
+163) The reason ___ I’m calling is to confirm the appointment.
+   A) whose
+   B) why
+   C) which
+   D) where
+   E) what
+TIP: reason why.
+
+164) There are several factors, one of ___ is cost, that affect the decision.
+   A) which
+   B) where
+   C) what
+   D) who
+   E) whose
+TIP: which = cansız/üst cümle; virgüllü yapı sık.
+
+165) The students, most of ___ had never travelled abroad, were excited.
+   A) whom
+   B) whose
+   C) which
+   D) what
+   E) who
+TIP: whom = kişi (nesne), özellikle preposition sonrası.
+
+166) This is the first time ___ I have tried online learning.
+   A) which
+   B) when
+   C) whose
+   D) what
+   E) that
+TIP: that = defining; only/first/superlative ile sık.
+
+167) He is the only one ___ knows the password.
+   A) whom
+   B) which
+   C) who
+   D) whose
+   E) where
+TIP: who = kişi (özne).
+
+168) The book ___ I borrowed from you was fascinating.
+   A) that
+   B) whom
+   C) whose
+   D) where
+   E) what
+TIP: that = defining; only/first/superlative ile sık.
+
+169) The manager, ___ office is on the top floor, is out today.
+   A) which
+   B) who
+   C) whose
+   D) whom
+   E) where
+TIP: whose = sahiplik (…’ın).
+
+170) The woman ___ you were talking about has arrived.
+   A) where
+   B) who
+   C) which
+   D) whose
+   E) what
+TIP: who = kişi (özne).
+
+171) The article ___ I referred to is no longer available.
+   A) whose
+   B) that
+   C) which
+   D) where
+   E) what
+TIP: that = defining; only/first/superlative ile sık.
+
+172) The students ___ papers were late received a penalty.
+   A) whom
+   B) where
+   C) which
+   D) whose
+   E) who
+TIP: whose = sahiplik (…’ın).
+
+173) The company ___ headquarters are in Berlin opened a new branch.
+   A) which
+   B) who
+   C) whom
+   D) where
+   E) whose
+TIP: whose = sahiplik (…’ın).
+
+174) The experiment ___ results surprised everyone was repeated.
+   A) where
+   B) whose
+   C) which
+   D) whom
+   E) who
+TIP: whose = sahiplik (…’ın).
+
+175) The man ___ I saw at the conference was your colleague.
+   A) what
+   B) whom
+   C) where
+   D) which
+   E) whose
+TIP: whom = kişi (nesne), özellikle preposition sonrası.
+
+176) The island ___ we visited had no airport.
+   A) what
+   B) whose
+   C) whom
+   D) that
+   E) where
+TIP: that = defining; only/first/superlative ile sık.
+
+177) The woman ___ to you I was introduced is my neighbor.
+   A) who
+   B) what
+   C) whose
+   D) which
+   E) whom
+TIP: whom = kişi (nesne), özellikle preposition sonrası.
+
+178) The report ___ findings were widely discussed was leaked online.
+   A) who
+   B) whom
+   C) whose
+   D) where
+   E) which
+TIP: whose = sahiplik (…’ın).
+
+179) The only explanation ___ makes sense is the simplest one.
+   A) what
+   B) whom
+   C) whose
+   D) that
+   E) where
+TIP: that = defining; only/first/superlative ile sık.
+
+180) The student ___ I gave the book to thanked me later.
+   A) what
+   B) which
+   C) whose
+   D) whom
+   E) who
+TIP: whom = kişi (nesne), özellikle preposition sonrası.
+
+181) The company, for ___ he used to work, went bankrupt last year.
+   A) whose
+   B) whom
+   C) that
+   D) where
+   E) which
+TIP: which = cansız/üst cümle; virgüllü yapı sık.
+
+182) The colleague ___ advice I trust most is leaving the firm.
+   A) whom
+   B) where
+   C) which
+   D) who
+   E) whose
+TIP: whose = sahiplik (…’ın).
+
+183) The conference, during ___ several new projects were announced, lasted two days.
+   A) where
+   B) whose
+   C) which
+   D) whom
+   E) that
+TIP: which = cansız/üst cümle; virgüllü yapı sık.
+
+184) The problem ___ we are dealing with is more complex than it seems.
+   A) what
+   B) where
+   C) whom
+   D) that
+   E) whose
+TIP: that = defining; only/first/superlative ile sık.
+
+185) The only time ___ I can study is late at night.
+   A) when
+   B) which
+   C) where
+   D) what
+   E) whose
+TIP: when = zaman.
+
+186) The equipment ___ in the lab must be handled carefully.
+   A) to keep
+   B) keeping
+   C) kept
+   D) keeps
+   E) keep
+TIP: Relative ipuçlarını yakala. Doğru: 'kept'.
+
+187) The students ___ invited to the ceremony were given certificates.
+   A) invites
+   B) to invite
+   C) inviting
+   D) invite
+   E) invited
+TIP: V3 = pasif kısaltılmış relative.
+
+188) The man, ___ I had never seen before, introduced himself politely.
+   A) which
+   B) whom
+   C) where
+   D) who
+   E) whose
+TIP: whom = kişi (nesne), özellikle preposition sonrası.
+
+189) The rule ___ you mentioned does not apply in this case.
+   A) whom
+   B) what
+   C) where
+   D) that
+   E) whose
+TIP: that = defining; only/first/superlative ile sık.
+
+190) The researcher ___ work focuses on climate change published a new paper.
+   A) whom
+   B) which
+   C) where
+   D) who
+   E) whose
+TIP: whose = sahiplik (…’ın).
+
+Section: Tense, Passive, Modals, Conditionals (191–250)
+191) By the time we arrived, the meeting ___ already ___.
+   A) has / started
+   B) have / started
+   C) is / starting
+   D) had / started
+   E) was / starting
+TIP: ‘By the time’ + past → Past Perfect (had + V3).
+
+192) I ___ in this city since 2018.
+   A) have lived
+   B) live
+   C) am living
+   D) lived
+   E) had lived
+TIP: since/for → Present Perfect (have/has + V3).
+
+193) When I called, she ___ dinner, so she couldn’t talk.
+   A) cooked
+   B) is cooking
+   C) had cooked
+   D) has cooked
+   E) was cooking
+TIP: Geçmişte devam eden eylem → was/were + V-ing.
+
+194) He ___ his keys, so he couldn’t open the door.
+   A) has lost
+   B) had lost
+   C) lost
+   D) was losing
+   E) loses
+TIP: Önce gerçekleşen geçmiş eylem → Past Perfect.
+
+195) This bridge ___ in 2010 and ___ since then.
+   A) is built / was repaired
+   B) was built / has been repaired
+   C) was building / repairs
+   D) had been built / repaired
+   E) built / repaired
+TIP: Past passive + Present perfect passive.
+
+196) The report ___ tomorrow, so we must finish today.
+   A) will submit
+   B) will be submitted
+   C) submits
+   D) is submitting
+   E) has submitted
+TIP: Gelecek pasif: will be + V3.
+
+197) The tickets must ___ before Friday.
+   A) be bought
+   B) to buy
+   C) buying
+   D) bought
+   E) buy
+TIP: Modal + passive → must be + V3.
+
+198) He can’t ___ the truth; he looks too calm.
+   A) have told
+   B) told
+   C) be telling
+   D) tells
+   E) tell
+TIP: Şu an çıkarımı: can’t + be + V-ing.
+
+199) She ___ be at home; the lights are off and her car is gone.
+   A) may
+   B) should
+   C) must
+   D) would
+   E) can’t
+TIP: Güçlü olumsuz çıkarım: can’t be.
+
+200) You ___ leave early; the meeting ends at five.
+   A) don’t have to
+   B) shouldn’t
+   C) can’t
+   D) might
+   E) mustn’t
+TIP: Zorunluluk yok: don’t have to.
+
+201) If you heat ice, it ___.
+   A) will melt
+   B) would melt
+   C) melted
+   D) has melted
+   E) melts
+TIP: Zero conditional: If + Present, Present.
+
+202) If I ___ enough money, I would buy a new laptop.
+   A) had
+   B) am having
+   C) would have
+   D) will have
+   E) have
+TIP: 2nd conditional: If + Past, would + V1.
+
+203) If she ___ earlier, she wouldn’t have missed the bus.
+   A) has left
+   B) leaves
+   C) left
+   D) would leave
+   E) had left
+TIP: 3rd conditional: If + had V3, would have V3.
+
+204) I wish I ___ more patient in stressful situations.
+   A) have been
+   B) will be
+   C) am
+   D) were
+   E) had been
+TIP: wish (şimdi) → past form; be → were.
+
+205) It’s essential that he ___ on time.
+   A) will be
+   B) be
+   C) has been
+   D) was
+   E) is
+TIP: Subjunctive: essential that + base verb.
+
+206) Not until he apologized ___ to speak to him again.
+   A) agreed I
+   B) I agreed
+   C) did I agree
+   D) I agree
+   E) I had agreed
+TIP: Negative inversion: Not until ... did + S + V1.
+
+207) The new law ___ next month.
+   A) introduced
+   B) introduces
+   C) will introduce
+   D) will be introduced
+   E) has introduced
+TIP: Future passive.
+
+208) She suggested ___ earlier to avoid traffic.
+   A) left
+   B) having left
+   C) to leave
+   D) leaving
+   E) leave
+TIP: suggest + V-ing.
+
+209) He denied ___ the document.
+   A) sign
+   B) having sign
+   C) signing
+   D) signed
+   E) to sign
+TIP: deny + V-ing.
+
+210) I’m used to ___ up early on weekdays.
+   A) getting
+   B) got
+   C) have got
+   D) to get
+   E) get
+TIP: be used to + V-ing/noun.
+
+211) The car needs ___ immediately.
+   A) repair
+   B) repaired
+   C) repairing
+   D) to repair
+   E) repairs
+TIP: need + V-ing (= to be V3).
+
+212) Had I known about the delay, I ___ earlier.
+   A) had left
+   B) leave
+   C) would have left
+   D) left
+   E) would leave
+TIP: Inversion: Had I known = If I had known.
+
+213) It was the first time he ___ such a mistake.
+   A) was making
+   B) made
+   C) makes
+   D) has made
+   E) had made
+TIP: It was the first time + past → Past Perfect.
+
+214) She acts as if she ___ everything.
+   A) knows
+   B) will know
+   C) had known
+   D) has known
+   E) knew
+TIP: as if + past form (gerçek dışı/mesafe).
+
+215) He ___ for two hours when the phone finally rang.
+   A) was waited
+   B) waited
+   C) had been waiting
+   D) has waited
+   E) had waited
+TIP: Süre + geçmiş ana kadar → Past Perfect Continuous.
+
+216) This room ___ cleaned every day.
+   A) has
+   B) has been
+   C) is being
+   D) is
+   E) was
+TIP: Routine passive: is/are + V3.
+
+217) The emails ___ right now; please try again later.
+   A) have sent
+   B) were sent
+   C) send
+   D) are sent
+   E) are being sent
+TIP: Şu an pasif: am/is/are being + V3.
+
+218) You ___ have told me; I already knew.
+   A) could
+   B) might
+   C) needn’t
+   D) should
+   E) must
+TIP: needn’t have V3 = gereksiz yaptın.
+
+219) He ___ have missed the train; he arrived far too early.
+   A) can’t
+   B) should
+   C) might
+   D) would
+   E) must
+TIP: can’t have V3 = imkânsız.
+
+220) She ___ be working; her computer is on.
+   A) shouldn’t
+   B) can’t
+   C) would
+   D) must
+   E) need
+TIP: must be + V-ing = güçlü çıkarım.
+
+221) Unless you ___ now, you will miss the bus.
+   A) leaving
+   B) had left
+   C) left
+   D) to leave
+   E) leave
+TIP: 1st conditional: if/unless + Present.
+
+222) I’d rather you ___ so much noise at night.
+   A) hadn’t made
+   B) don’t make
+   C) didn’t make
+   D) haven’t made
+   E) won’t make
+TIP: would rather + past (başkası için).
+
+223) He made me ___ the report again.
+   A) to rewrite
+   B) rewritten
+   C) rewrote
+   D) rewriting
+   E) rewrite
+TIP: make/let + object + bare infinitive.
+
+224) She was made ___ the contract without reading it.
+   A) to signing
+   B) signing
+   C) sign
+   D) to sign
+   E) signed
+TIP: Passive: be made to + V.
+
+225) By next year, they ___ the project.
+   A) have finished
+   B) finish
+   C) finished
+   D) will have finished
+   E) will finish
+TIP: By + future time → Future Perfect.
+
+226) The letter ___ yesterday, but it still hasn’t arrived.
+   A) was sent
+   B) had been sent
+   C) is sent
+   D) sent
+   E) has been sent
+TIP: yesterday → simple past passive.
+
+227) He said he ___ the document the next day.
+   A) has sent
+   B) would send
+   C) will send
+   D) had sent
+   E) sends
+TIP: Reported speech: will → would.
+
+228) If it ___ tomorrow, we’ll cancel the picnic.
+   A) has rained
+   B) rained
+   C) will rain
+   D) would rain
+   E) rains
+TIP: 1st conditional: If + Present, will + V1.
+
+229) If I were you, I ___ that offer.
+   A) accepted
+   B) had accepted
+   C) will accept
+   D) would accept
+   E) accept
+TIP: If I were you → would + V1.
+
+230) You ___ wear a seatbelt; it’s the law.
+   A) might
+   B) must
+   C) would
+   D) can
+   E) needn’t
+TIP: Kural/zorunluluk: must.
+
+231) Students ___ submit the assignment after the deadline.
+   A) should
+   B) mustn’t
+   C) may
+   D) might
+   E) don’t have to
+TIP: Yasak: mustn’t.
+
+232) He ___ speak English fluently when he was ten.
+   A) could
+   B) may
+   C) would
+   D) can
+   E) must
+TIP: Geçmiş yetenek: could.
+
+233) The issue ___ resolved if both sides cooperate.
+   A) had
+   B) has
+   C) will
+   D) will be
+   E) is
+TIP: will be + V3 (pasif).
+
+234) She ___ have called you, but her phone battery died.
+   A) should
+   B) needn’t
+   C) could
+   D) must
+   E) can’t
+TIP: could have V3 = yapabilirdi ama olmadı.
+
+235) He said he ___ never seen such a place before.
+   A) would have
+   B) had
+   C) will have
+   D) is
+   E) has
+TIP: Reported speech + before → had + V3.
+
+236) No sooner ___ the class started than the power went out.
+   A) was
+   B) had
+   C) have
+   D) has
+   E) did
+TIP: No sooner had + S + V3 than ...
+
+237) It’s time we ___ home.
+   A) go
+   B) went
+   C) had gone
+   D) will go
+   E) have gone
+TIP: It’s time + past (gecikmişlik).
+
+238) She would rather ___ at home than go out.
+   A) stays
+   B) stay
+   C) staying
+   D) stayed
+   E) to stay
+TIP: would rather + V1 (özne aynı).
+
+239) The work ___ by Friday, otherwise we’ll lose the client.
+   A) must to finish
+   B) must be finished
+   C) must finishing
+   D) must finished
+   E) must finish
+TIP: Modal + passive: must be + V3.
+
+240) If he ___ harder, he would have passed.
+   A) has studied
+   B) studies
+   C) was studying
+   D) studied
+   E) had studied
+TIP: 3rd conditional if-clause: had + V3.
+
+241) I wish I ___ him yesterday.
+   A) saw
+   B) see
+   C) have seen
+   D) will see
+   E) had seen
+TIP: wish (geçmiş pişmanlık) → had + V3.
+
+242) They ___ the decision yet, so we should wait.
+   A) haven’t made
+   B) didn’t make
+   C) don’t make
+   D) won’t make
+   E) hadn’t made
+TIP: yet + Present Perfect.
+
+243) This is the first time I ___ such a challenging exam.
+   A) took
+   B) take
+   C) have taken
+   D) am taking
+   E) had taken
+TIP: This is the first time → Present Perfect.
+
+244) The accident ___ by careless driving, according to witnesses.
+   A) has caused
+   B) had caused
+   C) was caused
+   D) is causing
+   E) caused
+TIP: Passive: was caused (agent implied).
+
+245) When the boss entered, everyone ___ silent.
+   A) became
+   B) had become
+   C) becomes
+   D) has become
+   E) was becoming
+TIP: Tek olay dizisi → simple past.
+
+246) If you ___ your password, click 'Forgot password'.
+   A) forgot
+   B) will forget
+   C) forget
+   D) have forgotten
+   E) had forgotten
+TIP: Talimat/genel durum: present tense.
+
+247) I ___ to the gym lately because of my exams.
+   A) wasn’t going
+   B) didn’t go
+   C) haven’t been going
+   D) don’t go
+   E) hadn’t gone
+TIP: lately + süre → Present Perfect Continuous.
+
+248) It is believed that the painting ___ stolen years ago.
+   A) was
+   B) will be
+   C) had been
+   D) is
+   E) has been
+TIP: years ago → simple past passive.
+
+249) The suspect ___ released if there isn’t enough evidence.
+   A) is
+   B) will
+   C) has been
+   D) was
+   E) will be
+TIP: will be + V3 (released).
+
+250) I ___ have helped you if you had asked me.
+   A) would
+   B) will
+   C) can
+   D) should
+   E) must
+TIP: Main clause: would have V3 (burada would).
+`;
+
+    const rawAnswersText = `
+1:E  2:E  3:C  4:E  5:B  6:E  7:E  8:D  9:B  10:B
+11:C  12:C  13:D  14:A  15:C  16:B  17:C  18:A  19:A  20:D
+21:B  22:D  23:E  24:D  25:B  26:B  27:E  28:B  29:C  30:A
+31:B  32:C  33:D  34:C  35:B  36:A  37:C  38:E  39:C  40:B
+41:C  42:A  43:D  44:A  45:A  46:C  47:A  48:C  49:D  50:E
+51:B  52:D  53:D  54:E  55:E  56:A  57:B  58:A  59:E  60:D
+61:E  62:E  63:A  64:D  65:C  66:C  67:C  68:B  69:C  70:A
+71:E  72:C  73:A  74:B  75:A  76:D  77:E  78:B  79:D  80:C
+81:B  82:A  83:C  84:B  85:A  86:A  87:A  88:C  89:C  90:A
+91:E  92:A  93:D  94:E  95:D  96:A  97:A  98:A  99:E  100:B
+101:B  102:B  103:D  104:C  105:D  106:A  107:E  108:E  109:B  110:C
+111:C  112:E  113:C  114:E  115:C  116:C  117:D  118:A  119:B  120:D
+121:B  122:D  123:E  124:B  125:A  126:B  127:E  128:E  129:E  130:C
+131:B  132:A  133:E  134:D  135:D  136:E  137:D  138:D  139:B  140:E
+141:D  142:D  143:D  144:B  145:D  146:E  147:E  148:B  149:D  150:B
+151:C  152:B  153:B  154:D  155:D  156:C  157:D  158:D  159:B  160:A
+161:C  162:D  163:B  164:A  165:A  166:E  167:C  168:A  169:C  170:B
+171:B  172:D  173:E  174:B  175:B  176:D  177:E  178:C  179:D  180:D
+181:E  182:E  183:C  184:D  185:A  186:C  187:E  188:B  189:D  190:E
+191:D  192:A  193:E  194:B  195:B  196:B  197:A  198:C  199:E  200:A
+201:E  202:A  203:E  204:D  205:B  206:C  207:D  208:D  209:C  210:A
+211:C  212:C  213:E  214:E  215:C  216:D  217:E  218:C  219:A  220:D
+221:E  222:C  223:E  224:D  225:D  226:A  227:B  228:E  229:D  230:B
+231:B  232:A  233:D  234:C  235:B  236:B  237:B  238:B  239:B  240:E
+241:E  242:A  243:C  244:C  245:A  246:C  247:C  248:A  249:E  250:A
+`;
+
+    // Global Değişkenler
+    let allQuestions = [];
+    let currentSectionKey = null;
+    let wrongBank = [];
+    let progressData = {}; // { qId: "correct" | "wrong" }
+
+    // Bölüm Tanımları
+    const sections = [
+        { key: "sec1", title: "Prepositions & Collocations (1-70)", start: 1, end: 70 },
+        { key: "sec2", title: "Conjunctions & Linkers (71-130)", start: 71, end: 130 },
+        { key: "sec3", title: "Relative Clauses (131-190)", start: 131, end: 190 },
+        { key: "sec4", title: "Tense & Modals (191-250)", start: 191, end: 250 }
+    ];
+
+    window.onload = function() {
+        if(localStorage.getItem('yds_theme') === 'dark') document.body.setAttribute('data-theme', 'dark');
+        loadData();
+        renderMenu();
+        // Varsayılan olarak ilk bölümü açabiliriz veya boş bırakabiliriz
+        // showSection('sec1');
+    };
+
+    // --- VERİ PARSE İŞLEMİ ---
+    function loadData() {
+        // 1. Cevap Anahtarını Parse Et
+        const answerMap = {};
+        const ansRegex = /(\d+):([A-E])/g;
+        let match;
+        while ((match = ansRegex.exec(rawAnswersText)) !== null) {
+            answerMap[match[1]] = match[2];
+        }
+
+        // 2. Soruları Parse Et
+        // Soru formatı: Sayı) Soru metni \n A) ... \n TIP: ...
+        // Regex ile bölmek yerine, "Section:"ları ve soru bloklarını manuel parse etmek daha güvenli.
+        
+        const lines = rawQuestionsText.split('\n');
+        let currentQ = null;
+        let buffer = [];
+        
+        lines.forEach(line => {
+            line = line.trim();
+            if (!line) return;
+            
+            // Yeni soru başlangıcı tespiti: "1) " gibi
+            if (/^\d+\)/.test(line)) {
+                if (currentQ) saveQuestion(currentQ, answerMap);
+                currentQ = { 
+                    id: parseInt(line.split(')')[0]), 
+                    text: line.split(')').slice(1).join(')').trim(), 
+                    options: {}, 
+                    tip: "" 
+                };
+            } 
+            else if (currentQ) {
+                if (line.startsWith('A)')) currentQ.options.A = line.substring(2).trim();
+                else if (line.startsWith('B)')) currentQ.options.B = line.substring(2).trim();
+                else if (line.startsWith('C)')) currentQ.options.C = line.substring(2).trim();
+                else if (line.startsWith('D)')) currentQ.options.D = line.substring(2).trim();
+                else if (line.startsWith('E)')) currentQ.options.E = line.substring(2).trim();
+                else if (line.startsWith('TIP:')) currentQ.tip = line.substring(4).trim();
+                else {
+                    // Soru metni devamı veya tip devamı olabilir ama bu formatta genelde tek satır.
+                }
+            }
+        });
+        // Son soruyu kaydet
+        if (currentQ) saveQuestion(currentQ, answerMap);
+
+        // 3. LocalStorage verilerini çek
+        const savedProgress = localStorage.getItem('yds_progress');
+        if(savedProgress) progressData = JSON.parse(savedProgress);
+
+        const savedMistakes = localStorage.getItem('yds_mistakes');
+        if(savedMistakes) wrongBank = JSON.parse(savedMistakes);
+    }
+
+    function saveQuestion(q, ansMap) {
+        q.correctAnswer = ansMap[q.id];
+        allQuestions.push(q);
+    }
+
+    // --- UI RENDER ---
+    function renderMenu() {
+        const menu = document.getElementById('sidebar-menu');
+        menu.innerHTML = "";
+
+        // Yanlışlar Butonu
+        const mistakeBtn = document.createElement('div');
+        mistakeBtn.className = "sidebar-item sidebar-mistakes";
+        mistakeBtn.id = "menu-mistakes";
+        mistakeBtn.innerHTML = `<span><i class="bi bi-exclamation-octagon-fill"></i> YANLIŞLARIM</span> <span class="badge bg-danger">${wrongBank.length}</span>`;
+        mistakeBtn.onclick = () => showMistakes();
+        menu.appendChild(mistakeBtn);
+
+        // Bölümler
+        sections.forEach(sec => {
+            const div = document.createElement('div');
+            div.className = "sidebar-item";
+            div.id = `menu-${sec.key}`;
+            div.innerHTML = `<span>${sec.title}</span>`;
+            div.onclick = () => showSection(sec.key);
+            menu.appendChild(div);
+        });
+    }
+
+    function showSection(key) {
+        currentSectionKey = key;
+        
+        // Menü aktiflik ayarı
+        document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
+        document.getElementById(`menu-${key}`).classList.add('active');
+
+        // Başlık ve Veri
+        const secData = sections.find(s => s.key === key);
+        document.getElementById('active-section-title').innerText = secData.title;
+        
+        // Soruları filtrele
+        const filteredQ = allQuestions.filter(q => q.id >= secData.start && q.id <= secData.end);
+        renderQuestions(filteredQ);
+        updateProgressBadge(filteredQ);
+    }
+
+    function showMistakes() {
+        currentSectionKey = 'mistakes';
+        document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
+        document.getElementById('menu-mistakes').classList.add('active');
+        document.getElementById('active-section-title').innerText = "Yanlış Cevapladığım Sorular";
+
+        if(wrongBank.length === 0) {
+            document.getElementById('questions-area').innerHTML = `
+                <div class="text-center py-5">
+                    <i class="bi bi-emoji-smile fs-1 text-success"></i><br>
+                    <p class="mt-2 text-muted">Harika! Şu an kayıtlı yanlış sorunuz yok.</p>
+                </div>`;
+            document.getElementById('progress-badge').innerText = "0 Soru";
+        } else {
+            // wrongBank sadece ID tutuyor olabilir, tüm datadan objeyi bulalım
+            // Veya wrongBank direkt obje tutuyor olabilir. Yapımızda ID tutsun.
+            const mistakeQuestions = allQuestions.filter(q => wrongBank.includes(q.id));
+            renderQuestions(mistakeQuestions);
+            document.getElementById('progress-badge').innerText = `${mistakeQuestions.length} Soru`;
+        }
+    }
+
+    function renderQuestions(qList) {
+        const area = document.getElementById('questions-area');
+        area.innerHTML = "";
+
+        qList.forEach(q => {
+            // Daha önce çözülmüş mü?
+            const status = progressData[q.id]; // "correct" veya "wrong"
+            
+            let solvedClass = "";
+            let feedbackHTML = "";
+            let disabledAttr = "";
+
+            // Eğer çözüldüyse durumu göster
+            if (status) {
+                // disabledAttr = "disabled"; // İstersek tekrar çözmeyi engelleyebiliriz ama açık bırakalım.
+                if (status === 'correct') {
+                    feedbackHTML = `<div class="mt-2 text-success fw-bold"><i class="bi bi-check-circle"></i> Doğru Bildiniz!</div>`;
+                } else {
+                    // Yanlış bilindiyse TIP gösterilecek
+                    feedbackHTML = `
+                        <div class="mt-2 text-danger fw-bold"><i class="bi bi-x-circle"></i> Yanlış Cevap. Doğru: ${q.correctAnswer}</div>
+                        <div class="tip-box" style="display:block;">
+                            <strong>İPUCU:</strong> ${q.tip}
+                        </div>`;
+                }
+            }
+
+            const html = `
+            <div class="card mb-4" id="card-${q.id}">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="badge bg-secondary">Soru ${q.id}</span>
+                        ${status ? (status==='correct' ? '<span class="badge bg-success">Çözüldü</span>' : '<span class="badge bg-danger">Hatalı</span>') : ''}
+                    </div>
+                    <p class="question-text">${formatQuestionText(q.text)}</p>
+                    
+                    <div class="d-flex flex-wrap gap-2 justify-content-center mb-3" id="opts-${q.id}">
+                        ${renderOptionBtn(q, 'A', status)}
+                        ${renderOptionBtn(q, 'B', status)}
+                        ${renderOptionBtn(q, 'C', status)}
+                        ${renderOptionBtn(q, 'D', status)}
+                        ${renderOptionBtn(q, 'E', status)}
+                    </div>
+
+                    <div id="feedback-${q.id}">${feedbackHTML}</div>
+                    <!-- Başlangıçta gizli tip kutusu (JS ile açılacak) -->
+                    <div id="tip-${q.id}" class="tip-box">
+                        <strong>İPUCU:</strong> ${q.tip}
+                    </div>
+                </div>
+            </div>`;
+            area.innerHTML += html;
+        });
+    }
+
+    function formatQuestionText(text) {
+        // Boşlukları ___ yerine input gibi göstermek istersen burayı düzenle. 
+        // Şimdilik metin olarak kalsın.
+        return text.replace(/___/g, "__________");
+    }
+
+    function renderOptionBtn(q, opt, status) {
+        let extraClass = "";
+        
+        // Eğer soru daha önce çözüldüyse renkleri boya
+        if (status) {
+            if (opt === q.correctAnswer) {
+                extraClass = "btn-correct"; // Doğru şık her zaman yeşil
+            } else if (status === 'wrong' && progressData[q.id + '_selected'] === opt) {
+                // Eğer yanlışsa ve kullanıcının seçtiği şıksa kırmızı yap
+                extraClass = "btn-wrong";
+            }
+        }
+        
+        return `<button class="btn btn-option ${extraClass}" onclick="checkAnswer(${q.id}, '${opt}')">${opt}</button>`;
+    }
+
+    function checkAnswer(qId, selectedOpt) {
+        // Eğer zaten doğru bilindiyse işlem yapma (veya tekrar çözmeye izin ver, mantığa göre)
+        // Biz burada tekrar tıklamaya izin verelim ama istatistiği bozmayalım.
+        
+        const q = allQuestions.find(i => i.id === qId);
+        const feedbackDiv = document.getElementById(`feedback-${qId}`);
+        const tipDiv = document.getElementById(`tip-${qId}`);
+        const btnContainer = document.getElementById(`opts-${qId}`);
+        
+        // Butonları resetle
+        const buttons = btnContainer.querySelectorAll('.btn-option');
+        buttons.forEach(b => {
+            b.classList.remove('btn-correct', 'btn-wrong');
+            // Tıklananı bul
+            if(b.innerText === selectedOpt) {
+                // Geçici işaretleme
+            }
+        });
+
+        // Doğru mu?
+        const isCorrect = (selectedOpt === q.correctAnswer);
+
+        // Görsel Güncelleme
+        buttons.forEach(b => {
+            if (b.innerText === q.correctAnswer) b.classList.add('btn-correct');
+            if (!isCorrect && b.innerText === selectedOpt) b.classList.add('btn-wrong');
+        });
+
+        if (isCorrect) {
+            feedbackDiv.innerHTML = `<div class="mt-2 text-success fw-bold"><i class="bi bi-check-circle"></i> Tebrikler, Doğru!</div>`;
+            tipDiv.style.display = 'none'; // Doğruysa ipucunu gizle
+            
+            // Eğer "Yanlışlarım" listesindeyse çıkar
+            if (wrongBank.includes(qId)) {
+                wrongBank = wrongBank.filter(id => id !== qId);
+                localStorage.setItem('yds_mistakes', JSON.stringify(wrongBank));
+                renderMenu(); // Sayacı güncelle
+                // Eğer yanlışlar sayfasındaysak kartı animasyonla silebiliriz ama kafa karıştırmasın, kalsın.
+            }
+            
+            progressData[qId] = 'correct';
+        } else {
+            feedbackDiv.innerHTML = `<div class="mt-2 text-danger fw-bold"><i class="bi bi-x-circle"></i> Yanlış. Doğru Cevap: ${q.correctAnswer}</div>`;
+            tipDiv.style.display = 'block'; // Yanlışsa ipucunu göster
+            
+            // Yanlışlara ekle
+            if (!wrongBank.includes(qId)) {
+                wrongBank.push(qId);
+                localStorage.setItem('yds_mistakes', JSON.stringify(wrongBank));
+                renderMenu();
+            }
+            
+            progressData[qId] = 'wrong';
+            progressData[qId + '_selected'] = selectedOpt; // Hangi şıkkı seçtiğini hatırla
+        }
+
+        // Kaydet
+        localStorage.setItem('yds_progress', JSON.stringify(progressData));
+        
+        // Rozeti güncelle
+        if (currentSectionKey !== 'mistakes') {
+            const secData = sections.find(s => s.key === currentSectionKey);
+            const filteredQ = allQuestions.filter(q => q.id >= secData.start && q.id <= secData.end);
+            updateProgressBadge(filteredQ);
+        }
+    }
+
+    function updateProgressBadge(qList) {
+        let solved = 0;
+        qList.forEach(q => {
+            if (progressData[q.id]) solved++;
+        });
+        document.getElementById('progress-badge').innerText = `${solved} / ${qList.length}`;
+    }
+
+    function resetCurrentSection() {
+        if (!confirm("Bu bölümdeki ilerlemeniz silinecek. Emin misiniz?")) return;
+
+        let qList = [];
+        if (currentSectionKey === 'mistakes') {
+            // Yanlışlar listesini temizle
+            wrongBank = [];
+            localStorage.setItem('yds_mistakes', JSON.stringify([]));
+            showMistakes();
+            renderMenu();
+            return;
+        } else {
+            const secData = sections.find(s => s.key === currentSectionKey);
+            qList = allQuestions.filter(q => q.id >= secData.start && q.id <= secData.end);
+        }
+
+        // Seçilen bölümdeki soruların progress kaydını sil
+        qList.forEach(q => {
+            delete progressData[q.id];
+            delete progressData[q.id + '_selected'];
+        });
+        localStorage.setItem('yds_progress', JSON.stringify(progressData));
+        
+        showSection(currentSectionKey);
+    }
+
+    function fullReset() {
+        if (!confirm("TÜM ilerlemeniz ve yanlışlarınız silinecek. Emin misiniz?")) return;
+        localStorage.removeItem('yds_progress');
+        localStorage.removeItem('yds_mistakes');
+        location.reload();
+    }
+
+    function toggleTheme() {
+        const body = document.body;
+        if(body.getAttribute('data-theme') === 'dark') { 
+            body.removeAttribute('data-theme'); 
+            localStorage.setItem('yds_theme', 'light'); 
+        } else { 
+            body.setAttribute('data-theme', 'dark'); 
+            localStorage.setItem('yds_theme', 'dark'); 
+        }
+    }
+</script>
+</body>
+</html>
