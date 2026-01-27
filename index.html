@@ -3588,105 +3588,98 @@ function renderQuestions(qList) {
     }
 
     async function generateAiQuestions(sourceId) {
-        if(!userApiKey) {
-            alert("Lütfen önce API Ayarları bölümünden Gemini anahtarınızı girin.");
-            openSettings();
-            return;
-        }
-
-        let sourceQ = allQuestions.find(q => q.id === sourceId);
-        if(!sourceQ) sourceQ = generatedQuestions.find(q => q.id === sourceId);
-
-        document.getElementById('loadingOverlay').classList.remove('d-none');
-
-        // Gemini 2.0 Flash Experimental
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${userApiKey}`;
-        
-        const promptText = `
-            You are a strict exam question cloner for the YDS exam.
-            
-            INPUT DATA:
-            - Source Question: "${sourceQ.text}"
-            - Correct Answer: ${sourceQ.correctAnswer}
-            - Grammar Rule / Tip: "${sourceQ.tip}"
-
-            TASK:
-            Generate 3 NEW questions that are STRUCTURALLY and LOGICALLY identical to the Source Question.
-            
-            STRICT RULES:
-            1. Focus EXACTLY on the grammar rule mentioned in the "Tip". If the tip says "insist on", create questions testing "insist on" or very close synonyms.
-            2. Do not change the topic. If it's a "Preposition" question, generate only "Preposition" questions.
-            3. Mimic the sentence length and vocabulary difficulty of the source.
-            4. The distractors (wrong options) should be tricky in the same style as the source.
-            
-            OUTPUT FORMAT:
-            - Provide ONLY a strict JSON array.
-            - Keys: "text" (contains ___), "options" (A,B,C,D,E), "correctAnswer", "tip".
-            - "tip" must be in Turkish and explain the specific rule.
-        `;
-
-        const requestBody = {
-            contents: [{ parts: [{ text: promptText }] }],
-            generationConfig: { response_mime_type: "application/json" }
-        };
-
-        try {
-            const response = await fetch(url, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(requestBody)
-            });
-
-            if (!response.ok) {
-                const err = await response.json();
-                throw new Error(err.error.message || "API Hatası");
-            }
-
-            const data = await response.json();
-            const rawText = data.candidates[0].content.parts[0].text;
-            const newQuestions = JSON.parse(rawText);
-
-            newQuestions.forEach(nq => {
-                const newId = 20000 + generatedQuestions.length + 1; 
-                generatedQuestions.push({
-                    id: newId,
-                    text: nq.text,
-                    options: nq.options,
-                    correctAnswer: nq.correctAnswer,
-                    tip: nq.tip + " (Gemini)",
-                    isAi: true
-                });
-            });
-
-            localStorage.setItem('yds_generated', JSON.stringify(generatedQuestions));
-            renderMenu();
-            alert(`${newQuestions.length} yeni soru Gemini tarafından üretildi!`);
-
-        } catch (error) {
-            console.error(error);
-            alert("Hata oluştu: " + error.message);
-        } finally {
-            document.getElementById('loadingOverlay').classList.add('d-none');
-        }
+    if(!userApiKey) {
+        alert("Lütfen önce API Ayarları bölümünden Gemini anahtarınızı girin.");
+        openSettings();
+        return;
     }
+
+    let sourceQ = allQuestions.find(q => q.id === sourceId);
+    if(!sourceQ) sourceQ = generatedQuestions.find(q => q.id === sourceId);
+
+    document.getElementById('loadingOverlay').classList.remove('d-none');
+
+    // Gemini 2.0 Flash Experimental
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${userApiKey}`;
     
-    function loadMoreQuestions() {
-        renderLimit += 50; // Limiti 50 artır
+    const promptText = `
+        You are a strict exam question cloner for the YDS exam.
         
-        // Hangi bölümde olduğumuzu bulup yeniden çizdir
-        if (currentSectionKey === 'mistakes') {
-            showMistakes();
-        } else if (currentSectionKey === 'ai') {
-            showAiGenerated();
-        } else {
-            // Normal bölümler
-            const secData = sections.find(s => s.key === currentSectionKey);
-            if(secData) {
-                const filteredQ = allQuestions.filter(q => q.id >= secData.start && q.id <= secData.end);
-                renderQuestions(filteredQ);
-            }
+        INPUT DATA:
+        - Source Question: "${sourceQ.text}"
+        - Correct Answer: ${sourceQ.correctAnswer}
+        - Grammar Rule / Tip: "${sourceQ.tip}"
+
+        TASK:
+        Generate 3 NEW questions that are STRUCTURALLY and LOGICALLY identical to the Source Question.
+        
+        STRICT RULES:
+        1. Focus EXACTLY on the grammar rule mentioned in the "Tip".
+        2. Do not change the topic.
+        3. Mimic the sentence length and vocabulary difficulty.
+        4. The distractors (wrong options) should be tricky.
+        
+        OUTPUT FORMAT:
+        - Provide ONLY a strict JSON array.
+        - Keys: "text" (contains ___), "options" (A,B,C,D,E), "correctAnswer", "tip".
+        - "tip" must be in Turkish.
+    `;
+
+    const requestBody = {
+        contents: [{ parts: [{ text: promptText }] }],
+        generationConfig: { response_mime_type: "application/json" }
+    };
+
+    try {
+        const response = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(requestBody)
+        });
+
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.error.message || "API Hatası");
         }
+
+        const data = await response.json();
+        const rawText = data.candidates[0].content.parts[0].text;
+        const newQuestions = JSON.parse(rawText);
+
+        // --- ID ÇAKIŞMASINI ÖNLEYEN KISIM BURASI ---
+        newQuestions.forEach((nq, index) => {
+            // ID'yi o anki milisaniye + index olarak ayarla. 
+            // Böylece asla daha önceki bir ID ile çakışmaz.
+            const newId = Date.now() + index; 
+            
+            // Garanti olsun diye bu ID'ye ait eski bir kayıt varsa sil
+            if(progressData[newId]) delete progressData[newId];
+            if(progressData[newId + '_selected']) delete progressData[newId + '_selected'];
+
+            generatedQuestions.push({
+                id: newId,
+                text: nq.text,
+                options: nq.options,
+                correctAnswer: nq.correctAnswer,
+                tip: nq.tip + " (Gemini)",
+                isAi: true
+            });
+        });
+
+        // Verileri Güncelle
+        localStorage.setItem('yds_generated', JSON.stringify(generatedQuestions));
+        localStorage.setItem('yds_progress', JSON.stringify(progressData)); // Temizliği kaydet
+        
+        renderMenu();
+        alert(`${newQuestions.length} yeni soru başarıyla üretildi!`);
+
+    } catch (error) {
+        console.error(error);
+        alert("Hata oluştu: " + error.message);
+    } finally {
+        document.getElementById('loadingOverlay').classList.add('d-none');
     }
+}
     
     function fullReset() {
         if (!confirm("TÜM ilerlemeniz ve ayarlarınız silinecek. Emin misiniz?")) return;
