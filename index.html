@@ -2532,21 +2532,29 @@ TIP: Main clause: would have V3 (burada would).
         // Gemini 1.5 Flash - Hızlı ve Ücretsiz
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${userApiKey}`;
         
-        const promptText = `
-            You are an expert English teacher preparing questions for the YDS exam.
-            I will give you a grammar multiple-choice question.
-            Your task is to generate 3 NEW, SIMILAR questions testing the SAME grammar rule (e.g., same preposition logic, same conjunction type, or same tense rule).
-            
-            SOURCE QUESTION:
-            "${sourceQ.text}"
-            Answer: ${sourceQ.correctAnswer}
-            Tip: ${sourceQ.tip}
+// DEĞİŞTİRECEĞİN KISIM BURASI (generateAiQuestions fonksiyonunun içi)
 
-            OUTPUT REQUIREMENTS:
+        const promptText = `
+            You are a strict exam question cloner for the YDS exam.
+            
+            INPUT DATA:
+            - Source Question: "${sourceQ.text}"
+            - Correct Answer: ${sourceQ.correctAnswer}
+            - Grammar Rule / Tip: "${sourceQ.tip}"
+
+            TASK:
+            Generate 3 NEW questions that are STRUCTURALLY and LOGICALLY identical to the Source Question.
+            
+            STRICT RULES:
+            1. Focus EXACTLY on the grammar rule mentioned in the "Tip". If the tip says "insist on", create questions testing "insist on" or very close synonyms.
+            2. Do not change the topic. If it's a "Preposition" question, generate only "Preposition" questions.
+            3. Mimic the sentence length and vocabulary difficulty of the source.
+            4. The distractors (wrong options) should be tricky in the same style as the source.
+            
+            OUTPUT FORMAT:
             - Provide ONLY a strict JSON array.
-            - Keys must be: "text", "options" (A,B,C,D,E), "correctAnswer", "tip".
-            - The "text" should contain "___" for the blank.
-            - "tip" should be in Turkish.
+            - Keys: "text" (contains ___), "options" (A,B,C,D,E), "correctAnswer", "tip".
+            - "tip" must be in Turkish and explain the specific rule.
         `;
 
         const requestBody = {
