@@ -17,6 +17,7 @@
             --active-color: #0d6efd;
             --wrong-color: #dc3545;
             --correct-color: #198754;
+            --hover-bg: #f8f9fa;
         }
 
         [data-theme="dark"] {
@@ -25,6 +26,7 @@
             --text-color: #e0e0e0;
             --border-color: #333;
             --active-color: #bb86fc;
+            --hover-bg: #2c2c2c;
         }
 
         body { background-color: var(--bg-body); color: var(--text-color); font-family: 'Segoe UI', sans-serif; transition: 0.3s; }
@@ -40,16 +42,37 @@
         .sidebar-mistakes { border: 1px solid var(--wrong-color); color: var(--wrong-color); background: rgba(220, 53, 69, 0.05); font-weight: bold; }
         .sidebar-mistakes.active { background: var(--wrong-color); color: white; }
 
-        .btn-option {
-            width: 45px; height: 45px; border-radius: 50%; padding: 0;
-            font-size: 1.1rem; font-weight: bold; margin: 0 5px;
-            border: 2px solid #6c757d; color: #6c757d; background: transparent;
+        /* Şık Tasarımı */
+        .option-row {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            margin-bottom: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            cursor: pointer;
             transition: all 0.2s;
         }
-        .btn-option:hover { transform: scale(1.1); background: rgba(108, 117, 125, 0.1); }
+        .option-row:hover {
+            background-color: var(--hover-bg);
+            transform: translateX(5px);
+        }
         
-        .btn-correct { background-color: var(--correct-color) !important; color: white !important; border-color: var(--correct-color) !important; }
-        .btn-wrong { background-color: var(--wrong-color) !important; color: white !important; border-color: var(--wrong-color) !important; }
+        .btn-circle {
+            width: 35px; height: 35px; border-radius: 50%; 
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold; margin-right: 15px; flex-shrink: 0;
+            border: 2px solid #6c757d; color: #6c757d; background: transparent;
+        }
+        
+        .option-text { font-size: 1rem; }
+
+        /* Cevap Durumları */
+        .opt-correct { border-color: var(--correct-color) !important; background-color: rgba(25, 135, 84, 0.1) !important; }
+        .opt-correct .btn-circle { background-color: var(--correct-color); color: white; border-color: var(--correct-color); }
+        
+        .opt-wrong { border-color: var(--wrong-color) !important; background-color: rgba(220, 53, 69, 0.1) !important; }
+        .opt-wrong .btn-circle { background-color: var(--wrong-color); color: white; border-color: var(--wrong-color); }
 
         .tip-box { 
             background-color: rgba(255, 193, 7, 0.15); 
@@ -57,11 +80,15 @@
             padding: 15px; 
             border-radius: 4px;
             margin-top: 15px;
-            display: none; /* Başlangıçta gizli */
+            display: none; 
+            color: var(--text-color);
         }
         
         .question-text { font-size: 1.15rem; font-weight: 500; margin-bottom: 1.5rem; line-height: 1.6; }
         .hidden { display: none !important; }
+        
+        /* Disable clicks after answer */
+        .disabled-opts { pointer-events: none; opacity: 0.8; }
     </style>
 </head>
 <body>
@@ -84,11 +111,9 @@
     <div class="row">
         <!-- SOL MENÜ -->
         <div class="col-md-4 col-lg-3 mb-4">
-            <div class="card p-3 sticky-top" style="top: 20px;">
+            <div class="card p-3 sticky-top" style="top: 20px; max-height: 90vh; overflow-y: auto;">
                 <h5 class="fw-bold mb-3 border-bottom pb-2">Bölümler</h5>
-                <div id="sidebar-menu">
-                    <!-- Menü JS ile dolacak -->
-                </div>
+                <div id="sidebar-menu"></div>
             </div>
         </div>
 
@@ -106,7 +131,6 @@
                 </div>
                 <hr>
                 <div id="questions-area">
-                    <!-- Sorular JS ile buraya gelecek -->
                     <div class="text-center py-5 text-muted">Lütfen soldan bir bölüm seçin.</div>
                 </div>
             </div>
@@ -2168,8 +2192,6 @@ TIP: Main clause: would have V3 (burada would).
         if(localStorage.getItem('yds_theme') === 'dark') document.body.setAttribute('data-theme', 'dark');
         loadData();
         renderMenu();
-        // Varsayılan olarak ilk bölümü açabiliriz veya boş bırakabiliriz
-        // showSection('sec1');
     };
 
     // --- VERİ PARSE İŞLEMİ ---
@@ -2183,12 +2205,8 @@ TIP: Main clause: would have V3 (burada would).
         }
 
         // 2. Soruları Parse Et
-        // Soru formatı: Sayı) Soru metni \n A) ... \n TIP: ...
-        // Regex ile bölmek yerine, "Section:"ları ve soru bloklarını manuel parse etmek daha güvenli.
-        
         const lines = rawQuestionsText.split('\n');
         let currentQ = null;
-        let buffer = [];
         
         lines.forEach(line => {
             line = line.trim();
@@ -2211,12 +2229,8 @@ TIP: Main clause: would have V3 (burada would).
                 else if (line.startsWith('D)')) currentQ.options.D = line.substring(2).trim();
                 else if (line.startsWith('E)')) currentQ.options.E = line.substring(2).trim();
                 else if (line.startsWith('TIP:')) currentQ.tip = line.substring(4).trim();
-                else {
-                    // Soru metni devamı veya tip devamı olabilir ama bu formatta genelde tek satır.
-                }
             }
         });
-        // Son soruyu kaydet
         if (currentQ) saveQuestion(currentQ, answerMap);
 
         // 3. LocalStorage verilerini çek
@@ -2259,15 +2273,12 @@ TIP: Main clause: would have V3 (burada would).
     function showSection(key) {
         currentSectionKey = key;
         
-        // Menü aktiflik ayarı
         document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
         document.getElementById(`menu-${key}`).classList.add('active');
 
-        // Başlık ve Veri
         const secData = sections.find(s => s.key === key);
         document.getElementById('active-section-title').innerText = secData.title;
         
-        // Soruları filtrele
         const filteredQ = allQuestions.filter(q => q.id >= secData.start && q.id <= secData.end);
         renderQuestions(filteredQ);
         updateProgressBadge(filteredQ);
@@ -2287,8 +2298,6 @@ TIP: Main clause: would have V3 (burada would).
                 </div>`;
             document.getElementById('progress-badge').innerText = "0 Soru";
         } else {
-            // wrongBank sadece ID tutuyor olabilir, tüm datadan objeyi bulalım
-            // Veya wrongBank direkt obje tutuyor olabilir. Yapımızda ID tutsun.
             const mistakeQuestions = allQuestions.filter(q => wrongBank.includes(q.id));
             renderQuestions(mistakeQuestions);
             document.getElementById('progress-badge').innerText = `${mistakeQuestions.length} Soru`;
@@ -2298,29 +2307,47 @@ TIP: Main clause: would have V3 (burada would).
     function renderQuestions(qList) {
         const area = document.getElementById('questions-area');
         area.innerHTML = "";
+        
+        // Eğer "Yanlışlarım" bölümündeysek, soruların daha önce çözülmüş durumunu (status) yok sayacağız.
+        // Böylece tertemiz/boş olarak gelir.
+        const isMistakeView = (currentSectionKey === 'mistakes');
 
         qList.forEach(q => {
-            // Daha önce çözülmüş mü?
-            const status = progressData[q.id]; // "correct" veya "wrong"
+            // Eğer normal bölümse progressData'ya bak, yanlışlar bölümüyse null (temiz) yap.
+            const savedStatus = progressData[q.id];
+            const status = isMistakeView ? null : savedStatus;
             
-            let solvedClass = "";
             let feedbackHTML = "";
-            let disabledAttr = "";
+            let optionsHTML = "";
+            let tipDisplay = "none";
 
-            // Eğer çözüldüyse durumu göster
+            // Eğer durumu varsa (çözülmüşse ve normal moddaysak)
             if (status) {
-                // disabledAttr = "disabled"; // İstersek tekrar çözmeyi engelleyebiliriz ama açık bırakalım.
                 if (status === 'correct') {
                     feedbackHTML = `<div class="mt-2 text-success fw-bold"><i class="bi bi-check-circle"></i> Doğru Bildiniz!</div>`;
                 } else {
-                    // Yanlış bilindiyse TIP gösterilecek
-                    feedbackHTML = `
-                        <div class="mt-2 text-danger fw-bold"><i class="bi bi-x-circle"></i> Yanlış Cevap. Doğru: ${q.correctAnswer}</div>
-                        <div class="tip-box" style="display:block;">
-                            <strong>İPUCU:</strong> ${q.tip}
-                        </div>`;
+                    feedbackHTML = `<div class="mt-2 text-danger fw-bold"><i class="bi bi-x-circle"></i> Yanlış Cevap. Doğru: ${q.correctAnswer}</div>`;
+                    tipDisplay = "block";
                 }
             }
+
+            // Şıkları Oluştur
+            ['A', 'B', 'C', 'D', 'E'].forEach(opt => {
+                let rowClass = "";
+                // Eğer çözülmüşse renkleri bas
+                if (status) {
+                    if (opt === q.correctAnswer) rowClass = "opt-correct";
+                    else if (status === 'wrong' && progressData[q.id + '_selected'] === opt) rowClass = "opt-wrong";
+                }
+                
+                const optText = q.options[opt] || "---"; // Veri yoksa tire koy
+
+                optionsHTML += `
+                <div class="option-row ${rowClass} ${status ? 'disabled-opts' : ''}" onclick="checkAnswer(${q.id}, '${opt}')">
+                    <div class="btn-circle">${opt}</div>
+                    <div class="option-text">${optText}</div>
+                </div>`;
+            });
 
             const html = `
             <div class="card mb-4" id="card-${q.id}">
@@ -2331,17 +2358,13 @@ TIP: Main clause: would have V3 (burada would).
                     </div>
                     <p class="question-text">${formatQuestionText(q.text)}</p>
                     
-                    <div class="d-flex flex-wrap gap-2 justify-content-center mb-3" id="opts-${q.id}">
-                        ${renderOptionBtn(q, 'A', status)}
-                        ${renderOptionBtn(q, 'B', status)}
-                        ${renderOptionBtn(q, 'C', status)}
-                        ${renderOptionBtn(q, 'D', status)}
-                        ${renderOptionBtn(q, 'E', status)}
+                    <div id="opts-${q.id}">
+                        ${optionsHTML}
                     </div>
 
                     <div id="feedback-${q.id}">${feedbackHTML}</div>
-                    <!-- Başlangıçta gizli tip kutusu (JS ile açılacak) -->
-                    <div id="tip-${q.id}" class="tip-box">
+                    
+                    <div id="tip-${q.id}" class="tip-box" style="display: ${tipDisplay};">
                         <strong>İPUCU:</strong> ${q.tip}
                     </div>
                 </div>
@@ -2351,87 +2374,63 @@ TIP: Main clause: would have V3 (burada would).
     }
 
     function formatQuestionText(text) {
-        // Boşlukları ___ yerine input gibi göstermek istersen burayı düzenle. 
-        // Şimdilik metin olarak kalsın.
         return text.replace(/___/g, "__________");
     }
 
-    function renderOptionBtn(q, opt, status) {
-        let extraClass = "";
-        
-        // Eğer soru daha önce çözüldüyse renkleri boya
-        if (status) {
-            if (opt === q.correctAnswer) {
-                extraClass = "btn-correct"; // Doğru şık her zaman yeşil
-            } else if (status === 'wrong' && progressData[q.id + '_selected'] === opt) {
-                // Eğer yanlışsa ve kullanıcının seçtiği şıksa kırmızı yap
-                extraClass = "btn-wrong";
-            }
-        }
-        
-        return `<button class="btn btn-option ${extraClass}" onclick="checkAnswer(${q.id}, '${opt}')">${opt}</button>`;
-    }
-
     function checkAnswer(qId, selectedOpt) {
-        // Eğer zaten doğru bilindiyse işlem yapma (veya tekrar çözmeye izin ver, mantığa göre)
-        // Biz burada tekrar tıklamaya izin verelim ama istatistiği bozmayalım.
-        
         const q = allQuestions.find(i => i.id === qId);
+        const container = document.getElementById(`opts-${qId}`);
         const feedbackDiv = document.getElementById(`feedback-${qId}`);
         const tipDiv = document.getElementById(`tip-${qId}`);
-        const btnContainer = document.getElementById(`opts-${qId}`);
         
-        // Butonları resetle
-        const buttons = btnContainer.querySelectorAll('.btn-option');
-        buttons.forEach(b => {
-            b.classList.remove('btn-correct', 'btn-wrong');
-            // Tıklananı bul
-            if(b.innerText === selectedOpt) {
-                // Geçici işaretleme
+        // Tüm şıklara disabled bas ve renkleri ayarla
+        const rows = container.querySelectorAll('.option-row');
+        rows.forEach(row => {
+            row.classList.add('disabled-opts');
+            const btnText = row.querySelector('.btn-circle').innerText;
+            
+            if (btnText === q.correctAnswer) {
+                row.classList.add('opt-correct');
+            }
+            else if (btnText === selectedOpt && selectedOpt !== q.correctAnswer) {
+                row.classList.add('opt-wrong');
             }
         });
 
-        // Doğru mu?
         const isCorrect = (selectedOpt === q.correctAnswer);
-
-        // Görsel Güncelleme
-        buttons.forEach(b => {
-            if (b.innerText === q.correctAnswer) b.classList.add('btn-correct');
-            if (!isCorrect && b.innerText === selectedOpt) b.classList.add('btn-wrong');
-        });
 
         if (isCorrect) {
             feedbackDiv.innerHTML = `<div class="mt-2 text-success fw-bold"><i class="bi bi-check-circle"></i> Tebrikler, Doğru!</div>`;
-            tipDiv.style.display = 'none'; // Doğruysa ipucunu gizle
+            tipDiv.style.display = 'none';
             
-            // Eğer "Yanlışlarım" listesindeyse çıkar
+            // Eğer yanlışlar listesindeyse, doğru bildiği için siliyoruz
             if (wrongBank.includes(qId)) {
                 wrongBank = wrongBank.filter(id => id !== qId);
                 localStorage.setItem('yds_mistakes', JSON.stringify(wrongBank));
-                renderMenu(); // Sayacı güncelle
-                // Eğer yanlışlar sayfasındaysak kartı animasyonla silebiliriz ama kafa karıştırmasın, kalsın.
+                renderMenu(); 
             }
-            
+            // Genel ilerlemeye doğru olarak kaydet
             progressData[qId] = 'correct';
+
         } else {
             feedbackDiv.innerHTML = `<div class="mt-2 text-danger fw-bold"><i class="bi bi-x-circle"></i> Yanlış. Doğru Cevap: ${q.correctAnswer}</div>`;
-            tipDiv.style.display = 'block'; // Yanlışsa ipucunu göster
+            tipDiv.style.display = 'block';
             
-            // Yanlışlara ekle
+            // Yanlış bankasına ekle
             if (!wrongBank.includes(qId)) {
                 wrongBank.push(qId);
                 localStorage.setItem('yds_mistakes', JSON.stringify(wrongBank));
                 renderMenu();
             }
-            
+            // Genel ilerlemeye yanlış olarak kaydet
             progressData[qId] = 'wrong';
-            progressData[qId + '_selected'] = selectedOpt; // Hangi şıkkı seçtiğini hatırla
+            progressData[qId + '_selected'] = selectedOpt;
         }
 
-        // Kaydet
+        // Genel progress kaydı
         localStorage.setItem('yds_progress', JSON.stringify(progressData));
         
-        // Rozeti güncelle
+        // Eğer normal bölümde isek sayacı güncelle
         if (currentSectionKey !== 'mistakes') {
             const secData = sections.find(s => s.key === currentSectionKey);
             const filteredQ = allQuestions.filter(q => q.id >= secData.start && q.id <= secData.end);
@@ -2450,27 +2449,22 @@ TIP: Main clause: would have V3 (burada would).
     function resetCurrentSection() {
         if (!confirm("Bu bölümdeki ilerlemeniz silinecek. Emin misiniz?")) return;
 
-        let qList = [];
         if (currentSectionKey === 'mistakes') {
-            // Yanlışlar listesini temizle
             wrongBank = [];
             localStorage.setItem('yds_mistakes', JSON.stringify([]));
             showMistakes();
-            renderMenu();
-            return;
         } else {
             const secData = sections.find(s => s.key === currentSectionKey);
-            qList = allQuestions.filter(q => q.id >= secData.start && q.id <= secData.end);
+            const qList = allQuestions.filter(q => q.id >= secData.start && q.id <= secData.end);
+            
+            qList.forEach(q => {
+                delete progressData[q.id];
+                delete progressData[q.id + '_selected'];
+            });
+            localStorage.setItem('yds_progress', JSON.stringify(progressData));
+            showSection(currentSectionKey);
         }
-
-        // Seçilen bölümdeki soruların progress kaydını sil
-        qList.forEach(q => {
-            delete progressData[q.id];
-            delete progressData[q.id + '_selected'];
-        });
-        localStorage.setItem('yds_progress', JSON.stringify(progressData));
-        
-        showSection(currentSectionKey);
+        renderMenu();
     }
 
     function fullReset() {
