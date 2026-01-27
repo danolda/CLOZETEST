@@ -3393,54 +3393,74 @@ function renderQuestions(qList) {
     }
     
     function goToFirstUnsolved() {
-        // 1. Şu anki aktif listeyi bul
-        let activeList = [];
-        if (currentSectionKey === 'mistakes') {
-            const mistakeQuestions = allQuestions.filter(q => wrongBank.includes(q.id));
-            const mistakeAi = generatedQuestions.filter(q => wrongBank.includes(q.id));
-            activeList = [...mistakeQuestions, ...mistakeAi];
-        } else if (currentSectionKey === 'ai') {
-            activeList = [...generatedQuestions].reverse();
-        } else {
-            const secData = sections.find(s => s.key === currentSectionKey);
-            if(secData) {
-                activeList = allQuestions.filter(q => q.id >= secData.start && q.id <= secData.end);
-            }
-        }
-
-        if (activeList.length === 0) return;
-
-        // 2. Çözülmemiş ilk sorunun indexini bul
-        // (progressData[id] değeri 'correct' veya 'wrong' değilse çözülmemiştir)
-        const targetIndex = activeList.findIndex(q => !progressData[q.id]);
-
-        if (targetIndex === -1) {
-            alert("Tebrikler! Bu bölümdeki tüm soruları çözdünüz.");
-            return;
-        }
-
-        // 3. Eğer soru "Daha Fazla Göster" limitinin dışındaysa limiti artır
-        if (targetIndex >= renderLimit) {
-            renderLimit = targetIndex + 5; // Sorunun biraz altına kadar aç
-            
-            // Listeyi o anki haliyle yeniden çiz (Load More yapmış gibi)
-            renderQuestions(activeList);
-        }
-
-        // 4. O soruya kaydır (Hafif gecikmeli ki çizim bitsin)
-        setTimeout(() => {
-            const targetId = activeList[targetIndex].id;
-            const element = document.getElementById(`card-${targetId}`);
-            if (element) {
-                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                // Kullanıcının dikkatini çekmek için kısa bir yanıp sönme efekti (opsiyonel)
-                element.style.transition = "background-color 0.5s";
-                element.style.backgroundColor = "#fff3cd"; // Hafif sarı
-                setTimeout(() => { element.style.backgroundColor = ""; }, 1000);
-            }
-        }, 100);
+    // 1. Hangi bölümde olduğumuzu kontrol et
+    if (!currentSectionKey) {
+        alert("Lütfen önce soldan bir ders/bölüm seçiniz.");
+        return;
     }
 
+    // 2. Şu anki aktif listeyi belirle
+    let activeList = [];
+    
+    if (currentSectionKey === 'mistakes') {
+        const mistakeQuestions = allQuestions.filter(q => wrongBank.includes(q.id));
+        const mistakeAi = generatedQuestions.filter(q => wrongBank.includes(q.id));
+        activeList = [...mistakeQuestions, ...mistakeAi];
+    } else if (currentSectionKey === 'ai') {
+        activeList = [...generatedQuestions].reverse();
+    } else {
+        const secData = sections.find(s => s.key === currentSectionKey);
+        if(secData) {
+            activeList = allQuestions.filter(q => q.id >= secData.start && q.id <= secData.end);
+        }
+    }
+
+    // 3. Liste boşsa dur
+    if (!activeList || activeList.length === 0) {
+        alert("Bu bölümde görüntülenecek soru yok.");
+        return;
+    }
+
+    // 4. Çözülmemiş İLK sorunun sırasını (index) bul
+    // (Not: progressData içinde kaydı yoksa çözülmemiştir)
+    const targetIndex = activeList.findIndex(q => !progressData[q.id]);
+
+    if (targetIndex === -1) {
+        alert("Harika! Bu bölümdeki TÜM soruları zaten çözmüşsünüz.");
+        return;
+    }
+
+    const targetQuestion = activeList[targetIndex];
+
+    // 5. Eğer hedef soru şu an ekranda değilse (Daha Fazla Göster'in altındaysa)
+    if (targetIndex >= renderLimit) {
+        // Limiti sorunun olduğu yere kadar artır (+10 fazladan pay bırak)
+        renderLimit = targetIndex + 10;
+        
+        // Listeyi YENİ LİMİTLE tekrar çiz
+        renderQuestions(activeList);
+    }
+
+    // 6. O soruya kaydır (DOM'un çizilmesi için ufak bir gecikme veriyoruz)
+    setTimeout(() => {
+        const element = document.getElementById(`card-${targetQuestion.id}`);
+        if (element) {
+            // Soruyu ekranın ortasına getir
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            // Kullanıcı görsün diye anlık sarı yapıp söndür
+            element.style.transition = "background-color 0.5s ease";
+            const originalBg = element.style.backgroundColor;
+            element.style.backgroundColor = "#fff3cd"; // Sarımsı renk
+            
+            setTimeout(() => {
+                element.style.backgroundColor = originalBg;
+            }, 1500);
+        } else {
+            console.error("Hedef kart bulunamadı:", targetQuestion.id);
+        }
+    }, 150); // 150ms gecikme çizim hatasını önler
+}
     function formatQuestionText(text) {
         return text.replace(/___/g, "__________");
     }
