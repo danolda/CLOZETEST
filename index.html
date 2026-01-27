@@ -3393,38 +3393,6 @@ function renderQuestions(qList) {
     }
     
 
-
-    const targetQuestion = activeList[targetIndex];
-
-    // 5. Eğer hedef soru şu an ekranda değilse (Daha Fazla Göster'in altındaysa)
-    if (targetIndex >= renderLimit) {
-        // Limiti sorunun olduğu yere kadar artır (+10 fazladan pay bırak)
-        renderLimit = targetIndex + 10;
-        
-        // Listeyi YENİ LİMİTLE tekrar çiz
-        renderQuestions(activeList);
-    }
-
-    // 6. O soruya kaydır (DOM'un çizilmesi için ufak bir gecikme veriyoruz)
-    setTimeout(() => {
-        const element = document.getElementById(`card-${targetQuestion.id}`);
-        if (element) {
-            // Soruyu ekranın ortasına getir
-            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            
-            // Kullanıcı görsün diye anlık sarı yapıp söndür
-            element.style.transition = "background-color 0.5s ease";
-            const originalBg = element.style.backgroundColor;
-            element.style.backgroundColor = "#fff3cd"; // Sarımsı renk
-            
-            setTimeout(() => {
-                element.style.backgroundColor = originalBg;
-            }, 1500);
-        } else {
-            console.error("Hedef kart bulunamadı:", targetQuestion.id);
-        }
-    }, 150); // 150ms gecikme çizim hatasını önler
-}
     function formatQuestionText(text) {
         return text.replace(/___/g, "__________");
     }
