@@ -3423,13 +3423,13 @@ function renderQuestions(qList) {
         `;
     }
     function goToFirstUnsolved() {
-    // 1. Kontroller
+    // 1. Bölüm Seçili mi?
     if (!currentSectionKey) {
         alert("Lütfen önce bir bölüm seçiniz.");
         return;
     }
 
-    // 2. Aktif Listeyi Belirle
+    // 2. Aktif Listeyi ve İlerlemeyi Getir
     let activeList = [];
     if (currentSectionKey === 'mistakes') {
         const mistakeQuestions = allQuestions.filter(q => wrongBank.includes(q.id));
@@ -3445,54 +3445,68 @@ function renderQuestions(qList) {
     }
 
     if (!activeList || activeList.length === 0) {
-        alert("Bu bölümde soru yok.");
+        alert("Bu bölümde görüntülenecek soru yok.");
         return;
     }
 
-    // 3. İlk Çözülmemiş Soruyu Bul
-    const targetIndex = activeList.findIndex(q => !progressData[q.id]);
+    // 3. HEDEFİ BUL (Mantık: İlk çözülmemiş soru. Hepsi çözüldüyse sonuncusu.)
+    let targetIndex = activeList.findIndex(q => !progressData[q.id]);
 
+    // Eğer hepsi çözülmüşse (-1), listenin en sonuna git
     if (targetIndex === -1) {
-        alert("Harika! Bu bölümdeki tüm sorular çözülmüş.");
-        return;
+        targetIndex = activeList.length - 1; 
+        // Kullanıcıya bilgi ver (Opsiyonel, istersen kaldırabilirsin)
+        // alert("Tüm soruları çözdünüz, en sona gidiliyor.");
     }
 
     const targetQuestion = activeList[targetIndex];
 
-    // 4. LİMİT GÜNCELLEME VE ZORLA ÇİZDİRME
-    // Limiti sorunun olduğu yere kadar artır
+    // 4. LİMİTİ GENİŞLET (Eğer soru kapalı alandaysa aç)
+    // Soru indexi 50 ise, limit 60 olsun ki görünsün.
     if (renderLimit <= targetIndex + 5) {
-        renderLimit = targetIndex + 10;
+        renderLimit = targetIndex + 20; 
     }
     
-    // Listeyi yeniden çizdiriyoruz
+    // Listeyi yeni limitle çiz
     renderQuestions(activeList);
 
-    // 5. ASENKRON KAYDIRMA (Hata Çözümü Burası)
-    // requestAnimationFrame: Tarayıcının bir sonraki kareyi çizmesini bekle
-    requestAnimationFrame(() => {
-        // İkinci bir requestAnimationFrame ile çizimin bittiğinden emin ol
-        requestAnimationFrame(() => {
-            const element = document.getElementById(`card-${targetQuestion.id}`);
+    // 5. AKILLI BEKLEME (POLLING) SİSTEMİ
+    // Kart DOM'a düşene kadar 50ms'de bir kontrol et (Max 20 kere = 1 saniye)
+    let attempts = 0;
+    const maxAttempts = 40; // 2 saniye boyunca dener
+
+    const checkExist = setInterval(function() {
+        const element = document.getElementById(`card-${targetQuestion.id}`);
+        
+        if (element) {
+            // BULDU! Döngüyü durdur ve kaydır
+            clearInterval(checkExist);
             
-            if (element) {
-                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                
-                // Görsel Efekt
-                element.style.transition = "background-color 0.5s ease";
-                // Gece modunda çok parlamasın diye hafif bir renk
-                element.style.backgroundColor = document.body.getAttribute('data-theme') === 'dark' ? '#444' : '#fff3cd';
-                
-                setTimeout(() => {
-                    element.style.backgroundColor = ""; 
-                }, 1000);
-            } else {
-                console.error("HATA: Kart DOM'da oluşmadı. ID:", targetQuestion.id);
-                // Son çare: Manuel hash değişimi (sayfayı oraya atlatır)
-                window.location.hash = `#card-${targetQuestion.id}`;
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            // Sarı ışık yak (Gece moduna uyumlu)
+            element.style.transition = "background-color 0.5s ease";
+            const isDark = document.body.getAttribute('data-theme') === 'dark';
+            const highlightColor = isDark ? '#3d3d3d' : '#fff3cd'; // Gece: Koyu Gri, Gündüz: Sarı
+            
+            const originalBg = element.style.backgroundColor;
+            element.style.backgroundColor = highlightColor;
+            
+            setTimeout(() => {
+                element.style.backgroundColor = originalBg; 
+            }, 1000);
+            
+        } else {
+            // Henüz oluşmadı, denemeye devam
+            attempts++;
+            if (attempts >= maxAttempts) {
+                clearInterval(checkExist);
+                console.error("Zaman aşımı: Kart çizilemedi. ID:", targetQuestion.id);
+                // Son çare: Sayfayı zorla oraya at (hash ile)
+                window.location.hash = `card-${targetQuestion.id}`;
             }
-        });
-    });
+        }
+    }, 50); // Her 50 milisaniyede bir kontrol et
 }
     function formatQuestionText(text) {
         return text.replace(/___/g, "__________");
