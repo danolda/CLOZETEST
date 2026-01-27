@@ -159,6 +159,11 @@
                     <h4 id="active-section-title" class="fw-bold m-0 text-primary">Bölüm Seçiniz</h4>
                     <div class="d-flex gap-2 align-items-center">
                         <span id="progress-badge" class="badge bg-secondary">0/0</span>
+                        
+                        <button class="btn btn-sm btn-primary" onclick="goToFirstUnsolved()">
+                            <i class="bi bi-geo-alt-fill"></i> Kaldığım Yer
+                        </button>
+                        
                         <button class="btn btn-sm btn-outline-warning" onclick="resetCurrentSection()">
                             <i class="bi bi-arrow-counterclockwise"></i> Temizle
                         </button>
@@ -3365,18 +3370,75 @@ function renderQuestions(qList) {
             area.innerHTML += html;
         });
 
-        // DAHA FAZLA GÖSTER BUTONU
+            // 1. DAHA FAZLA GÖSTER BUTONU (Varsa)
         if (qList.length > renderLimit) {
             const remaining = qList.length - renderLimit;
             area.innerHTML += `
-                <div class="text-center py-4">
-                    <p class="text-muted">Toplam ${qList.length} sorudan ${renderLimit} tanesi gösteriliyor.</p>
-                    <button class="btn btn-lg btn-outline-primary px-5" onclick="loadMoreQuestions()">
-                        <i class="bi bi-arrow-down-circle"></i> Sonraki 50 Soruyu Göster (+${remaining} kaldı)
+                <div class="text-center py-3">
+                    <button class="btn btn-lg btn-outline-primary px-5 shadow-sm" onclick="loadMoreQuestions()">
+                        <i class="bi bi-arrow-down-circle"></i> Sonraki 50 Soruyu Göster (+${remaining})
                     </button>
                 </div>
             `;
         }
+
+        // 2. EN ALTTA BAŞA DÖN BUTONU (HER ZAMAN GÖRÜNSÜN)
+        area.innerHTML += `
+            <div class="text-center pb-4 mt-3">
+                <button class="btn btn-sm btn-secondary w-50" onclick="window.scrollTo({top: 0, behavior: 'smooth'});">
+                    <i class="bi bi-arrow-up-circle"></i> Sayfa Başına Dön
+                </button>
+            </div>
+        `;
+    }
+    
+    function goToFirstUnsolved() {
+        // 1. Şu anki aktif listeyi bul
+        let activeList = [];
+        if (currentSectionKey === 'mistakes') {
+            const mistakeQuestions = allQuestions.filter(q => wrongBank.includes(q.id));
+            const mistakeAi = generatedQuestions.filter(q => wrongBank.includes(q.id));
+            activeList = [...mistakeQuestions, ...mistakeAi];
+        } else if (currentSectionKey === 'ai') {
+            activeList = [...generatedQuestions].reverse();
+        } else {
+            const secData = sections.find(s => s.key === currentSectionKey);
+            if(secData) {
+                activeList = allQuestions.filter(q => q.id >= secData.start && q.id <= secData.end);
+            }
+        }
+
+        if (activeList.length === 0) return;
+
+        // 2. Çözülmemiş ilk sorunun indexini bul
+        // (progressData[id] değeri 'correct' veya 'wrong' değilse çözülmemiştir)
+        const targetIndex = activeList.findIndex(q => !progressData[q.id]);
+
+        if (targetIndex === -1) {
+            alert("Tebrikler! Bu bölümdeki tüm soruları çözdünüz.");
+            return;
+        }
+
+        // 3. Eğer soru "Daha Fazla Göster" limitinin dışındaysa limiti artır
+        if (targetIndex >= renderLimit) {
+            renderLimit = targetIndex + 5; // Sorunun biraz altına kadar aç
+            
+            // Listeyi o anki haliyle yeniden çiz (Load More yapmış gibi)
+            renderQuestions(activeList);
+        }
+
+        // 4. O soruya kaydır (Hafif gecikmeli ki çizim bitsin)
+        setTimeout(() => {
+            const targetId = activeList[targetIndex].id;
+            const element = document.getElementById(`card-${targetId}`);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                // Kullanıcının dikkatini çekmek için kısa bir yanıp sönme efekti (opsiyonel)
+                element.style.transition = "background-color 0.5s";
+                element.style.backgroundColor = "#fff3cd"; // Hafif sarı
+                setTimeout(() => { element.style.backgroundColor = ""; }, 1000);
+            }
+        }, 100);
     }
 
     function formatQuestionText(text) {
