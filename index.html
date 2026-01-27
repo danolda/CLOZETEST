@@ -3116,7 +3116,8 @@ TIP: Main clause: would have V3 (burada would).
     let wrongBank = [];
     let progressData = {}; 
     let userApiKey = "";
-
+    let renderLimit = 50;
+    
     const sections = [
         { key: "sec1", title: "Prepositions & Collocations", start: 1, end: 70 },
         { key: "sec2", title: "Conjunctions & Linkers", start: 71, end: 130 },
@@ -3245,10 +3246,15 @@ TIP: Main clause: would have V3 (burada would).
 
     function showSection(key) {
         currentSectionKey = key;
+        renderLimit = 50; // HER BÖLÜM GEÇİŞİNDE LİMİTİ SIFIRLA
         updateActiveMenu(`menu-${key}`);
+        
         const secData = sections.find(s => s.key === key);
         document.getElementById('active-section-title').innerText = secData.title;
+        
+        // Filtreleme yap
         const filteredQ = allQuestions.filter(q => q.id >= secData.start && q.id <= secData.end);
+        
         renderQuestions(filteredQ);
         updateProgressBadge(filteredQ);
     }
@@ -3294,13 +3300,16 @@ TIP: Main clause: would have V3 (burada would).
         if(el) el.classList.add('active');
     }
 
-    function renderQuestions(qList) {
+function renderQuestions(qList) {
         const area = document.getElementById('questions-area');
         area.innerHTML = "";
         
         const isCleanView = (currentSectionKey === 'mistakes');
 
-        qList.forEach(q => {
+        // LİMİT UYGULAMA: Listeyi bölüyoruz
+        const visibleList = qList.slice(0, renderLimit);
+
+        visibleList.forEach(q => {
             const savedStatus = progressData[q.id];
             const status = isCleanView ? null : savedStatus;
             
@@ -3328,7 +3337,6 @@ TIP: Main clause: would have V3 (burada would).
                 </div>`;
             });
 
-            // AI Butonu sadece normal gramer sorularında görünsün (kelimede gerek yok)
             let aiButton = "";
             if(!q.isVocab) {
                  aiButton = `<button class="btn btn-sm btn-outline-primary btn-ai-gen ms-auto" onclick="generateAiQuestions(${q.id})" title="Gemini ile Benzer Soru Üret"><i class="bi bi-stars"></i></button>`;
@@ -3356,6 +3364,19 @@ TIP: Main clause: would have V3 (burada would).
             </div>`;
             area.innerHTML += html;
         });
+
+        // DAHA FAZLA GÖSTER BUTONU
+        if (qList.length > renderLimit) {
+            const remaining = qList.length - renderLimit;
+            area.innerHTML += `
+                <div class="text-center py-4">
+                    <p class="text-muted">Toplam ${qList.length} sorudan ${renderLimit} tanesi gösteriliyor.</p>
+                    <button class="btn btn-lg btn-outline-primary px-5" onclick="loadMoreQuestions()">
+                        <i class="bi bi-arrow-down-circle"></i> Sonraki 50 Soruyu Göster (+${remaining} kaldı)
+                    </button>
+                </div>
+            `;
+        }
     }
 
     function formatQuestionText(text) {
@@ -3553,7 +3574,25 @@ TIP: Main clause: would have V3 (burada would).
             document.getElementById('loadingOverlay').classList.add('d-none');
         }
     }
-
+    
+    function loadMoreQuestions() {
+        renderLimit += 50; // Limiti 50 artır
+        
+        // Hangi bölümde olduğumuzu bulup yeniden çizdir
+        if (currentSectionKey === 'mistakes') {
+            showMistakes();
+        } else if (currentSectionKey === 'ai') {
+            showAiGenerated();
+        } else {
+            // Normal bölümler
+            const secData = sections.find(s => s.key === currentSectionKey);
+            if(secData) {
+                const filteredQ = allQuestions.filter(q => q.id >= secData.start && q.id <= secData.end);
+                renderQuestions(filteredQ);
+            }
+        }
+    }
+    
     function fullReset() {
         if (!confirm("TÜM ilerlemeniz ve ayarlarınız silinecek. Emin misiniz?")) return;
         localStorage.clear();
