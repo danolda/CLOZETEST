@@ -160,7 +160,7 @@
                     <div class="d-flex gap-2 align-items-center">
                         <span id="progress-badge" class="badge bg-secondary">0/0</span>
                         
-                        <button class="btn btn-sm btn-primary" onclick="goToFirstUnsolved()">
+                        <button class="btn btn-sm btn-primary" onclick="()">
                             <i class="bi bi-geo-alt-fill"></i> Kaldığım Yer
                         </button>
                         
@@ -3393,15 +3393,14 @@ function renderQuestions(qList) {
     }
     
     function goToFirstUnsolved() {
-    // 1. Hangi bölümde olduğumuzu kontrol et
+    // 1. Kontroller
     if (!currentSectionKey) {
-        alert("Lütfen önce soldan bir ders/bölüm seçiniz.");
+        alert("Lütfen önce bir bölüm seçiniz.");
         return;
     }
 
-    // 2. Şu anki aktif listeyi belirle
+    // 2. Aktif Listeyi Belirle
     let activeList = [];
-    
     if (currentSectionKey === 'mistakes') {
         const mistakeQuestions = allQuestions.filter(q => wrongBank.includes(q.id));
         const mistakeAi = generatedQuestions.filter(q => wrongBank.includes(q.id));
@@ -3415,20 +3414,51 @@ function renderQuestions(qList) {
         }
     }
 
-    // 3. Liste boşsa dur
     if (!activeList || activeList.length === 0) {
-        alert("Bu bölümde görüntülenecek soru yok.");
+        alert("Bu bölümde soru yok.");
         return;
     }
 
-    // 4. Çözülmemiş İLK sorunun sırasını (index) bul
-    // (Not: progressData içinde kaydı yoksa çözülmemiştir)
+    // 3. İlk Çözülmemiş Soruyu Bul
     const targetIndex = activeList.findIndex(q => !progressData[q.id]);
 
     if (targetIndex === -1) {
-        alert("Harika! Bu bölümdeki TÜM soruları zaten çözmüşsünüz.");
+        alert("Tebrikler! Bu bölümdeki tüm sorular çözülmüş.");
         return;
     }
+
+    const targetQuestion = activeList[targetIndex];
+
+    // 4. LİMİT GÜNCELLEME VE ZORLA ÇİZDİRME (Hata Çözümü Burası)
+    // Eğer soru limitin dışındaysa limiti artır, içindeyse bile listeyi tazele.
+    if (renderLimit <= targetIndex + 5) {
+        renderLimit = targetIndex + 10; // Soruyu kapsayacak kadar genişlet
+    }
+    
+    // Listeyi MUTLAKA yeniden çizdiriyoruz ki kartın HTML'de olduğundan %100 emin olalım
+    renderQuestions(activeList);
+
+    // 5. Kaydırma İşlemi (DOM çizimi için minik gecikme şart)
+    setTimeout(() => {
+        const element = document.getElementById(`card-${targetQuestion.id}`);
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            // Görsel Efekt
+            element.style.transition = "background-color 0.5s ease";
+            const originalBg = getComputedStyle(element).backgroundColor;
+            element.style.backgroundColor = "#fff3cd"; // Sarı ışık yak
+            
+            setTimeout(() => {
+                element.style.backgroundColor = originalBg; // Eski haline dön
+            }, 1000);
+        } else {
+            console.error("KRİTİK HATA: Kart ID yine bulunamadı ->", targetQuestion.id);
+            // Acil durum: Manuel scroll dene
+            window.location.hash = `card-${targetQuestion.id}`;
+        }
+    }, 200); // Süreyi biraz artırdık (200ms) ki tarayıcı çizmeyi bitirsin
+}
 
     const targetQuestion = activeList[targetIndex];
 
