@@ -3337,99 +3337,97 @@ TIP: Main clause: would have V3 (burada would).
     }
 
 function renderQuestions(qList) {
-        const area = document.getElementById('questions-area');
-        area.innerHTML = "";
+    const area = document.getElementById('questions-area');
+    const isCleanView = (currentSectionKey === 'mistakes');
+
+    // 1. HTML'i Hafızada Biriktir (DOM'a dokunma)
+    let htmlBuffer = ""; 
+    const visibleList = qList.slice(0, renderLimit);
+
+    visibleList.forEach(q => {
+        const savedStatus = progressData[q.id];
+        const status = isCleanView ? null : savedStatus;
         
-        const isCleanView = (currentSectionKey === 'mistakes');
+        let feedbackHTML = "", optionsHTML = "", tipDisplay = "none";
 
-        // LİMİT UYGULAMA: Listeyi bölüyoruz
-        const visibleList = qList.slice(0, renderLimit);
-
-        visibleList.forEach(q => {
-            const savedStatus = progressData[q.id];
-            const status = isCleanView ? null : savedStatus;
-            
-            let feedbackHTML = "", optionsHTML = "", tipDisplay = "none";
-
-            if (status) {
-                if (status === 'correct') {
-                    feedbackHTML = `<div class="mt-2 text-success fw-bold"><i class="bi bi-check-circle"></i> Doğru!</div>`;
-                } else {
-                    feedbackHTML = `<div class="mt-2 text-danger fw-bold"><i class="bi bi-x-circle"></i> Yanlış. Cevap: ${q.correctAnswer}</div>`;
-                    if(!q.isVocab) tipDisplay = "block";
-                }
+        if (status) {
+            if (status === 'correct') {
+                feedbackHTML = `<div class="mt-2 text-success fw-bold"><i class="bi bi-check-circle"></i> Doğru!</div>`;
+            } else {
+                feedbackHTML = `<div class="mt-2 text-danger fw-bold"><i class="bi bi-x-circle"></i> Yanlış. Cevap: ${q.correctAnswer}</div>`;
+                if(!q.isVocab) tipDisplay = "block";
             }
-
-            ['A', 'B', 'C', 'D', 'E'].forEach(opt => {
-                let rowClass = "";
-                if (status) {
-                    if (opt === q.correctAnswer) rowClass = "opt-correct";
-                    else if (status === 'wrong' && progressData[q.id + '_selected'] === opt) rowClass = "opt-wrong";
-                }
-                optionsHTML += `
-                <div class="option-row ${rowClass} ${status ? 'disabled-opts' : ''}" onclick="checkAnswer(${q.id}, '${opt}')">
-                    <div class="btn-circle">${opt}</div>
-                    <div class="option-text">${q.options[opt] || "---"}</div>
-                </div>`;
-            });
-
-            let aiButton = "";
-            if(!q.isVocab) {
-                 aiButton = `<button class="btn btn-sm btn-outline-primary btn-ai-gen ms-auto" onclick="generateAiQuestions(${q.id})" title="Gemini ile Benzer Soru Üret"><i class="bi bi-stars"></i></button>`;
-            }
-
-            const html = `
-            <div class="card mb-4 border-start-0" style="${q.isAi ? 'border-left: 5px solid var(--ai-color);' : (q.isVocab ? 'border-left: 5px solid var(--vocab-color);' : '')}">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between mb-2 align-items-center">
-                        <div>
-                            <span class="badge ${q.isAi ? 'bg-primary' : (q.isVocab ? 'bg-warning text-dark' : 'bg-secondary')}" style="${q.isAi ? 'background-color: var(--ai-color)!important;' : ''}">
-                                ${q.isAi ? 'Gemini AI' : (q.isVocab ? 'Kelime' : 'Soru ' + q.id)}
-                            </span>
-                            ${status ? (status==='correct' ? '<span class="badge bg-success ms-1">Çözüldü</span>' : '<span class="badge bg-danger ms-1">Hatalı</span>') : ''}
-                        </div>
-                        ${aiButton}
-                    </div>
-                    <p class="question-text">${formatQuestionText(q.text)}</p>
-                    <div id="opts-${q.id}">${optionsHTML}</div>
-                    <div id="feedback-${q.id}">${feedbackHTML}</div>
-                    <div id="tip-${q.id}" class="tip-box" style="display: ${tipDisplay};">
-                        <strong>İPUCU:</strong> ${q.tip}
-                    </div>
-                </div>
-            </div>`;
-            area.innerHTML += html;
-        });
-
-            // 1. DAHA FAZLA GÖSTER BUTONU (Varsa)
-        if (qList.length > renderLimit) {
-            const remaining = qList.length - renderLimit;
-            area.innerHTML += `
-                <div class="text-center py-3">
-                    <button class="btn btn-lg btn-outline-primary px-5 shadow-sm" onclick="loadMoreQuestions()">
-                        <i class="bi bi-arrow-down-circle"></i> Sonraki 50 Soruyu Göster (+${remaining})
-                    </button>
-                </div>
-            `;
         }
 
-        // 2. EN ALTTA BAŞA DÖN BUTONU (HER ZAMAN GÖRÜNSÜN)
-        area.innerHTML += `
-            <div class="text-center pb-4 mt-3">
-                <button class="btn btn-sm btn-secondary w-50" onclick="window.scrollTo({top: 0, behavior: 'smooth'});">
-                    <i class="bi bi-arrow-up-circle"></i> Sayfa Başına Dön
-                </button>
+        // Şıkları oluştur
+        let optsInner = "";
+        ['A', 'B', 'C', 'D', 'E'].forEach(opt => {
+            let rowClass = "";
+            if (status) {
+                if (opt === q.correctAnswer) rowClass = "opt-correct";
+                else if (status === 'wrong' && progressData[q.id + '_selected'] === opt) rowClass = "opt-wrong";
+            }
+            optsInner += `
+            <div class="option-row ${rowClass} ${status ? 'disabled-opts' : ''}" onclick="checkAnswer(${q.id}, '${opt}')">
+                <div class="btn-circle">${opt}</div>
+                <div class="option-text">${q.options[opt] || "---"}</div>
+            </div>`;
+        });
+
+        let aiButton = "";
+        if(!q.isVocab) {
+                aiButton = `<button class="btn btn-sm btn-outline-primary btn-ai-gen ms-auto" onclick="generateAiQuestions(${q.id})" title="Gemini ile Benzer Soru Üret"><i class="bi bi-stars"></i></button>`;
+        }
+
+        // HTML String oluştur
+        htmlBuffer += `
+        <div class="card mb-4 border-start-0" id="card-${q.id}" style="${q.isAi ? 'border-left: 5px solid var(--ai-color);' : (q.isVocab ? 'border-left: 5px solid var(--vocab-color);' : '')}">
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-2 align-items-center">
+                    <div>
+                        <span class="badge ${q.isAi ? 'bg-primary' : (q.isVocab ? 'bg-warning text-dark' : 'bg-secondary')}" style="${q.isAi ? 'background-color: var(--ai-color)!important;' : ''}">
+                            ${q.isAi ? 'Gemini AI' : (q.isVocab ? 'Kelime' : 'Soru ' + q.id)}
+                        </span>
+                        ${status ? (status==='correct' ? '<span class="badge bg-success ms-1">Çözüldü</span>' : '<span class="badge bg-danger ms-1">Hatalı</span>') : ''}
+                    </div>
+                    ${aiButton}
+                </div>
+                <p class="question-text">${formatQuestionText(q.text)}</p>
+                <div id="opts-${q.id}">${optsInner}</div>
+                <div id="feedback-${q.id}">${feedbackHTML}</div>
+                <div id="tip-${q.id}" class="tip-box" style="display: ${tipDisplay};">
+                    <strong>İPUCU:</strong> ${q.tip}
+                </div>
             </div>
-        `;
-    }
-    function goToFirstUnsolved() {
-    // 1. Bölüm Seçili mi?
-    if (!currentSectionKey) {
-        alert("Lütfen önce bir bölüm seçiniz.");
-        return;
+        </div>`;
+    });
+
+    // 2. TEK SEFERDE DOM'A BAS (Hız Artışı Buradan Geliyor)
+    area.innerHTML = htmlBuffer;
+
+    // 3. Alt Butonları Ekle
+    if (qList.length > renderLimit) {
+        const remaining = qList.length - renderLimit;
+        const loadMoreHTML = `
+            <div class="text-center py-3">
+                <button class="btn btn-lg btn-outline-primary px-5 shadow-sm" onclick="loadMoreQuestions()">
+                    <i class="bi bi-arrow-down-circle"></i> Sonraki 50 Soruyu Göster (+${remaining})
+                </button>
+            </div>`;
+        area.insertAdjacentHTML('beforeend', loadMoreHTML);
     }
 
-    // 2. Aktif Listeyi ve İlerlemeyi Getir
+    const footerHTML = `
+        <div class="text-center pb-4 mt-3">
+            <button class="btn btn-sm btn-secondary w-50" onclick="window.scrollTo({top: 0, behavior: 'smooth'});">
+                <i class="bi bi-arrow-up-circle"></i> Sayfa Başına Dön
+            </button>
+        </div>`;
+    area.insertAdjacentHTML('beforeend', footerHTML);
+}
+    function goToFirstUnsolved() {
+    if (!currentSectionKey) { alert("Lütfen bölüm seçiniz."); return; }
+
     let activeList = [];
     if (currentSectionKey === 'mistakes') {
         const mistakeQuestions = allQuestions.filter(q => wrongBank.includes(q.id));
@@ -3439,74 +3437,42 @@ function renderQuestions(qList) {
         activeList = [...generatedQuestions].reverse();
     } else {
         const secData = sections.find(s => s.key === currentSectionKey);
-        if(secData) {
-            activeList = allQuestions.filter(q => q.id >= secData.start && q.id <= secData.end);
-        }
+        if(secData) activeList = allQuestions.filter(q => q.id >= secData.start && q.id <= secData.end);
     }
 
-    if (!activeList || activeList.length === 0) {
-        alert("Bu bölümde görüntülenecek soru yok.");
-        return;
-    }
+    if (!activeList.length) { alert("Bu bölümde soru yok."); return; }
 
-    // 3. HEDEFİ BUL (Mantık: İlk çözülmemiş soru. Hepsi çözüldüyse sonuncusu.)
+    // Çözülmemiş İLK soruyu bul, yoksa en SON soruyu bul
     let targetIndex = activeList.findIndex(q => !progressData[q.id]);
-
-    // Eğer hepsi çözülmüşse (-1), listenin en sonuna git
-    if (targetIndex === -1) {
-        targetIndex = activeList.length - 1; 
-        // Kullanıcıya bilgi ver (Opsiyonel, istersen kaldırabilirsin)
-        // alert("Tüm soruları çözdünüz, en sona gidiliyor.");
-    }
+    if (targetIndex === -1) targetIndex = activeList.length - 1;
 
     const targetQuestion = activeList[targetIndex];
 
-    // 4. LİMİTİ GENİŞLET (Eğer soru kapalı alandaysa aç)
-    // Soru indexi 50 ise, limit 60 olsun ki görünsün.
+    // Limiti güncelle (Soru uzaktaysa listeyi uzat)
     if (renderLimit <= targetIndex + 5) {
-        renderLimit = targetIndex + 20; 
+        renderLimit = targetIndex + 25;
     }
-    
-    // Listeyi yeni limitle çiz
+
+    // Listeyi TEK SEFERDE çiz
     renderQuestions(activeList);
 
-    // 5. AKILLI BEKLEME (POLLING) SİSTEMİ
-    // Kart DOM'a düşene kadar 50ms'de bir kontrol et (Max 20 kere = 1 saniye)
-    let attempts = 0;
-    const maxAttempts = 40; // 2 saniye boyunca dener
-
-    const checkExist = setInterval(function() {
+    // Çizim biter bitmez kaydır
+    setTimeout(() => {
         const element = document.getElementById(`card-${targetQuestion.id}`);
-        
         if (element) {
-            // BULDU! Döngüyü durdur ve kaydır
-            clearInterval(checkExist);
-            
             element.scrollIntoView({ behavior: 'smooth', block: 'center' });
             
-            // Sarı ışık yak (Gece moduna uyumlu)
-            element.style.transition = "background-color 0.5s ease";
+            // Renk Efekti
             const isDark = document.body.getAttribute('data-theme') === 'dark';
-            const highlightColor = isDark ? '#3d3d3d' : '#fff3cd'; // Gece: Koyu Gri, Gündüz: Sarı
-            
-            const originalBg = element.style.backgroundColor;
-            element.style.backgroundColor = highlightColor;
-            
-            setTimeout(() => {
-                element.style.backgroundColor = originalBg; 
-            }, 1000);
-            
+            element.style.transition = "background-color 0.5s";
+            element.style.backgroundColor = isDark ? '#444' : '#fff3cd';
+            setTimeout(() => { element.style.backgroundColor = ""; }, 1000);
         } else {
-            // Henüz oluşmadı, denemeye devam
-            attempts++;
-            if (attempts >= maxAttempts) {
-                clearInterval(checkExist);
-                console.error("Zaman aşımı: Kart çizilemedi. ID:", targetQuestion.id);
-                // Son çare: Sayfayı zorla oraya at (hash ile)
-                window.location.hash = `card-${targetQuestion.id}`;
-            }
+            // Hata olursa yine de konsola yaz ama kullanıcıya hissettirme
+            console.warn("Kart bulunamadı, manuel yönlendirme yapılıyor.");
+            window.location.href = `#card-${targetQuestion.id}`;
         }
-    }, 50); // Her 50 milisaniyede bir kontrol et
+    }, 50);
 }
     function formatQuestionText(text) {
         return text.replace(/___/g, "__________");
