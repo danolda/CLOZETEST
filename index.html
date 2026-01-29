@@ -119,6 +119,24 @@
         position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.8); 
         z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white;
     }
+        /* Tüyo Butonu İçin Akıllı Renk Ayarı */
+    .btn-ai-tip {
+        border-color: #ffc107 !important; /* Sarı çerçeve */
+        color: #212529; /* Light modda KOYU yazı */
+    }
+    .btn-ai-tip:hover {
+        background-color: #ffc107;
+        color: #000;
+    }
+
+    /* Koyu Tema Aktifken */
+    [data-theme="dark"] .btn-ai-tip {
+        color: #ffc107; /* Dark modda SARI yazı (Okunabilir) */
+    }
+    [data-theme="dark"] .btn-ai-tip:hover {
+        background-color: #ffc107;
+        color: #000; /* Üzerine gelince siyah */
+    }
 </style>
 </head>
 <body>
@@ -7155,7 +7173,7 @@ function renderQuestions(qList) {
                 </div>`;
             });
 
-            // --- 4. BUTON GRUBU (3 BUTON) ---
+         // --- 4. BUTON GRUBU (3 BUTON) ---
             let buttonsHTML = "";
             if (!q.isVocab) {
                 buttonsHTML = `
@@ -7166,7 +7184,8 @@ function renderQuestions(qList) {
                     <button type="button" class="btn btn-sm btn-outline-success" onclick="getAiAnalysis(${q.id})" title="Çeviri ve Analiz">
                         <i class="bi bi-translate"></i> <span class="d-none d-md-inline">Analiz</span>
                     </button>
-                    <button type="button" class="btn btn-sm btn-outline-warning text-dark" onclick="getAiTip(${q.id})" title="Sadece Tüyo">
+                    <!-- GÜNCELLENEN BUTON BURASI -->
+                    <button type="button" class="btn btn-sm btn-outline-warning btn-ai-tip" onclick="getAiTip(${q.id})" title="Sadece Tüyo">
                         <i class="bi bi-lightbulb-fill"></i> <span class="d-none d-md-inline">Tüyo</span>
                     </button>
                 </div>`;
