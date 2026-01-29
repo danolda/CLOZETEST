@@ -7110,11 +7110,19 @@ function renderQuestions(qList) {
         const visibleList = qList.slice(0, renderLimit);
 
         visibleList.forEach(q => {
-            const savedStatus = progressData[q.id];
+            // --- KRİTİK DÜZELTME BURADA ---
+            // Eğer şu an "Yanlışlarım" (mistakes) bölümündeysek, savedStatus'u NULL yapıyoruz.
+            // Böylece soru daha önce çözülmemiş gibi tertemiz görünüyor.
+            let savedStatus = progressData[q.id];
             
-            // --- 1. ETİKET BELİRLEME (ID'ye Göre Doğru İsimlendirme) ---
+            if (currentSectionKey === 'mistakes') {
+                savedStatus = null; // Yanlışlar bölümünde cevabı gizle/sıfırla
+            }
+            // -----------------------------
+
+            // --- ETİKET BELİRLEME ---
             let badgeText = "Soru";
-            let badgeColorStyle = "background-color: #6c757d !important;"; // Gri default
+            let badgeColorStyle = "background-color: #6c757d !important;";
             let borderStyle = "";
 
             if (q.isVocab) {
@@ -7136,12 +7144,10 @@ function renderQuestions(qList) {
             else if (q.id >= 131 && q.id <= 190) { badgeText = "Relative Clauses"; borderStyle = "border-left: 5px solid #0d6efd;"; badgeColorStyle = "background-color: #0d6efd!important;"; }
             else if (q.id >= 191 && q.id <= 250) { badgeText = "Tense & Modals"; borderStyle = "border-left: 5px solid #0d6efd;"; badgeColorStyle = "background-color: #0d6efd!important;"; }
 
-            // --- 2. İPUCU KUTUSU İÇERİĞİ ---
-            // Varsayılan: Eğer veritabanında kısa tüyo varsa onu hazırla
+            // --- İPUCU ALANI ---
             let initialTipContent = "";
             let initialTipDisplay = "none";
 
-            // Eğer kullanıcı daha önce AI butonuna bastıysa o kalsın
             if (q.aiAnalysisData) {
                 initialTipContent = `<strong><i class="bi bi-translate"></i> Analiz & Çeviri:</strong><br><br>${q.aiAnalysisData}`;
                 initialTipDisplay = "block";
@@ -7150,15 +7156,13 @@ function renderQuestions(qList) {
                 initialTipContent = `<strong><i class="bi bi-stars"></i> Altın Tüyo:</strong><br><br>${q.aiTipData}`;
                 initialTipDisplay = "block";
             }
-            // Hiçbiri yoksa ve yanlış yaptıysa veritabanındaki kısa tüyoyu göster
+            // Yanlışlar bölümünde soru temiz geldiği için, kullanıcı tekrar yanlış yapana kadar ipucunu gösterme
             else if (savedStatus === 'wrong' && q.tip && !q.isExam) { 
-                // Not: !q.isExam dedik çünkü çıkmış sorulardaki 'tip' alanı yıl bilgisini tutuyor olabilir, 
-                // ama normal sorularda (1-250) gramer tüyosu tutuyor.
                 initialTipContent = `<strong><i class="bi bi-lightbulb"></i> İPUCU:</strong> ${q.tip}`;
                 initialTipDisplay = "block";
             }
 
-            // --- 3. ŞIKLAR ---
+            // --- ŞIKLAR ---
             let optsInner = "";
             ['A', 'B', 'C', 'D', 'E'].forEach(opt => {
                 let rowClass = "";
@@ -7173,7 +7177,7 @@ function renderQuestions(qList) {
                 </div>`;
             });
 
-         // --- 4. BUTON GRUBU (3 BUTON) ---
+            // --- BUTONLAR ---
             let buttonsHTML = "";
             if (!q.isVocab) {
                 buttonsHTML = `
@@ -7184,14 +7188,13 @@ function renderQuestions(qList) {
                     <button type="button" class="btn btn-sm btn-outline-success" onclick="getAiAnalysis(${q.id})" title="Çeviri ve Analiz">
                         <i class="bi bi-translate"></i> <span class="d-none d-md-inline">Analiz</span>
                     </button>
-                    <!-- GÜNCELLENEN BUTON BURASI -->
                     <button type="button" class="btn btn-sm btn-outline-warning btn-ai-tip" onclick="getAiTip(${q.id})" title="Sadece Tüyo">
                         <i class="bi bi-lightbulb-fill"></i> <span class="d-none d-md-inline">Tüyo</span>
                     </button>
                 </div>`;
             }
 
-            // --- HTML ÇIKTISI ---
+            // --- HTML BAS ---
             area.insertAdjacentHTML('beforeend', `
             <div class="card mb-4 border-start-0" id="card-${q.id}" style="${borderStyle}">
                 <div class="card-body">
@@ -7225,11 +7228,6 @@ function renderQuestions(qList) {
                     </button>
                 </div>`);
         }
-    }
-// EKSİK OLAN FONKSİYON BURASI
-    function formatQuestionText(text) {
-        if (!text) return "";
-        return text.replace(/___/g, "__________");
     }
     
 function checkAnswer(qId, selectedOpt) {
@@ -7548,7 +7546,82 @@ function saveApiKey() {
         }
     }
 
-function fullReset() {
+    
+    // --- 3. BUTON: BENZER SORU ÜRET (SİLİNEN FONKSİYON) ---
+    async function generateAiQuestions(sourceId) {
+        if(!userApiKey) {
+            alert("API Anahtarı girilmemiş! Lütfen 'API' butonuna basarak ekleyin.");
+            openSettings();
+            return;
+        }
+
+        // Hem normal listede hem de daha önce üretilenlerde ara
+        let sourceQ = allQuestions.find(q => q.id === sourceId) || generatedQuestions.find(q => q.id === sourceId);
+        if (!sourceQ) { console.error("Kaynak soru bulunamadı!"); return; }
+
+        document.getElementById('loadingOverlay').classList.remove('d-none');
+
+        // GÜNCEL MODEL: gemini-1.5-flash
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${userApiKey}`;
+        
+        const promptText = `
+            YDS sınavı için soru klonla.
+            Orijinal Soru: "${sourceQ.text}"
+            Cevap: ${sourceQ.correctAnswer}
+            Kural/Tip: "${sourceQ.tip || 'Genel Gramer'}"
+
+            Görevin: Bu soruya gramer yapısı, kelime zorluğu ve uzunluk olarak BENZER 2 yeni soru üret.
+            
+            Çıktı FORMATI (Sadece saf JSON dizisi ver, markdown kullanma):
+            [
+              { "text": "Soru metni (boşluk için ___ kullan)", "options": {"A": "...", "B": "...", "C": "...", "D": "...", "E": "..."}, "correctAnswer": "A", "tip": "İpucu (Türkçe)" }
+            ]
+        `;
+
+        try {
+            const response = await fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
+            });
+
+            const data = await response.json();
+            
+            if (!data.candidates || !data.candidates[0].content) {
+                throw new Error("API yanıt vermedi.");
+            }
+
+            let rawText = data.candidates[0].content.parts[0].text;
+            // Markdown temizliği (```json ... ``` gibi gelenleri temizler)
+            rawText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+            
+            const newQuestions = JSON.parse(rawText);
+
+            newQuestions.forEach((nq, index) => {
+                const newId = Date.now() + index; // Benzersiz ID
+                generatedQuestions.push({
+                    id: newId,
+                    text: nq.text,
+                    options: nq.options,
+                    correctAnswer: nq.correctAnswer,
+                    tip: nq.tip + " (AI Üretimi)",
+                    isAi: true
+                });
+            });
+
+            localStorage.setItem('yds_generated', JSON.stringify(generatedQuestions));
+            renderMenu(); // Menüdeki sayıyı güncelle
+            alert(`${newQuestions.length} yeni soru üretildi! Menüden 'YAPAY ZEKA' bölümüne giderek çözebilirsin.`);
+
+        } catch (error) {
+            alert("Hata: " + error.message);
+            console.error(error);
+        } finally {
+            document.getElementById('loadingOverlay').classList.add('d-none');
+        }
+    }
+
+    function fullReset() {
         if (!confirm("TÜM ilerlemeniz ve ayarlarınız silinecek. Emin misiniz?")) return;
         localStorage.clear();
         location.reload();
