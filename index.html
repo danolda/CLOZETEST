@@ -6845,14 +6845,13 @@ const rawExamVocabA = `1-C 2-D 3-A 4-A 5-E 6-B 7-E 8-E 9-B 10-A 11-C 12-D 13-C 1
         { key: "sec3", title: "Relative Clauses", start: 131, end: 190 },
         { key: "sec4", title: "Tense & Modals", start: 191, end: 250 },
       
-              // --- YENİ EKLENEN ÇIKMIŞ SORULAR ---
-        // ID'leri çakışmasın diye 3000'den başlattım
+        // ID Aralığını Düzelttik: Kelimeler 2999'da biter, Çıkmışlar 3000'de başlar.
+        { key: "secVocab", title: "YDS Akademik Kelimeler", start: 1000, end: 2999 },
+
         { key: "secExamPrep", title: "Çıkmış Prepositions (Son 10 Yıl)", start: 3000, end: 3200 },
         { key: "secExamConj", title: "Çıkmış Bağlaçlar (Son 10 Yıl)", start: 3201, end: 3500 },
         { key: "secExamTense", title: "Çıkmış Tense/Modals (Son 10 Yıl)", start: 3501, end: 3800 },
-        { key: "secExamVocab", title: "Çıkmış Kelime (Son 10 Yıl)", start: 3801, end: 4200 },
-        
-        { key: "secVocab", title: "YDS Akademik Kelimeler", start: 1000, end: 9999 }  
+        { key: "secExamVocab", title: "Çıkmış Kelime (Son 10 Yıl)", start: 3801, end: 4200 }
     ];
 
     window.onload = function() {
@@ -7071,100 +7070,117 @@ function updateActiveMenu(id) {
 }
 
 function renderQuestions(qList) {
-    const area = document.getElementById('questions-area');
-    area.innerHTML = "";
-    
-    if(!qList || qList.length === 0) {
-        area.innerHTML = `<div class="text-center py-5 text-muted">Bu bölümde henüz soru yok.</div>`;
-        return;
-    }
-    
-    const isCleanView = (currentSectionKey === 'mistakes');
-    let htmlBuffer = ""; 
-    const visibleList = qList.slice(0, renderLimit);
-
-    visibleList.forEach(q => {
-        const savedStatus = progressData[q.id];
-        const status = isCleanView ? null : savedStatus;
+        const area = document.getElementById('questions-area');
+        area.innerHTML = "";
         
-        let feedbackHTML = "", tipDisplay = "none";
+        // Sayfalama Limiti
+        const visibleList = qList.slice(0, renderLimit);
 
-        if (status) {
-            if (status === 'correct') {
-                feedbackHTML = `<div class="mt-2 text-success fw-bold"><i class="bi bi-check-circle"></i> Doğru!</div>`;
-            } else {
-                feedbackHTML = `<div class="mt-2 text-danger fw-bold"><i class="bi bi-x-circle"></i> Yanlış. Cevap: ${q.correctAnswer}</div>`;
-                if(!q.isVocab && !q.isExam) tipDisplay = "block";
-                if(q.isExam && q.aiExplanation) tipDisplay = "block";
+        visibleList.forEach(q => {
+            const savedStatus = progressData[q.id];
+            
+            let feedbackHTML = "";
+            // TİP GÖSTERME MANTIĞI DÜZELTİLDİ:
+            // 1. Eğer AI cevabı varsa -> GÖSTER (block)
+            // 2. Yoksa ve bu bir sınav sorusu DEĞİLSE (Normal testse) ve ipucu varsa -> GÖSTER (block)
+            // 3. Hiçbiri değilse -> GİZLE (none)
+            let tipDisplay = "none";
+            
+            if (q.aiExplanation) {
+                tipDisplay = "block";
+            } else if (!q.isExam && q.tip) {
+                tipDisplay = "block";
             }
-        }
 
-        let optsInner = "";
-        ['A', 'B', 'C', 'D', 'E'].forEach(opt => {
-            let rowClass = "";
-            if (status) {
-                if (opt === q.correctAnswer) rowClass = "opt-correct";
-                else if (status === 'wrong' && progressData[q.id + '_selected'] === opt) rowClass = "opt-wrong";
+            // Cevap durumu kontrolü
+            if (savedStatus) {
+                if (savedStatus === 'correct') {
+                    feedbackHTML = `<div class="mt-2 text-success fw-bold"><i class="bi bi-check-circle"></i> Doğru!</div>`;
+                } else {
+                    feedbackHTML = `<div class="mt-2 text-danger fw-bold"><i class="bi bi-x-circle"></i> Yanlış. Cevap: ${q.correctAnswer}</div>`;
+                    // Yanlış yapılınca sınav sorusu olsa bile ipucu varsa göster
+                    if(q.isExam && q.aiExplanation) tipDisplay = "block";
+                }
             }
-            optsInner += `
-            <div class="option-row ${rowClass} ${status ? 'disabled-opts' : ''}" onclick="checkAnswer(${q.id}, '${opt}')">
-                <div class="btn-circle">${opt}</div>
-                <div class="option-text">${q.options[opt] || "---"}</div>
-            </div>`;
+
+            // Şıkları Oluştur
+            let optsInner = "";
+            ['A', 'B', 'C', 'D', 'E'].forEach(opt => {
+                let rowClass = "";
+                if (savedStatus) {
+                    if (opt === q.correctAnswer) rowClass = "opt-correct";
+                    else if (savedStatus === 'wrong' && progressData[q.id + '_selected'] === opt) rowClass = "opt-wrong";
+                }
+                optsInner += `
+                <div class="option-row ${rowClass} ${savedStatus ? 'disabled-opts' : ''}" onclick="checkAnswer(${q.id}, '${opt}')">
+                    <div class="btn-circle">${opt}</div>
+                    <div class="option-text">${q.options[opt] || "---"}</div>
+                </div>`;
+            });
+
+            // BUTON MANTIĞI (Soru Üret Butonu Geri Geldi)
+            let actionBtn = "";
+            
+            if (!q.isVocab) {
+                if (q.isExam) {
+                    // Çıkmış Soru -> AI Çözüm İste
+                    actionBtn = `
+                    <button class="btn btn-sm btn-outline-success ms-auto" onclick="getAiExplanation(${q.id})">
+                        <i class="bi bi-magic"></i> AI Çözüm & Tüyo
+                    </button>`;
+                } else {
+                    // Normal Test -> Benzer Soru Üret
+                    actionBtn = `
+                    <button class="btn btn-sm btn-outline-primary ms-auto" onclick="generateAiQuestions(${q.id})">
+                        <i class="bi bi-stars"></i> Benzer Üret
+                    </button>`;
+                }
+            }
+
+            // İpucu İçeriği
+            let tipContent = q.aiExplanation ? `<strong><i class="bi bi-robot"></i> AI ÖĞRETMEN ÇÖZÜMÜ:</strong><br>${q.aiExplanation.replace(/\n/g, '<br>')}` : `<strong><i class="bi bi-lightbulb"></i> İPUCU:</strong> ${q.tip || "Yok"}`;
+
+            // Kart HTML'i
+            let cardColorStyle = "";
+            if (q.isExam) cardColorStyle = "border-left: 5px solid var(--exam-color);";
+            else if (q.isAi) cardColorStyle = "border-left: 5px solid var(--ai-color);";
+            else if (q.isVocab) cardColorStyle = "border-left: 5px solid var(--vocab-color);";
+
+            let badgeColor = q.isExam ? 'background-color: var(--exam-color)!important;' : (q.isAi ? 'background-color: var(--ai-color)!important;' : '');
+            let badgeText = q.isExam ? 'Çıkmış Soru' : (q.isAi ? 'Yapay Zeka' : (q.isVocab ? 'Kelime' : 'Soru ' + q.id));
+
+            area.insertAdjacentHTML('beforeend', `
+            <div class="card mb-4 border-start-0" id="card-${q.id}" style="${cardColorStyle}">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2 align-items-center">
+                        <div>
+                            <span class="badge bg-secondary" style="${badgeColor}">${badgeText}</span>
+                            ${savedStatus ? (savedStatus==='correct' ? '<span class="badge bg-success ms-1">Çözüldü</span>' : '<span class="badge bg-danger ms-1">Hatalı</span>') : ''}
+                        </div>
+                        ${actionBtn}
+                    </div>
+                    <p class="question-text">${formatQuestionText(q.text)}</p>
+                    <div id="opts-${q.id}">${optsInner}</div>
+                    <div id="feedback-${q.id}">${feedbackHTML}</div>
+                    
+                    <div id="tip-${q.id}" class="tip-box mt-3" style="display: ${tipDisplay};">
+                        ${tipContent}
+                    </div>
+                </div>
+            </div>`);
         });
 
-        let actionBtn = "";
-        if(!q.isVocab) {
-            if(q.isExam) {
-                actionBtn = `<button class="btn btn-sm btn-outline-success ms-auto btn-ai-explain" onclick="getAiExplanation(${q.id})" title="Gemini ile Çözümü Anlat"><i class="bi bi-lightbulb-fill"></i> AI Çözüm & Tüyo</button>`;
-            } else {
-                actionBtn = `<button class="btn btn-sm btn-outline-primary btn-ai-gen ms-auto" onclick="generateAiQuestions(${q.id})" title="Gemini ile Benzer Soru Üret"><i class="bi bi-stars"></i> Benzer Üret</button>`;
-            }
+        // Load More Butonu
+        if (qList.length > renderLimit) {
+            const remaining = qList.length - renderLimit;
+            area.insertAdjacentHTML('beforeend', `
+                <div class="text-center py-4">
+                    <button class="btn btn-lg btn-outline-primary px-5 shadow-sm" onclick="loadMoreQuestions()">
+                        <i class="bi bi-arrow-down-circle"></i> Daha Fazla Göster (+${remaining})
+                    </button>
+                </div>`);
         }
-
-        let tipContent = q.aiExplanation ? q.aiExplanation : (q.tip || "İpucu yok.");
-
-        htmlBuffer += `
-        <div class="card mb-4 border-start-0" id="card-${q.id}" style="${q.isExam ? 'border-left: 5px solid var(--exam-color);' : (q.isAi ? 'border-left: 5px solid var(--ai-color);' : (q.isVocab ? 'border-left: 5px solid var(--vocab-color);' : ''))}">
-            <div class="card-body">
-                <div class="d-flex justify-content-between mb-2 align-items-center">
-                    <div>
-                        <span class="badge ${q.isExam ? 'bg-primary' : (q.isAi ? 'bg-primary' : (q.isVocab ? 'bg-warning text-dark' : 'bg-secondary'))}" style="${q.isExam ? 'background-color: var(--exam-color)!important;' : (q.isAi ? 'background-color: var(--ai-color)!important;' : '')}">
-                            ${q.isExam ? 'Çıkmış Soru' : (q.isAi ? 'Gemini AI' : (q.isVocab ? 'Kelime' : 'Soru ' + q.id))}
-                        </span>
-                        ${status ? (status==='correct' ? '<span class="badge bg-success ms-1">Çözüldü</span>' : '<span class="badge bg-danger ms-1">Hatalı</span>') : ''}
-                    </div>
-                    ${actionBtn}
-                </div>
-                <p class="question-text">${formatQuestionText(q.text)}</p>
-                <div id="opts-${q.id}">${optsInner}</div>
-                <div id="feedback-${q.id}">${feedbackHTML}</div>
-                <div id="tip-${q.id}" class="tip-box" style="display: ${tipDisplay}; white-space: pre-wrap;">
-                    <strong>İPUCU / ÇÖZÜM:</strong><br>${tipContent}
-                </div>
-            </div>
-        </div>`;
-    });
-
-    area.innerHTML = htmlBuffer;
-
-    if (qList.length > renderLimit) {
-        const remaining = qList.length - renderLimit;
-        area.insertAdjacentHTML('beforeend', `
-            <div class="text-center py-3">
-                <button class="btn btn-lg btn-outline-primary px-5 shadow-sm" onclick="loadMoreQuestions()">
-                    <i class="bi bi-arrow-down-circle"></i> Sonraki 50 Soruyu Göster (+${remaining})
-                </button>
-            </div>`);
     }
-
-    area.insertAdjacentHTML('beforeend', `
-        <div class="text-center pb-4 mt-3">
-            <button class="btn btn-sm btn-secondary w-50" onclick="window.scrollTo({top: 0, behavior: 'smooth'});">
-                <i class="bi bi-arrow-up-circle"></i> Sayfa Başına Dön
-            </button>
-        </div>`);
-}
     
 // EKSİK OLAN FONKSİYON BURASI
     function formatQuestionText(text) {
@@ -7284,84 +7300,129 @@ function saveApiKey() {
 }
 
 async function getAiExplanation(questionId) {
-    if(!userApiKey) { alert("Lütfen API anahtarınızı giriniz."); openSettings(); return; }
+        if(!userApiKey) {
+            alert("Lütfen önce API Ayarları bölümünden Gemini anahtarınızı girin.");
+            openSettings();
+            return;
+        }
 
-    let q = allQuestions.find(i => i.id === questionId);
-    if(!q) return;
+        let q = allQuestions.find(i => i.id === questionId);
+        if(!q) return;
 
-    const tipBox = document.getElementById(`tip-${questionId}`);
-    tipBox.style.display = 'block';
-    tipBox.innerHTML = '<div class="spinner-border spinner-border-sm text-primary"></div> AI Çözüyor...';
+        const tipBox = document.getElementById(`tip-${questionId}`);
+        tipBox.style.display = 'block';
+        tipBox.innerHTML = '<div class="d-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-primary" role="status"></div> <span>Yapay zeka çözüyor...</span></div>';
 
-    const promptText = `
-        Sen uzman bir YDS öğretmenisin. Şu soruyu Türk öğrenciye detaylıca açıkla:
-        SORU: "${q.text}"
-        ŞIKLAR: A) ${q.options.A} B) ${q.options.B} C) ${q.options.C} D) ${q.options.D} E) ${q.options.E}
-        DOĞRU CEVAP: ${q.correctAnswer}
+        // GÜNCEL MODEL: gemini-1.5-flash
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${userApiKey}`;
         
-        Lütfen cevabın neden doğru olduğunu, diğer şıkların neden yanlış olduğunu ve bu soru tipi için bir ipucu ver. Türkçe yanıtla.
-    `;
+        const promptText = `
+            Sen bir YDS sınav uzmanısın. Şu soruyu Türkçe olarak, adım adım ve eğitici bir dille açıkla:
+            
+            SORU: "${q.text}"
+            ŞIKLAR: A) ${q.options.A}, B) ${q.options.B}, C) ${q.options.C}, D) ${q.options.D}, E) ${q.options.E}
+            DOĞRU CEVAP: ${q.correctAnswer}
+            
+            1. Soruyu Türkçe'ye çevir.
+            2. Neden bu cevabın doğru olduğunu dilbilgisi kurallarıyla anlat.
+            3. Diğer şıkların neden yanlış olduğunu kısaca belirt.
+            4. Bu soru tipi için bir 'Tüyo' ver.
+        `;
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${userApiKey}`;
-    
-    try {
-        const response = await fetch(url, {
-            method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
-        });
-        const data = await response.json();
-        const explanation = data.candidates[0].content.parts[0].text;
-        
-        q.aiExplanation = explanation;
-        tipBox.innerHTML = `<strong>AI ÇÖZÜMÜ:</strong><br>${explanation.replace(/\n/g, '<br>')}`;
-    } catch (e) {
-        tipBox.innerHTML = "Hata oluştu: " + e.message;
-    }
-}
-
-async function generateAiQuestions(sourceId) {
-    if(!userApiKey) { alert("API Anahtarı gerekli."); openSettings(); return; }
-
-    let sourceQ = allQuestions.find(q => q.id === sourceId) || generatedQuestions.find(q => q.id === sourceId);
-    
-    document.getElementById('loadingOverlay').classList.remove('d-none');
-
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${userApiKey}`;
-    const promptText = `
-        You are a strict exam question cloner.
-        INPUT: "${sourceQ.text}"
-        TASK: Generate 3 NEW questions structurally identical to this one.
-        OUTPUT: Strict JSON array. Keys: "text", "options" (A-E), "correctAnswer", "tip" (Turkish).
-    `;
-
-    try {
-        const response = await fetch(url, {
-            method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ 
-                contents: [{ parts: [{ text: promptText }] }],
-                generationConfig: { response_mime_type: "application/json" }
-            })
-        });
-        const data = await response.json();
-        const newQuestions = JSON.parse(data.candidates[0].content.parts[0].text);
-
-        newQuestions.forEach((nq, index) => {
-            const newId = Date.now() + index; 
-            generatedQuestions.push({
-                id: newId, text: nq.text, options: nq.options,
-                correctAnswer: nq.correctAnswer, tip: nq.tip + " (AI)", isAi: true
+        try {
+            const response = await fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
             });
-        });
 
-        localStorage.setItem('yds_generated', JSON.stringify(generatedQuestions));
-        renderMenu();
-        alert("Sorular üretildi! 'Yapay Zeka' bölümüne bakınız.");
-    } catch (e) {
-        alert("Hata: " + e.message);
-    } finally {
-        document.getElementById('loadingOverlay').classList.add('d-none');
+            const data = await response.json();
+            
+            // HATA KONTROLÜ (Cannot read properties of undefined hatasını çözer)
+            if (!data.candidates || data.candidates.length === 0) {
+                throw new Error("Yapay zeka boş cevap döndü veya API anahtarı hatalı.");
+            }
+
+            const explanation = data.candidates[0].content.parts[0].text;
+            q.aiExplanation = explanation;
+            
+            // Eski ipucunun üzerine yazıyoruz
+            tipBox.innerHTML = `<strong><i class="bi bi-robot"></i> AI ÖĞRETMEN ÇÖZÜMÜ:</strong><br><br>${explanation.replace(/\n/g, '<br>')}`;
+            
+        } catch (error) {
+            tipBox.innerHTML = `<span class="text-danger">Hata: ${error.message}</span>`;
+        }
     }
-}
+
+    async function generateAiQuestions(sourceId) {
+        if(!userApiKey) {
+            alert("API Anahtarı girilmemiş!");
+            openSettings();
+            return;
+        }
+
+        let sourceQ = allQuestions.find(q => q.id === sourceId) || generatedQuestions.find(q => q.id === sourceId);
+        document.getElementById('loadingOverlay').classList.remove('d-none');
+
+        // GÜNCEL MODEL
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${userApiKey}`;
+        
+        const promptText = `
+            YDS sınavı için soru klonla.
+            Orijinal Soru: "${sourceQ.text}"
+            Cevap: ${sourceQ.correctAnswer}
+            Kural: "${sourceQ.tip}"
+
+            Görevin: Bu soruya gramer yapısı ve zorluk olarak BENZER 2 yeni soru üret.
+            
+            Çıktı FORMATI (Sadece saf JSON dizisi ver):
+            [
+              { "text": "Soru metni (boşluk için ___ kullan)", "options": {"A": "...", "B": "...", "C": "...", "D": "...", "E": "..."}, "correctAnswer": "A", "tip": "İpucu" }
+            ]
+        `;
+
+        try {
+            const response = await fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
+            });
+
+            const data = await response.json();
+            
+            // HATA KONTROLÜ
+            if (!data.candidates || !data.candidates[0].content) {
+                throw new Error("API yanıt vermedi.");
+            }
+
+            let rawText = data.candidates[0].content.parts[0].text;
+            // Markdown temizliği (```json ... ``` gibi gelenleri temizler)
+            rawText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+            
+            const newQuestions = JSON.parse(rawText);
+
+            newQuestions.forEach((nq, index) => {
+                const newId = Date.now() + index; 
+                generatedQuestions.push({
+                    id: newId,
+                    text: nq.text,
+                    options: nq.options,
+                    correctAnswer: nq.correctAnswer,
+                    tip: nq.tip + " (AI Üretimi)",
+                    isAi: true
+                });
+            });
+
+            localStorage.setItem('yds_generated', JSON.stringify(generatedQuestions));
+            renderMenu();
+            alert(`${newQuestions.length} yeni soru üretildi! Menüden 'YAPAY ZEKA' bölümüne git.`);
+
+        } catch (error) {
+            alert("Hata: " + error.message);
+        } finally {
+            document.getElementById('loadingOverlay').classList.add('d-none');
+        }
+    }
 
 function fullReset() {
         if (!confirm("TÜM ilerlemeniz ve ayarlarınız silinecek. Emin misiniz?")) return;
