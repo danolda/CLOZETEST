@@ -7461,103 +7461,80 @@ function saveApiKey() {
     }
 
     // --- YARDIMCI FONKSİYONLAR ---
-    async function callGemini(url, promptText) {
-        const response = await fetch(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
-        });
-        const json = await response.json();
-        if (!json.candidates || !json.candidates[0].content) throw new Error("API yanıt vermedi.");
-        return json.candidates[0].content.parts[0].text;
-    }
+    // --- 1. BUTON: ANALİZ VE ÇEVİRİ (DÜZELTİLDİ) ---
+    async function getAiAnalysis(questionId) {
+        if(!userApiKey) { alert("API Anahtarı eksik!"); openSettings(); return; }
 
-    function showLoading(id, msg) {
-        const box = document.getElementById(`tip-${id}`);
-        box.style.display = 'block';
-        box.innerHTML = `<div class="d-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-primary"></div> <span>${msg}</span></div>`;
-    }
-
-    function showTipBox(id, title, icon, content) {
-        const box = document.getElementById(`tip-${id}`);
-        box.style.display = 'block';
-        // İçeriği değiştirirken kutuyu biraz parlat
-        box.style.backgroundColor = document.body.getAttribute('data-theme') === 'dark' ? '#37474f' : '#e3f2fd';
-        box.innerHTML = `<strong><i class="bi ${icon}"></i> ${title}:</strong><br><br>${content}`;
-    }
-
-    function showError(id, msg) {
-        document.getElementById(`tip-${id}`).innerHTML = `<span class="text-danger">Hata: ${msg}</span>`;
-    }
-
-    async function generateAiQuestions(sourceId) {
-        if(!userApiKey) {
-            alert("API Anahtarı girilmemiş!");
-            openSettings();
+        // DÜZELTME BURADA: Hem ana havuza hem de AI havuzuna bakıyoruz
+        let q = allQuestions.find(i => i.id === questionId) || generatedQuestions.find(i => i.id === questionId);
+        
+        if(!q) {
+            console.error("Soru bulunamadı ID:", questionId);
             return;
         }
 
-        let sourceQ = allQuestions.find(q => q.id === sourceId) || generatedQuestions.find(q => q.id === sourceId);
-        document.getElementById('loadingOverlay').classList.remove('d-none');
+        // Eğer daha önce hafızaya aldıysak tekrar sorma, direkt göster
+        if(q.aiAnalysisData) {
+            showTipBox(q.id, "Analiz & Çeviri", "bi-translate", q.aiAnalysisData);
+            return;
+        }
 
-        // GÜNCEL MODEL
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${userApiKey}`;
-        
-        const promptText = `
-            YDS sınavı için soru klonla.
-            Orijinal Soru: "${sourceQ.text}"
-            Cevap: ${sourceQ.correctAnswer}
-            Kural: "${sourceQ.tip}"
+        showLoading(q.id, "Analiz yapılıyor...");
 
-            Görevin: Bu soruya gramer yapısı ve zorluk olarak BENZER 2 yeni soru üret.
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${userApiKey}`;
+        const prompt = `
+            Sen uzman bir İngilizce öğretmenisin. Aşağıdaki YDS sorusu için şu formatta yanıt ver:
             
-            Çıktı FORMATI (Sadece saf JSON dizisi ver):
-            [
-              { "text": "Soru metni (boşluk için ___ kullan)", "options": {"A": "...", "B": "...", "C": "...", "D": "...", "E": "..."}, "correctAnswer": "A", "tip": "İpucu" }
-            ]
+            SORU: "${q.text}"
+            ŞIKLAR: A) ${q.options.A}, B) ${q.options.B}, C) ${q.options.C}, D) ${q.options.D}, E) ${q.options.E}
+            DOĞRU: ${q.correctAnswer}
+
+            Lütfen şu 3 başlığı detaylıca açıkla (HTML kullanma, düz metin):
+            1. SORUNUN TÜRKÇE ÇEVİRİSİ: (Cümleyi tam çevir)
+            2. NEDEN DOĞRU?: (Gramer yapısı veya kelime anlamı üzerinden açıkla)
+            3. NEDEN YANLIŞ?: (Diğer şıkların neden olmadığını kısaca açıkla)
         `;
 
         try {
-            const response = await fetch(url, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
-            });
+            const data = await callGemini(url, prompt);
+            q.aiAnalysisData = data.replace(/\n/g, '<br>'); // Kaydet
+            showTipBox(q.id, "Analiz & Çeviri", "bi-translate", q.aiAnalysisData);
+        } catch (e) { showError(q.id, e.message); }
+    }
 
-            const data = await response.json();
-            
-            // HATA KONTROLÜ
-            if (!data.candidates || !data.candidates[0].content) {
-                throw new Error("API yanıt vermedi.");
-            }
+    // --- 2. BUTON: SADECE TÜYO (DÜZELTİLDİ) ---
+    async function getAiTip(questionId) {
+        if(!userApiKey) { alert("API Anahtarı eksik!"); openSettings(); return; }
 
-            let rawText = data.candidates[0].content.parts[0].text;
-            // Markdown temizliği (```json ... ``` gibi gelenleri temizler)
-            rawText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
-            
-            const newQuestions = JSON.parse(rawText);
-
-            newQuestions.forEach((nq, index) => {
-                const newId = Date.now() + index; 
-                generatedQuestions.push({
-                    id: newId,
-                    text: nq.text,
-                    options: nq.options,
-                    correctAnswer: nq.correctAnswer,
-                    tip: nq.tip + " (AI Üretimi)",
-                    isAi: true
-                });
-            });
-
-            localStorage.setItem('yds_generated', JSON.stringify(generatedQuestions));
-            renderMenu();
-            alert(`${newQuestions.length} yeni soru üretildi! Menüden 'YAPAY ZEKA' bölümüne git.`);
-
-        } catch (error) {
-            alert("Hata: " + error.message);
-        } finally {
-            document.getElementById('loadingOverlay').classList.add('d-none');
+        // DÜZELTME BURADA: Hem ana havuza hem de AI havuzuna bakıyoruz
+        let q = allQuestions.find(i => i.id === questionId) || generatedQuestions.find(i => i.id === questionId);
+        
+        if(!q) {
+            console.error("Soru bulunamadı ID:", questionId);
+            return;
         }
+
+        if(q.aiTipData) {
+            showTipBox(q.id, "Altın Tüyo", "bi-stars", q.aiTipData);
+            return;
+        }
+
+        showLoading(q.id, "Tüyo hazırlanıyor...");
+
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${userApiKey}`;
+        const prompt = `
+            Bu YDS sorusu için öğrencime sadece bir "Sınav Tüyosu" ver.
+            Soru metni: "${q.text}"
+            Cevap: ${q.correctAnswer}
+            
+            İstek: Uzun çeviri veya açıklama yapma. Sadece bu soru tipini çözerken nelere dikkat etmeli, hangi ipucunu yakalamalı? Kısa ve öz bir strateji ver.
+        `;
+
+        try {
+            const data = await callGemini(url, prompt);
+            q.aiTipData = data.replace(/\n/g, '<br>'); // Kaydet
+            showTipBox(q.id, "Altın Tüyo", "bi-stars", q.aiTipData);
+        } catch (e) { showError(q.id, e.message); }
     }
 
 function fullReset() {
