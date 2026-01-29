@@ -7079,31 +7079,33 @@ function renderQuestions(qList) {
         visibleList.forEach(q => {
             const savedStatus = progressData[q.id];
             
-            let feedbackHTML = "";
-            // TİP GÖSTERME MANTIĞI DÜZELTİLDİ:
-            // 1. Eğer AI cevabı varsa -> GÖSTER (block)
-            // 2. Yoksa ve bu bir sınav sorusu DEĞİLSE (Normal testse) ve ipucu varsa -> GÖSTER (block)
-            // 3. Hiçbiri değilse -> GİZLE (none)
-            let tipDisplay = "none";
-            
+            // --- 1. İPUCU İÇERİĞİ MANTIĞI ---
+            // Eğer AI açıklaması alındıysa onu göster, yoksa veritabanındaki kısa tüyoyu göster.
+            let tipContent = "";
             if (q.aiExplanation) {
-                tipDisplay = "block";
-            } else if (!q.isExam && q.tip) {
+                tipContent = `<strong><i class="bi bi-robot"></i> AI DETAYLI ÇÖZÜM:</strong><br>${q.aiExplanation.replace(/\n/g, '<br>')}`;
+            } else {
+                tipContent = `<strong><i class="bi bi-lightbulb"></i> İPUCU:</strong> ${q.tip || "Bu soru için ipucu bulunmuyor."}`;
+            }
+
+            // --- 2. GİZLE/GÖSTER MANTIĞI ---
+            // AI açıklaması varsa VEYA soru yanlış yapıldıysa kutuyu aç.
+            let tipDisplay = "none";
+            if (q.aiExplanation || savedStatus === 'wrong') {
                 tipDisplay = "block";
             }
 
-            // Cevap durumu kontrolü
+            // --- 3. CEVAP DURUMU (DOĞRU/YANLIŞ) ---
+            let feedbackHTML = "";
             if (savedStatus) {
                 if (savedStatus === 'correct') {
                     feedbackHTML = `<div class="mt-2 text-success fw-bold"><i class="bi bi-check-circle"></i> Doğru!</div>`;
                 } else {
                     feedbackHTML = `<div class="mt-2 text-danger fw-bold"><i class="bi bi-x-circle"></i> Yanlış. Cevap: ${q.correctAnswer}</div>`;
-                    // Yanlış yapılınca sınav sorusu olsa bile ipucu varsa göster
-                    if(q.isExam && q.aiExplanation) tipDisplay = "block";
                 }
             }
 
-            // Şıkları Oluştur
+            // --- 4. ŞIKLARI OLUŞTUR ---
             let optsInner = "";
             ['A', 'B', 'C', 'D', 'E'].forEach(opt => {
                 let rowClass = "";
@@ -7118,37 +7120,46 @@ function renderQuestions(qList) {
                 </div>`;
             });
 
-            // BUTON MANTIĞI (Soru Üret Butonu Geri Geldi)
-            let actionBtn = "";
+            // --- 5. BUTONLAR (Hepsinde Gözüksün) ---
+            let actionBtnHTML = "";
             
-            if (!q.isVocab) {
-                if (q.isExam) {
-                    // Çıkmış Soru -> AI Çözüm İste
-                    actionBtn = `
-                    <button class="btn btn-sm btn-outline-success ms-auto" onclick="getAiExplanation(${q.id})">
+            if (!q.isVocab) { // Sadece kelime sorularında buton olmasın
+                const btnExplain = `
+                    <button class="btn btn-sm btn-outline-success" onclick="getAiExplanation(${q.id})" title="Detaylı Çözüm İste">
                         <i class="bi bi-magic"></i> AI Çözüm & Tüyo
                     </button>`;
-                } else {
-                    // Normal Test -> Benzer Soru Üret
-                    actionBtn = `
-                    <button class="btn btn-sm btn-outline-primary ms-auto" onclick="generateAiQuestions(${q.id})">
+                
+                const btnGenerate = `
+                    <button class="btn btn-sm btn-outline-primary" onclick="generateAiQuestions(${q.id})" title="Benzer Soru Üret">
                         <i class="bi bi-stars"></i> Benzer Üret
                     </button>`;
-                }
+
+                // Çıkmış soru da olsa, normal soru da olsa ikisi de görünsün
+                actionBtnHTML = `<div class="d-flex gap-1">${btnGenerate}${btnExplain}</div>`;
             }
 
-            // İpucu İçeriği
-            let tipContent = q.aiExplanation ? `<strong><i class="bi bi-robot"></i> AI ÖĞRETMEN ÇÖZÜMÜ:</strong><br>${q.aiExplanation.replace(/\n/g, '<br>')}` : `<strong><i class="bi bi-lightbulb"></i> İPUCU:</strong> ${q.tip || "Yok"}`;
-
-            // Kart HTML'i
+            // --- 6. RENK VE ETİKETLER ---
             let cardColorStyle = "";
-            if (q.isExam) cardColorStyle = "border-left: 5px solid var(--exam-color);";
-            else if (q.isAi) cardColorStyle = "border-left: 5px solid var(--ai-color);";
-            else if (q.isVocab) cardColorStyle = "border-left: 5px solid var(--vocab-color);";
+            let badgeColor = "";
+            let badgeText = "";
 
-            let badgeColor = q.isExam ? 'background-color: var(--exam-color)!important;' : (q.isAi ? 'background-color: var(--ai-color)!important;' : '');
-            let badgeText = q.isExam ? 'Çıkmış Soru' : (q.isAi ? 'Yapay Zeka' : (q.isVocab ? 'Kelime' : 'Soru ' + q.id));
+            if (q.isExam) {
+                cardColorStyle = "border-left: 5px solid var(--exam-color);";
+                badgeColor = "background-color: var(--exam-color)!important;";
+                badgeText = "Çıkmış Soru";
+            } else if (q.isAi) {
+                cardColorStyle = "border-left: 5px solid var(--ai-color);";
+                badgeColor = "background-color: var(--ai-color)!important;";
+                badgeText = "Yapay Zeka";
+            } else if (q.isVocab) {
+                cardColorStyle = "border-left: 5px solid var(--vocab-color);";
+                badgeColor = "background-color: var(--vocab-color)!important;";
+                badgeText = "Kelime";
+            } else {
+                badgeText = "Soru " + q.id;
+            }
 
+            // --- 7. HTML ÇIKTISI ---
             area.insertAdjacentHTML('beforeend', `
             <div class="card mb-4 border-start-0" id="card-${q.id}" style="${cardColorStyle}">
                 <div class="card-body">
@@ -7157,7 +7168,7 @@ function renderQuestions(qList) {
                             <span class="badge bg-secondary" style="${badgeColor}">${badgeText}</span>
                             ${savedStatus ? (savedStatus==='correct' ? '<span class="badge bg-success ms-1">Çözüldü</span>' : '<span class="badge bg-danger ms-1">Hatalı</span>') : ''}
                         </div>
-                        ${actionBtn}
+                        ${actionBtnHTML}
                     </div>
                     <p class="question-text">${formatQuestionText(q.text)}</p>
                     <div id="opts-${q.id}">${optsInner}</div>
@@ -7170,13 +7181,13 @@ function renderQuestions(qList) {
             </div>`);
         });
 
-        // Load More Butonu
+        // Load More
         if (qList.length > renderLimit) {
             const remaining = qList.length - renderLimit;
             area.insertAdjacentHTML('beforeend', `
                 <div class="text-center py-4">
                     <button class="btn btn-lg btn-outline-primary px-5 shadow-sm" onclick="loadMoreQuestions()">
-                        <i class="bi bi-arrow-down-circle"></i> Daha Fazla Göster (+${remaining})
+                        <i class="bi bi-arrow-down-circle"></i> Sonraki 50 Soruyu Göster (+${remaining})
                     </button>
                 </div>`);
         }
@@ -7279,7 +7290,58 @@ function goToFirstUnsolved() {
         }
     }, 50);
 }
+// --- TEMİZLEME BUTONU İÇİN EKSİK OLAN FONKSİYON ---
+    function resetCurrentSection() {
+        if (!currentSectionKey) {
+            alert("Lütfen önce bir bölüm seçiniz.");
+            return;
+        }
 
+        if (!confirm("Bu bölümdeki ilerlemeniz ve cevaplarınız silinecek. Emin misiniz?")) return;
+        
+        let targetIds = [];
+
+        // 1. Yanlışlar Bölümü ise
+        if (currentSectionKey === 'mistakes') {
+            wrongBank = [];
+            localStorage.setItem('yds_mistakes', JSON.stringify([]));
+            // Yanlış bankasındaki tüm soruların cevap geçmişini de temizle
+            const mistakeQuestions = allQuestions.filter(q => wrongBank.includes(q.id));
+            mistakeQuestions.forEach(q => targetIds.push(q.id));
+            showMistakes();
+        } 
+        // 2. Yapay Zeka Bölümü ise
+        else if (currentSectionKey === 'ai') {
+            if(confirm("AI tarafından üretilen sorular tamamen silinsin mi? (Geri alınamaz)")) {
+                generatedQuestions.forEach(q => targetIds.push(q.id));
+                generatedQuestions = [];
+                localStorage.removeItem('yds_generated');
+            } else {
+                // Sadece cevapları temizle, sorular kalsın
+                generatedQuestions.forEach(q => targetIds.push(q.id));
+            }
+        } 
+        // 3. Normal Bölümler ise
+        else {
+            const secData = sections.find(s => s.key === currentSectionKey);
+            if (secData) {
+                const qList = allQuestions.filter(q => q.id >= secData.start && q.id <= secData.end);
+                qList.forEach(q => targetIds.push(q.id));
+            }
+        }
+
+        // İlerlemeyi (progressData) temizle
+        targetIds.forEach(id => {
+            delete progressData[id];
+            delete progressData[id + '_selected'];
+        });
+
+        localStorage.setItem('yds_progress', JSON.stringify(progressData));
+        
+        // Ekranı Yenile
+        if(currentSectionKey === 'ai') showAiGenerated();
+        else if(currentSectionKey !== 'mistakes') showSection(currentSectionKey);
+    }
 /* ================= AI FONKSİYONLARI ================= */
 
 function openSettings() {
