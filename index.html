@@ -7165,7 +7165,13 @@ function renderQuestions(qList) {
             </button>
         </div>`);
 }
-
+    
+// EKSİK OLAN FONKSİYON BURASI
+    function formatQuestionText(text) {
+        if (!text) return "";
+        return text.replace(/___/g, "__________");
+    }
+    
 function checkAnswer(qId, selectedOpt) {
     let q = allQuestions.find(i => i.id === qId);
     if(!q) q = generatedQuestions.find(i => i.id === qId);
