@@ -3686,7 +3686,36 @@ function renderQuestions(qList) {
         localStorage.clear();
         location.reload();
     }
+    
+function loadMoreQuestions() {
+    // 1. Limiti Artır
+    renderLimit += 50;
 
+    // 2. Şu an hangi bölümde olduğumuzu bul
+    let activeList = [];
+    
+    if (currentSectionKey === 'mistakes') {
+        const mistakeQuestions = allQuestions.filter(q => wrongBank.includes(q.id));
+        const mistakeAi = generatedQuestions.filter(q => wrongBank.includes(q.id));
+        activeList = [...mistakeQuestions, ...mistakeAi];
+    } else if (currentSectionKey === 'ai') {
+        activeList = [...generatedQuestions].reverse();
+    } else {
+        // Normal bölümler
+        const secData = sections.find(s => s.key === currentSectionKey);
+        if(secData) {
+            activeList = allQuestions.filter(q => q.id >= secData.start && q.id <= secData.end);
+        }
+    }
+
+    // 3. Listeyi yeni limitle tekrar çiz
+    if (activeList.length > 0) {
+        renderQuestions(activeList);
+        
+        // Kullanıcıya hissettirmeden hafifçe aşağı kaydır (opsiyonel, akıcılık için)
+        // window.scrollBy({ top: 100, behavior: 'smooth' });
+    }
+}
     function toggleTheme() {
         const body = document.body;
         if(body.getAttribute('data-theme') === 'dark') { body.removeAttribute('data-theme'); localStorage.setItem('yds_theme', 'light'); }
