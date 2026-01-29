@@ -8207,43 +8207,100 @@ const rawExamVocabA = `1-C 2-D 3-A 4-A 5-E 6-B 7-E 8-E 9-B 10-A 11-C 12-D 13-C 1
         });
         return qList;
     }
-
-    function loadData() {
+// --- BU FONKSIYONU EKLEMEZSEN YENI SORULAR YUKLENMEZ ---
+    function parseRawData(qText, aText, startIdOffset) {
+        const parsedQuestions = [];
         const answerMap = {};
-        const ansRegex = /(\d+):([A-E])/g;
+        
+        // Cevap Anahtarını İşle
+        const ansRegex = /(\d+)\s*[:\-\u2013]\s*([A-E])/g; 
         let match;
-        while ((match = ansRegex.exec(rawAnswersText)) !== null) answerMap[match[1]] = match[2];
+        while ((match = ansRegex.exec(aText)) !== null) {
+            answerMap[match[1]] = match[2];
+        }
 
-        const lines = rawQuestionsText.split('\n');
+        const lines = qText.split('\n');
         let currentQ = null;
         
         lines.forEach(line => {
             line = line.trim();
             if (!line) return;
-            if (/^\d+\)/.test(line)) {
-                if (currentQ) { currentQ.correctAnswer = answerMap[currentQ.id]; allQuestions.push(currentQ); }
-                currentQ = { id: parseInt(line.split(')')[0]), text: line.split(')').slice(1).join(')').trim(), options: {}, tip: "" };
+
+            // Soru Başlangıcını Yakala (1. veya 142. gibi)
+            if (/^\d+[\.\)\-]/.test(line)) {
+                if (currentQ) { 
+                    const realID = startIdOffset + currentQ.localId;
+                    currentQ.id = realID;
+                    currentQ.correctAnswer = answerMap[currentQ.localId];
+                    // Cevabı olmayan soruyu ekleme
+                    if(currentQ.correctAnswer) parsedQuestions.push(currentQ);
+                }
+
+                const qNum = parseInt(line.match(/^\d+/)[0]);
+                let textContent = line.replace(/^\d+[\.\)\-]\s*/, '').trim();
+                let yearTip = "Çıkmış Soru";
+                
+                // Yıl bilgisini yakala (2025 YDT) gibi
+                const yearMatch = textContent.match(/\((.*?YDT.*?|.*?YÖKDİL.*?)\)/);
+                if(yearMatch) yearTip = yearMatch[1]; 
+
+                currentQ = { 
+                    localId: qNum, 
+                    id: 0, 
+                    text: textContent, 
+                    options: {}, 
+                    tip: yearTip,
+                    isExam: true // Çıkmış soru olduğunu işaretle
+                };
             } 
             else if (currentQ) {
+                // Şıkları Yakala
                 if (line.startsWith('A)')) currentQ.options.A = line.substring(2).trim();
                 else if (line.startsWith('B)')) currentQ.options.B = line.substring(2).trim();
                 else if (line.startsWith('C)')) currentQ.options.C = line.substring(2).trim();
                 else if (line.startsWith('D)')) currentQ.options.D = line.substring(2).trim();
                 else if (line.startsWith('E)')) currentQ.options.E = line.substring(2).trim();
-                else if (line.startsWith('TIP:')) currentQ.tip = line.substring(4).trim();
+                // Şık değilse soru metninin devamıdır
+                else if (!line.match(/^[A-E]\)/)) currentQ.text += " " + line;
             }
         });
-        if (currentQ) { currentQ.correctAnswer = answerMap[currentQ.id]; allQuestions.push(currentQ); }
 
-        // KELİMELERİ EKLE
+        // Son soruyu kaydet
+        if (currentQ) {
+            const realID = startIdOffset + currentQ.localId;
+            currentQ.id = realID;
+            currentQ.correctAnswer = answerMap[currentQ.localId];
+            if(currentQ.correctAnswer) parsedQuestions.push(currentQ);
+        }
+
+        return parsedQuestions;
+    }
+    function loadData() {
+        allQuestions = []; 
+
+        // 1. Manuel Eklenen Eski Sorular (Varsa)
+        if(typeof rawQuestionsText !== 'undefined' && typeof rawAnswersText !== 'undefined') {
+             // Eski formatı destekleyen manuel parse
+             const oldQuestions = parseRawData(rawQuestionsText, rawAnswersText, 0);
+             allQuestions = allQuestions.concat(oldQuestions);
+        }
+
+        // 2. Çıkmış Soruları Yükle (PDF'ten gelenler)
+        if(rawExamPrepQ) allQuestions = allQuestions.concat(parseRawData(rawExamPrepQ, rawExamPrepA, 3000));
+        if(rawExamConjQ) allQuestions = allQuestions.concat(parseRawData(rawExamConjQ, rawExamConjA, 3200));
+        if(rawExamTenseQ) allQuestions = allQuestions.concat(parseRawData(rawExamTenseQ, rawExamTenseA, 3500));
+        if(rawExamVocabQ) allQuestions = allQuestions.concat(parseRawData(rawExamVocabQ, rawExamVocabA, 3800));
+
+        // 3. Kelime Havuzu
         const vocabQuestions = generateVocabQuestions();
         allQuestions = allQuestions.concat(vocabQuestions);
 
+        // 4. Verileri Çek
         if(localStorage.getItem('yds_progress')) progressData = JSON.parse(localStorage.getItem('yds_progress'));
         if(localStorage.getItem('yds_mistakes')) wrongBank = JSON.parse(localStorage.getItem('yds_mistakes'));
         if(localStorage.getItem('yds_generated')) generatedQuestions = JSON.parse(localStorage.getItem('yds_generated'));
 
-        renderMenu(); // Veri yüklendikten sonra menüyü çiz
+        renderMenu();
     }
 
     /* ================= ARAYÜZ (UI) ================= */
@@ -8834,7 +8891,7 @@ const rawExamVocabA = `1-C 2-D 3-A 4-A 5-E 6-B 7-E 8-E 9-B 10-A 11-C 12-D 13-C 1
         if (activeList.length > 0) {
             renderQuestions(activeList);
         }
-    }
+    }}
 
     // 3. Listeyi yeni limitle tekrar çiz
     if (activeList.length > 0) {
