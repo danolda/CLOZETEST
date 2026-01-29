@@ -6960,8 +6960,12 @@ function parseRawData(qText, aText, startIdOffset, isExamBatch) { // isExamBatch
                 else if (line.startsWith('D)')) currentQ.options.D = line.substring(2).trim();
                 else if (line.startsWith('E)')) currentQ.options.E = line.substring(2).trim();
                 else if (line.startsWith('TIP:')) {
-                    // Normal sorulardaki TIP satırını yakala
-                    if(!isExamBatch) currentQ.tip = line.substring(4).trim();
+                    // Sadece Sınav Sorusu DEĞİLSE o satırdaki tüyoyu al
+                    // Çünkü sınav sorularında bu satır yok, ama biz 'tip' alanına yıl bilgisini zaten üstte koyduk.
+                    // Eğer normal bir test ise, yıl bilgisi yoktur, TIP satırından geleni 'tip' değişkenine ata.
+                    if (!isExamBatch) {
+                        currentQ.tip = line.substring(4).trim();
+                    }
                 }
                 else if (!line.match(/^[A-E]\)/)) currentQ.text += " " + line;
             }
@@ -7085,54 +7089,58 @@ function updateActiveMenu(id) {
 function renderQuestions(qList) {
         const area = document.getElementById('questions-area');
         area.innerHTML = "";
-        
         const visibleList = qList.slice(0, renderLimit);
 
         visibleList.forEach(q => {
             const savedStatus = progressData[q.id];
             
-            // --- İPUCU İÇERİĞİ ---
-            let tipContent = "";
-            let tipIcon = "bi-lightbulb";
-            let tipTitle = "İPUCU";
+            // --- 1. ETİKET BELİRLEME (ID'ye Göre Doğru İsimlendirme) ---
+            let badgeText = "Soru";
+            let badgeColorStyle = "background-color: #6c757d !important;"; // Gri default
+            let borderStyle = "";
 
-            if (q.aiExplanation) {
-                tipContent = q.aiExplanation.replace(/\n/g, '<br>');
-                tipIcon = "bi-robot";
-                tipTitle = "AI DETAYLI ÇÖZÜM";
-            } else {
-                // Eğer normal soruysa ve veritabanında TIP varsa onu kullan
-                // Eğer çıkmış soruysa ve TIP (Yıl bilgisi) varsa onu kullanma, 'İpucu yok' de (veya AI bekleniyor de)
-                if(!q.isExam && q.tip) {
-                    tipContent = q.tip;
-                } else {
-                    tipContent = "Bu soru için henüz detaylı açıklama alınmadı. 'AI Çözüm' butonuna basarak öğrenebilirsin.";
-                }
+            if (q.isVocab) {
+                badgeText = "Kelime";
+                badgeColorStyle = "background-color: var(--vocab-color)!important;";
+                borderStyle = "border-left: 5px solid var(--vocab-color);";
+            } 
+            else if (q.isAi) {
+                badgeText = "Yapay Zeka";
+                badgeColorStyle = "background-color: var(--ai-color)!important;";
+                borderStyle = "border-left: 5px solid var(--ai-color);";
+            }
+            else if (q.id >= 3000 && q.id <= 3200) { badgeText = "Çıkmış Prepositions"; borderStyle = "border-left: 5px solid var(--exam-color);"; badgeColorStyle = "background-color: var(--exam-color)!important;"; }
+            else if (q.id >= 3201 && q.id <= 3500) { badgeText = "Çıkmış Bağlaçlar"; borderStyle = "border-left: 5px solid var(--exam-color);"; badgeColorStyle = "background-color: var(--exam-color)!important;"; }
+            else if (q.id >= 3501 && q.id <= 3800) { badgeText = "Çıkmış Tense/Modals"; borderStyle = "border-left: 5px solid var(--exam-color);"; badgeColorStyle = "background-color: var(--exam-color)!important;"; }
+            else if (q.id >= 3801 && q.id <= 4200) { badgeText = "Çıkmış Kelime"; borderStyle = "border-left: 5px solid var(--exam-color);"; badgeColorStyle = "background-color: var(--exam-color)!important;"; }
+            else if (q.id >= 1 && q.id <= 70) { badgeText = "Prepositions"; borderStyle = "border-left: 5px solid #0d6efd;"; badgeColorStyle = "background-color: #0d6efd!important;"; }
+            else if (q.id >= 71 && q.id <= 130) { badgeText = "Conjunctions"; borderStyle = "border-left: 5px solid #0d6efd;"; badgeColorStyle = "background-color: #0d6efd!important;"; }
+            else if (q.id >= 131 && q.id <= 190) { badgeText = "Relative Clauses"; borderStyle = "border-left: 5px solid #0d6efd;"; badgeColorStyle = "background-color: #0d6efd!important;"; }
+            else if (q.id >= 191 && q.id <= 250) { badgeText = "Tense & Modals"; borderStyle = "border-left: 5px solid #0d6efd;"; badgeColorStyle = "background-color: #0d6efd!important;"; }
+
+            // --- 2. İPUCU KUTUSU İÇERİĞİ ---
+            // Varsayılan: Eğer veritabanında kısa tüyo varsa onu hazırla
+            let initialTipContent = "";
+            let initialTipDisplay = "none";
+
+            // Eğer kullanıcı daha önce AI butonuna bastıysa o kalsın
+            if (q.aiAnalysisData) {
+                initialTipContent = `<strong><i class="bi bi-translate"></i> Analiz & Çeviri:</strong><br><br>${q.aiAnalysisData}`;
+                initialTipDisplay = "block";
+            } 
+            else if (q.aiTipData) {
+                initialTipContent = `<strong><i class="bi bi-stars"></i> Altın Tüyo:</strong><br><br>${q.aiTipData}`;
+                initialTipDisplay = "block";
+            }
+            // Hiçbiri yoksa ve yanlış yaptıysa veritabanındaki kısa tüyoyu göster
+            else if (savedStatus === 'wrong' && q.tip && !q.isExam) { 
+                // Not: !q.isExam dedik çünkü çıkmış sorulardaki 'tip' alanı yıl bilgisini tutuyor olabilir, 
+                // ama normal sorularda (1-250) gramer tüyosu tutuyor.
+                initialTipContent = `<strong><i class="bi bi-lightbulb"></i> İPUCU:</strong> ${q.tip}`;
+                initialTipDisplay = "block";
             }
 
-            // --- GİZLE/GÖSTER MANTIĞI ---
-            // 1. AI açıklaması varsa -> GÖSTER
-            // 2. Yanlış yapıldıysa VE (Normal soruysa VEYA Çıkmış soru olup AI açıklaması varsa) -> GÖSTER
-            // Normal sorularda tip veritabanından geldiği için hemen gösteriyoruz.
-            let tipDisplay = "none";
-            if (q.aiExplanation) {
-                tipDisplay = "block";
-            } else if (savedStatus === 'wrong') {
-                // Normal soruysa hemen göster, çıkmış soruysa AI bekleniyor yazısını göster
-                tipDisplay = "block"; 
-            }
-
-            // --- FEEDBACK ---
-            let feedbackHTML = "";
-            if (savedStatus) {
-                if (savedStatus === 'correct') {
-                    feedbackHTML = `<div class="mt-2 text-success fw-bold"><i class="bi bi-check-circle"></i> Doğru!</div>`;
-                } else {
-                    feedbackHTML = `<div class="mt-2 text-danger fw-bold"><i class="bi bi-x-circle"></i> Yanlış. Cevap: ${q.correctAnswer}</div>`;
-                }
-            }
-
-            // --- ŞIKLAR ---
+            // --- 3. ŞIKLAR ---
             let optsInner = "";
             ['A', 'B', 'C', 'D', 'E'].forEach(opt => {
                 let rowClass = "";
@@ -7147,73 +7155,43 @@ function renderQuestions(qList) {
                 </div>`;
             });
 
-            // --- BUTONLAR ---
-            let actionBtnHTML = "";
-            if (!q.isVocab) { 
-                const btnExplain = `
-                    <button class="btn btn-sm btn-outline-success" onclick="getAiExplanation(${q.id})" title="Detaylı Çözüm İste">
-                        <i class="bi bi-magic"></i> AI Çözüm
-                    </button>`;
-                
-                const btnGenerate = `
-                    <button class="btn btn-sm btn-outline-primary" onclick="generateAiQuestions(${q.id})" title="Benzer Soru Üret">
-                        <i class="bi bi-stars"></i> Benzer Üret
-                    </button>`;
-
-                actionBtnHTML = `<div class="d-flex gap-1">${btnGenerate}${btnExplain}</div>`;
-            }
-
-            // --- KART BAŞLIĞI VE RENKLERİ (Dynamic Labeling) ---
-            let cardColorStyle = "";
-            let badgeColor = "";
-            let badgeText = "";
-
-            if (q.isExam) {
-                // Çıkmış Soru
-                cardColorStyle = "border-left: 5px solid var(--exam-color);";
-                badgeColor = "background-color: var(--exam-color)!important;";
-                // Eğer ipucu (Yıl bilgisi) varsa onu başlığa yaz
-                badgeText = q.tip && q.tip.length < 20 ? q.tip : "Çıkmış Soru";
-            } else if (q.isAi) {
-                // AI Sorusu
-                cardColorStyle = "border-left: 5px solid var(--ai-color);";
-                badgeColor = "background-color: var(--ai-color)!important;";
-                badgeText = "Yapay Zeka";
-            } else if (q.isVocab) {
-                // Kelime Sorusu
-                cardColorStyle = "border-left: 5px solid var(--vocab-color);";
-                badgeColor = "background-color: var(--vocab-color)!important;";
-                badgeText = "Kelime";
-            } else {
-                // STANDART KONU TARAMA SORULARI
-                // Bölüm ismini ID aralığına göre bul
-                cardColorStyle = "border-left: 5px solid #0d6efd;"; // Mavi
-                badgeColor = "background-color: #0d6efd!important;";
-                
-                if(q.id <= 70) badgeText = "Prepositions";
-                else if(q.id <= 130) badgeText = "Conjunctions";
-                else if(q.id <= 190) badgeText = "Relative Clauses";
-                else if(q.id <= 250) badgeText = "Tense & Modals";
-                else badgeText = "Konu Tarama";
+            // --- 4. BUTON GRUBU (3 BUTON) ---
+            let buttonsHTML = "";
+            if (!q.isVocab) {
+                buttonsHTML = `
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="generateAiQuestions(${q.id})" title="Benzer Soru Üret">
+                        <i class="bi bi-stars"></i> <span class="d-none d-md-inline">Üret</span>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-success" onclick="getAiAnalysis(${q.id})" title="Çeviri ve Analiz">
+                        <i class="bi bi-translate"></i> <span class="d-none d-md-inline">Analiz</span>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-warning text-dark" onclick="getAiTip(${q.id})" title="Sadece Tüyo">
+                        <i class="bi bi-lightbulb-fill"></i> <span class="d-none d-md-inline">Tüyo</span>
+                    </button>
+                </div>`;
             }
 
             // --- HTML ÇIKTISI ---
             area.insertAdjacentHTML('beforeend', `
-            <div class="card mb-4 border-start-0" id="card-${q.id}" style="${cardColorStyle}">
+            <div class="card mb-4 border-start-0" id="card-${q.id}" style="${borderStyle}">
                 <div class="card-body">
                     <div class="d-flex justify-content-between mb-2 align-items-center">
                         <div>
-                            <span class="badge bg-secondary" style="${badgeColor}">${badgeText}</span>
+                            <span class="badge bg-secondary" style="${badgeColorStyle}">${badgeText}</span>
                             ${savedStatus ? (savedStatus==='correct' ? '<span class="badge bg-success ms-1">Çözüldü</span>' : '<span class="badge bg-danger ms-1">Hatalı</span>') : ''}
                         </div>
-                        ${actionBtnHTML}
+                        ${buttonsHTML}
                     </div>
                     <p class="question-text">${formatQuestionText(q.text)}</p>
                     <div id="opts-${q.id}">${optsInner}</div>
-                    <div id="feedback-${q.id}">${feedbackHTML}</div>
+                    <div id="feedback-${q.id}">
+                        ${savedStatus === 'correct' ? '<div class="mt-2 text-success fw-bold"><i class="bi bi-check-circle"></i> Doğru!</div>' : 
+                          (savedStatus === 'wrong' ? `<div class="mt-2 text-danger fw-bold"><i class="bi bi-x-circle"></i> Yanlış. Cevap: ${q.correctAnswer}</div>` : '')}
+                    </div>
                     
-                    <div id="tip-${q.id}" class="tip-box mt-3" style="display: ${tipDisplay};">
-                        <strong><i class="bi ${tipIcon}"></i> ${tipTitle}:</strong><br>${tipContent}
+                    <div id="tip-${q.id}" class="tip-box mt-3" style="display: ${initialTipDisplay};">
+                        ${initialTipContent}
                     </div>
                 </div>
             </div>`);
@@ -7397,59 +7375,100 @@ function saveApiKey() {
     }
 }
 
-async function getAiExplanation(questionId) {
-        if(!userApiKey) {
-            alert("Lütfen önce API Ayarları bölümünden Gemini anahtarınızı girin.");
-            openSettings();
-            return;
-        }
+// --- 1. BUTON: SADECE ANALİZ VE ÇEVİRİ ---
+    async function getAiAnalysis(questionId) {
+        if(!userApiKey) { alert("API Anahtarı eksik!"); openSettings(); return; }
 
         let q = allQuestions.find(i => i.id === questionId);
         if(!q) return;
 
-        const tipBox = document.getElementById(`tip-${questionId}`);
-        tipBox.style.display = 'block';
-        tipBox.innerHTML = '<div class="d-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-primary" role="status"></div> <span>Yapay zeka çözüyor...</span></div>';
+        // Eğer daha önce hafızaya aldıysak tekrar sorma, direkt göster
+        if(q.aiAnalysisData) {
+            showTipBox(q.id, "Analiz & Çeviri", "bi-translate", q.aiAnalysisData);
+            return;
+        }
 
-        // GÜNCEL MODEL: gemini-1.5-flash
+        showLoading(q.id, "Analiz yapılıyor...");
+
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${userApiKey}`;
-        
-        const promptText = `
-            Sen bir YDS sınav uzmanısın. Şu soruyu Türkçe olarak, adım adım ve eğitici bir dille açıkla:
+        const prompt = `
+            Sen uzman bir İngilizce öğretmenisin. Aşağıdaki YDS sorusu için şu formatta yanıt ver:
             
             SORU: "${q.text}"
             ŞIKLAR: A) ${q.options.A}, B) ${q.options.B}, C) ${q.options.C}, D) ${q.options.D}, E) ${q.options.E}
-            DOĞRU CEVAP: ${q.correctAnswer}
-            
-            1. Soruyu Türkçe'ye çevir.
-            2. Neden bu cevabın doğru olduğunu dilbilgisi kurallarıyla anlat.
-            3. Diğer şıkların neden yanlış olduğunu kısaca belirt.
-            4. Bu soru tipi için bir 'Tüyo' ver.
+            DOĞRU: ${q.correctAnswer}
+
+            Lütfen şu 3 başlığı detaylıca açıkla (HTML kullanma, düz metin):
+            1. SORUNUN TÜRKÇE ÇEVİRİSİ: (Cümleyi tam çevir)
+            2. NEDEN DOĞRU?: (Gramer yapısı veya kelime anlamı üzerinden açıkla)
+            3. NEDEN YANLIŞ?: (Diğer şıkların neden olmadığını kısaca açıkla)
         `;
 
         try {
-            const response = await fetch(url, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
-            });
+            const data = await callGemini(url, prompt);
+            q.aiAnalysisData = data.replace(/\n/g, '<br>'); // Kaydet
+            showTipBox(q.id, "Analiz & Çeviri", "bi-translate", q.aiAnalysisData);
+        } catch (e) { showError(q.id, e.message); }
+    }
 
-            const data = await response.json();
-            
-            // HATA KONTROLÜ (Cannot read properties of undefined hatasını çözer)
-            if (!data.candidates || data.candidates.length === 0) {
-                throw new Error("Yapay zeka boş cevap döndü veya API anahtarı hatalı.");
-            }
+    // --- 2. BUTON: SADECE TÜYO (STRATEJİ) ---
+    async function getAiTip(questionId) {
+        if(!userApiKey) { alert("API Anahtarı eksik!"); openSettings(); return; }
 
-            const explanation = data.candidates[0].content.parts[0].text;
-            q.aiExplanation = explanation;
-            
-            // Eski ipucunun üzerine yazıyoruz
-            tipBox.innerHTML = `<strong><i class="bi bi-robot"></i> AI ÖĞRETMEN ÇÖZÜMÜ:</strong><br><br>${explanation.replace(/\n/g, '<br>')}`;
-            
-        } catch (error) {
-            tipBox.innerHTML = `<span class="text-danger">Hata: ${error.message}</span>`;
+        let q = allQuestions.find(i => i.id === questionId);
+        if(!q) return;
+
+        if(q.aiTipData) {
+            showTipBox(q.id, "Altın Tüyo", "bi-stars", q.aiTipData);
+            return;
         }
+
+        showLoading(q.id, "Tüyo hazırlanıyor...");
+
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${userApiKey}`;
+        const prompt = `
+            Bu YDS sorusu için öğrencime sadece bir "Sınav Tüyosu" ver.
+            Soru metni: "${q.text}"
+            Cevap: ${q.correctAnswer}
+            
+            İstek: Uzun çeviri veya açıklama yapma. Sadece bu soru tipini çözerken nelere dikkat etmeli, hangi ipucunu yakalamalı? Kısa ve öz bir strateji ver.
+        `;
+
+        try {
+            const data = await callGemini(url, prompt);
+            q.aiTipData = data.replace(/\n/g, '<br>'); // Kaydet
+            showTipBox(q.id, "Altın Tüyo", "bi-stars", q.aiTipData);
+        } catch (e) { showError(q.id, e.message); }
+    }
+
+    // --- YARDIMCI FONKSİYONLAR ---
+    async function callGemini(url, promptText) {
+        const response = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
+        });
+        const json = await response.json();
+        if (!json.candidates || !json.candidates[0].content) throw new Error("API yanıt vermedi.");
+        return json.candidates[0].content.parts[0].text;
+    }
+
+    function showLoading(id, msg) {
+        const box = document.getElementById(`tip-${id}`);
+        box.style.display = 'block';
+        box.innerHTML = `<div class="d-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-primary"></div> <span>${msg}</span></div>`;
+    }
+
+    function showTipBox(id, title, icon, content) {
+        const box = document.getElementById(`tip-${id}`);
+        box.style.display = 'block';
+        // İçeriği değiştirirken kutuyu biraz parlat
+        box.style.backgroundColor = document.body.getAttribute('data-theme') === 'dark' ? '#37474f' : '#e3f2fd';
+        box.innerHTML = `<strong><i class="bi ${icon}"></i> ${title}:</strong><br><br>${content}`;
+    }
+
+    function showError(id, msg) {
+        document.getElementById(`tip-${id}`).innerHTML = `<span class="text-danger">Hata: ${msg}</span>`;
     }
 
     async function generateAiQuestions(sourceId) {
