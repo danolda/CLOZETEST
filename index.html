@@ -6906,7 +6906,7 @@ function generateVocabQuestions() {
 }
     
 // --- BU FONKSİYON EKSİKSE VERİLER YÜKLENMEZ ---
-    function parseRawData(qText, aText, startIdOffset) {
+function parseRawData(qText, aText, startIdOffset, isExamBatch) { // isExamBatch parametresi eklendi
         const parsedQuestions = [];
         const answerMap = {};
         
@@ -6935,18 +6935,22 @@ function generateVocabQuestions() {
 
                 const qNum = parseInt(line.match(/^\d+/)[0]);
                 let textContent = line.replace(/^\d+[\.\)\-]\s*/, '').trim();
-                let yearTip = "Çıkmış Soru";
                 
-                const yearMatch = textContent.match(/\((.*?YDT.*?|.*?YÖKDİL.*?|.*?YDS.*?)\)/);
-                if(yearMatch) yearTip = yearMatch[1]; 
+                // Yıl ipucunu sadece Çıkmış Sorularda ara, yoksa genel başlık koy
+                let yearTip = "";
+                if (isExamBatch) {
+                    const yearMatch = textContent.match(/\((.*?YDT.*?|.*?YÖKDİL.*?|.*?YDS.*?)\)/);
+                    if(yearMatch) yearTip = yearMatch[1];
+                    else yearTip = "Çıkmış Soru";
+                } 
 
                 currentQ = { 
                     localId: qNum, 
                     id: 0, 
                     text: textContent, 
                     options: {}, 
-                    tip: yearTip,
-                    isExam: true 
+                    tip: yearTip, // Normal sorularda burası boş kalır, aşağıda text'ten gelen TIP varsa o işlenir
+                    isExam: isExamBatch // ARTIK DİNAMİK (True veya False)
                 };
             } 
             else if (currentQ) {
@@ -6955,6 +6959,10 @@ function generateVocabQuestions() {
                 else if (line.startsWith('C)')) currentQ.options.C = line.substring(2).trim();
                 else if (line.startsWith('D)')) currentQ.options.D = line.substring(2).trim();
                 else if (line.startsWith('E)')) currentQ.options.E = line.substring(2).trim();
+                else if (line.startsWith('TIP:')) {
+                    // Normal sorulardaki TIP satırını yakala
+                    if(!isExamBatch) currentQ.tip = line.substring(4).trim();
+                }
                 else if (!line.match(/^[A-E]\)/)) currentQ.text += " " + line;
             }
         });
@@ -6968,31 +6976,36 @@ function generateVocabQuestions() {
 
         return parsedQuestions;
     }
+
+    
 // 3. Ana Yükleme Fonksiyonu
 function loadData() {
-    allQuestions = []; 
+        allQuestions = []; 
 
-    // Eski Sorular
-    if(typeof rawQuestionsText !== 'undefined') {
-         allQuestions = allQuestions.concat(parseRawData(rawQuestionsText, rawAnswersText, 0));
+        // 1. Manuel Eklenen Eski Sorular (NORMAL TESTLER - False gönderiyoruz)
+        if(typeof rawQuestionsText !== 'undefined' && typeof rawAnswersText !== 'undefined') {
+             // SONDATAKİ 'false' PARAMETRESİ ÖNEMLİ
+             const oldQuestions = parseRawData(rawQuestionsText, rawAnswersText, 0, false);
+             allQuestions = allQuestions.concat(oldQuestions);
+        }
+
+        // 2. Çıkmış Soruları Yükle (SINAV SORULARI - True gönderiyoruz)
+        if(typeof rawExamPrepQ !== 'undefined') allQuestions = allQuestions.concat(parseRawData(rawExamPrepQ, rawExamPrepA, 3000, true));
+        if(typeof rawExamConjQ !== 'undefined') allQuestions = allQuestions.concat(parseRawData(rawExamConjQ, rawExamConjA, 3200, true));
+        if(typeof rawExamTenseQ !== 'undefined') allQuestions = allQuestions.concat(parseRawData(rawExamTenseQ, rawExamTenseA, 3500, true));
+        if(typeof rawExamVocabQ !== 'undefined') allQuestions = allQuestions.concat(parseRawData(rawExamVocabQ, rawExamVocabA, 3800, true));
+
+        // 3. Kelime Havuzu
+        const vocabQuestions = generateVocabQuestions();
+        allQuestions = allQuestions.concat(vocabQuestions);
+
+        // 4. Verileri Çek
+        if(localStorage.getItem('yds_progress')) progressData = JSON.parse(localStorage.getItem('yds_progress'));
+        if(localStorage.getItem('yds_mistakes')) wrongBank = JSON.parse(localStorage.getItem('yds_mistakes'));
+        if(localStorage.getItem('yds_generated')) generatedQuestions = JSON.parse(localStorage.getItem('yds_generated'));
+
+        renderMenu();
     }
-
-    // Çıkmış Sorular (Hata olmaması için if kontrolü)
-    if(typeof rawExamPrepQ !== 'undefined') allQuestions = allQuestions.concat(parseRawData(rawExamPrepQ, rawExamPrepA, 3000));
-    if(typeof rawExamConjQ !== 'undefined') allQuestions = allQuestions.concat(parseRawData(rawExamConjQ, rawExamConjA, 3200));
-    if(typeof rawExamTenseQ !== 'undefined') allQuestions = allQuestions.concat(parseRawData(rawExamTenseQ, rawExamTenseA, 3500));
-    if(typeof rawExamVocabQ !== 'undefined') allQuestions = allQuestions.concat(parseRawData(rawExamVocabQ, rawExamVocabA, 3800));
-
-    // Kelimeler
-    allQuestions = allQuestions.concat(generateVocabQuestions());
-
-    // Veriler
-    if(localStorage.getItem('yds_progress')) progressData = JSON.parse(localStorage.getItem('yds_progress'));
-    if(localStorage.getItem('yds_mistakes')) wrongBank = JSON.parse(localStorage.getItem('yds_mistakes'));
-    if(localStorage.getItem('yds_generated')) generatedQuestions = JSON.parse(localStorage.getItem('yds_generated'));
-
-    renderMenu();
-}
 
 /* ================= UI FONKSİYONLARI ================= */
 function renderMenu() {
@@ -7073,29 +7086,43 @@ function renderQuestions(qList) {
         const area = document.getElementById('questions-area');
         area.innerHTML = "";
         
-        // Sayfalama Limiti
         const visibleList = qList.slice(0, renderLimit);
 
         visibleList.forEach(q => {
             const savedStatus = progressData[q.id];
             
-            // --- 1. İPUCU İÇERİĞİ MANTIĞI ---
-            // Eğer AI açıklaması alındıysa onu göster, yoksa veritabanındaki kısa tüyoyu göster.
+            // --- İPUCU İÇERİĞİ ---
             let tipContent = "";
+            let tipIcon = "bi-lightbulb";
+            let tipTitle = "İPUCU";
+
             if (q.aiExplanation) {
-                tipContent = `<strong><i class="bi bi-robot"></i> AI DETAYLI ÇÖZÜM:</strong><br>${q.aiExplanation.replace(/\n/g, '<br>')}`;
+                tipContent = q.aiExplanation.replace(/\n/g, '<br>');
+                tipIcon = "bi-robot";
+                tipTitle = "AI DETAYLI ÇÖZÜM";
             } else {
-                tipContent = `<strong><i class="bi bi-lightbulb"></i> İPUCU:</strong> ${q.tip || "Bu soru için ipucu bulunmuyor."}`;
+                // Eğer normal soruysa ve veritabanında TIP varsa onu kullan
+                // Eğer çıkmış soruysa ve TIP (Yıl bilgisi) varsa onu kullanma, 'İpucu yok' de (veya AI bekleniyor de)
+                if(!q.isExam && q.tip) {
+                    tipContent = q.tip;
+                } else {
+                    tipContent = "Bu soru için henüz detaylı açıklama alınmadı. 'AI Çözüm' butonuna basarak öğrenebilirsin.";
+                }
             }
 
-            // --- 2. GİZLE/GÖSTER MANTIĞI ---
-            // AI açıklaması varsa VEYA soru yanlış yapıldıysa kutuyu aç.
+            // --- GİZLE/GÖSTER MANTIĞI ---
+            // 1. AI açıklaması varsa -> GÖSTER
+            // 2. Yanlış yapıldıysa VE (Normal soruysa VEYA Çıkmış soru olup AI açıklaması varsa) -> GÖSTER
+            // Normal sorularda tip veritabanından geldiği için hemen gösteriyoruz.
             let tipDisplay = "none";
-            if (q.aiExplanation || savedStatus === 'wrong') {
+            if (q.aiExplanation) {
                 tipDisplay = "block";
+            } else if (savedStatus === 'wrong') {
+                // Normal soruysa hemen göster, çıkmış soruysa AI bekleniyor yazısını göster
+                tipDisplay = "block"; 
             }
 
-            // --- 3. CEVAP DURUMU (DOĞRU/YANLIŞ) ---
+            // --- FEEDBACK ---
             let feedbackHTML = "";
             if (savedStatus) {
                 if (savedStatus === 'correct') {
@@ -7105,7 +7132,7 @@ function renderQuestions(qList) {
                 }
             }
 
-            // --- 4. ŞIKLARI OLUŞTUR ---
+            // --- ŞIKLAR ---
             let optsInner = "";
             ['A', 'B', 'C', 'D', 'E'].forEach(opt => {
                 let rowClass = "";
@@ -7120,13 +7147,12 @@ function renderQuestions(qList) {
                 </div>`;
             });
 
-            // --- 5. BUTONLAR (Hepsinde Gözüksün) ---
+            // --- BUTONLAR ---
             let actionBtnHTML = "";
-            
-            if (!q.isVocab) { // Sadece kelime sorularında buton olmasın
+            if (!q.isVocab) { 
                 const btnExplain = `
                     <button class="btn btn-sm btn-outline-success" onclick="getAiExplanation(${q.id})" title="Detaylı Çözüm İste">
-                        <i class="bi bi-magic"></i> AI Çözüm & Tüyo
+                        <i class="bi bi-magic"></i> AI Çözüm
                     </button>`;
                 
                 const btnGenerate = `
@@ -7134,32 +7160,44 @@ function renderQuestions(qList) {
                         <i class="bi bi-stars"></i> Benzer Üret
                     </button>`;
 
-                // Çıkmış soru da olsa, normal soru da olsa ikisi de görünsün
                 actionBtnHTML = `<div class="d-flex gap-1">${btnGenerate}${btnExplain}</div>`;
             }
 
-            // --- 6. RENK VE ETİKETLER ---
+            // --- KART BAŞLIĞI VE RENKLERİ (Dynamic Labeling) ---
             let cardColorStyle = "";
             let badgeColor = "";
             let badgeText = "";
 
             if (q.isExam) {
+                // Çıkmış Soru
                 cardColorStyle = "border-left: 5px solid var(--exam-color);";
                 badgeColor = "background-color: var(--exam-color)!important;";
-                badgeText = "Çıkmış Soru";
+                // Eğer ipucu (Yıl bilgisi) varsa onu başlığa yaz
+                badgeText = q.tip && q.tip.length < 20 ? q.tip : "Çıkmış Soru";
             } else if (q.isAi) {
+                // AI Sorusu
                 cardColorStyle = "border-left: 5px solid var(--ai-color);";
                 badgeColor = "background-color: var(--ai-color)!important;";
                 badgeText = "Yapay Zeka";
             } else if (q.isVocab) {
+                // Kelime Sorusu
                 cardColorStyle = "border-left: 5px solid var(--vocab-color);";
                 badgeColor = "background-color: var(--vocab-color)!important;";
                 badgeText = "Kelime";
             } else {
-                badgeText = "Soru " + q.id;
+                // STANDART KONU TARAMA SORULARI
+                // Bölüm ismini ID aralığına göre bul
+                cardColorStyle = "border-left: 5px solid #0d6efd;"; // Mavi
+                badgeColor = "background-color: #0d6efd!important;";
+                
+                if(q.id <= 70) badgeText = "Prepositions";
+                else if(q.id <= 130) badgeText = "Conjunctions";
+                else if(q.id <= 190) badgeText = "Relative Clauses";
+                else if(q.id <= 250) badgeText = "Tense & Modals";
+                else badgeText = "Konu Tarama";
             }
 
-            // --- 7. HTML ÇIKTISI ---
+            // --- HTML ÇIKTISI ---
             area.insertAdjacentHTML('beforeend', `
             <div class="card mb-4 border-start-0" id="card-${q.id}" style="${cardColorStyle}">
                 <div class="card-body">
@@ -7175,13 +7213,12 @@ function renderQuestions(qList) {
                     <div id="feedback-${q.id}">${feedbackHTML}</div>
                     
                     <div id="tip-${q.id}" class="tip-box mt-3" style="display: ${tipDisplay};">
-                        ${tipContent}
+                        <strong><i class="bi ${tipIcon}"></i> ${tipTitle}:</strong><br>${tipContent}
                     </div>
                 </div>
             </div>`);
         });
 
-        // Load More
         if (qList.length > renderLimit) {
             const remaining = qList.length - renderLimit;
             area.insertAdjacentHTML('beforeend', `
@@ -7192,7 +7229,6 @@ function renderQuestions(qList) {
                 </div>`);
         }
     }
-    
 // EKSİK OLAN FONKSİYON BURASI
     function formatQuestionText(text) {
         if (!text) return "";
