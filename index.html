@@ -7430,50 +7430,18 @@ function saveApiKey() {
         } catch (e) { showError(q.id, e.message); }
     }
 
-    // --- 2. BUTON: SADECE TÜYO (STRATEJİ) ---
-    async function getAiTip(questionId) {
-        if(!userApiKey) { alert("API Anahtarı eksik!"); openSettings(); return; }
+    /* ================= AI FONKSİYONLARI (TAM SET) ================= */
 
-        let q = allQuestions.find(i => i.id === questionId);
-        if(!q) return;
-
-        if(q.aiTipData) {
-            showTipBox(q.id, "Altın Tüyo", "bi-stars", q.aiTipData);
-            return;
-        }
-
-        showLoading(q.id, "Tüyo hazırlanıyor...");
-
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${userApiKey}`;
-        const prompt = `
-            Bu YDS sorusu için öğrencime sadece bir "Sınav Tüyosu" ver.
-            Soru metni: "${q.text}"
-            Cevap: ${q.correctAnswer}
-            
-            İstek: Uzun çeviri veya açıklama yapma. Sadece bu soru tipini çözerken nelere dikkat etmeli, hangi ipucunu yakalamalı? Kısa ve öz bir strateji ver.
-        `;
-
-        try {
-            const data = await callGemini(url, prompt);
-            q.aiTipData = data.replace(/\n/g, '<br>'); // Kaydet
-            showTipBox(q.id, "Altın Tüyo", "bi-stars", q.aiTipData);
-        } catch (e) { showError(q.id, e.message); }
-    }
-
-    // --- YARDIMCI FONKSİYONLAR ---
-    // --- 1. BUTON: ANALİZ VE ÇEVİRİ (DÜZELTİLDİ) ---
+    // --- 1. BUTON: ANALİZ VE ÇEVİRİ ---
     async function getAiAnalysis(questionId) {
-        if(!userApiKey) { alert("API Anahtarı eksik!"); openSettings(); return; }
+        if(!userApiKey) { alert("API Anahtarı eksik! Lütfen ayarlardan ekleyin."); openSettings(); return; }
 
-        // DÜZELTME BURADA: Hem ana havuza hem de AI havuzuna bakıyoruz
+        // Hem ana havuzda hem yapay zeka havuzunda ara
         let q = allQuestions.find(i => i.id === questionId) || generatedQuestions.find(i => i.id === questionId);
         
-        if(!q) {
-            console.error("Soru bulunamadı ID:", questionId);
-            return;
-        }
+        if(!q) { console.error("Soru bulunamadı ID:", questionId); return; }
 
-        // Eğer daha önce hafızaya aldıysak tekrar sorma, direkt göster
+        // Hafızada varsa direkt göster
         if(q.aiAnalysisData) {
             showTipBox(q.id, "Analiz & Çeviri", "bi-translate", q.aiAnalysisData);
             return;
@@ -7489,7 +7457,7 @@ function saveApiKey() {
             ŞIKLAR: A) ${q.options.A}, B) ${q.options.B}, C) ${q.options.C}, D) ${q.options.D}, E) ${q.options.E}
             DOĞRU: ${q.correctAnswer}
 
-            Lütfen şu 3 başlığı detaylıca açıkla (HTML kullanma, düz metin):
+            Lütfen şu 3 başlığı HTML kullanmadan, düz metin ve satır başlarıyla açıkla:
             1. SORUNUN TÜRKÇE ÇEVİRİSİ: (Cümleyi tam çevir)
             2. NEDEN DOĞRU?: (Gramer yapısı veya kelime anlamı üzerinden açıkla)
             3. NEDEN YANLIŞ?: (Diğer şıkların neden olmadığını kısaca açıkla)
@@ -7502,17 +7470,13 @@ function saveApiKey() {
         } catch (e) { showError(q.id, e.message); }
     }
 
-    // --- 2. BUTON: SADECE TÜYO (DÜZELTİLDİ) ---
+    // --- 2. BUTON: SADECE TÜYO ---
     async function getAiTip(questionId) {
-        if(!userApiKey) { alert("API Anahtarı eksik!"); openSettings(); return; }
+        if(!userApiKey) { alert("API Anahtarı eksik! Lütfen ayarlardan ekleyin."); openSettings(); return; }
 
-        // DÜZELTME BURADA: Hem ana havuza hem de AI havuzuna bakıyoruz
         let q = allQuestions.find(i => i.id === questionId) || generatedQuestions.find(i => i.id === questionId);
         
-        if(!q) {
-            console.error("Soru bulunamadı ID:", questionId);
-            return;
-        }
+        if(!q) { console.error("Soru bulunamadı ID:", questionId); return; }
 
         if(q.aiTipData) {
             showTipBox(q.id, "Altın Tüyo", "bi-stars", q.aiTipData);
@@ -7535,6 +7499,53 @@ function saveApiKey() {
             q.aiTipData = data.replace(/\n/g, '<br>'); // Kaydet
             showTipBox(q.id, "Altın Tüyo", "bi-stars", q.aiTipData);
         } catch (e) { showError(q.id, e.message); }
+    }
+
+    // --- YARDIMCI ARAÇLAR (EKSİK OLANLAR BUNLARDI) ---
+    
+    // API Çağrısı Yapan Ortak Fonksiyon
+    async function callGemini(url, promptText) {
+        const response = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
+        });
+        const json = await response.json();
+        
+        if (json.error) throw new Error(json.error.message);
+        if (!json.candidates || !json.candidates[0].content) throw new Error("API yanıt vermedi.");
+        
+        return json.candidates[0].content.parts[0].text;
+    }
+
+    // Ekranda "Yükleniyor" animasyonu gösterir
+    function showLoading(id, msg) {
+        const box = document.getElementById(`tip-${id}`);
+        if(box) {
+            box.style.display = 'block';
+            box.innerHTML = `<div class="d-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-primary"></div> <span>${msg}</span></div>`;
+        }
+    }
+
+    // Sonucu Ekrana Basar
+    function showTipBox(id, title, icon, content) {
+        const box = document.getElementById(`tip-${id}`);
+        if(box) {
+            box.style.display = 'block';
+            // Koyu/Açık tema kontrolü
+            const isDark = document.body.getAttribute('data-theme') === 'dark';
+            box.style.backgroundColor = isDark ? '#37474f' : '#e3f2fd'; 
+            box.innerHTML = `<strong><i class="bi ${icon}"></i> ${title}:</strong><br><br>${content}`;
+        }
+    }
+
+    // Hata Mesajı Gösterir
+    function showError(id, msg) {
+        const box = document.getElementById(`tip-${id}`);
+        if(box) {
+            box.style.display = 'block';
+            box.innerHTML = `<span class="text-danger">Hata: ${msg}</span>`;
+        }
     }
 
 function fullReset() {
