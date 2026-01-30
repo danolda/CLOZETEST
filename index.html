@@ -7689,16 +7689,16 @@ function renderQuestions(qList) {
         area.innerHTML = "";
         const visibleList = qList.slice(0, renderLimit);
 
-        visibleList.forEach(q => {
+        // --- DÖNGÜYE 'index' PARAMETRESİ EKLENDİ ---
+        visibleList.forEach((q, index) => {
+            
             // --- CEVAP DURUMU ---
             let savedStatus = progressData[q.id];
-            
-            // Eğer "Yanlışlarım" bölümündeysek, soruyu temiz (çözülmemiş) gibi göster
             if (currentSectionKey === 'mistakes') {
                 savedStatus = null; 
             }
 
-            // --- ETİKETLEME ---
+            // --- ETİKET VE RENK BELİRLEME ---
             let badgeText = "Soru";
             let badgeColorStyle = "background-color: #6c757d !important;";
             let borderStyle = "";
@@ -7722,17 +7722,17 @@ function renderQuestions(qList) {
             else if (q.id >= 131 && q.id <= 190) { badgeText = "Relative Clauses"; borderStyle = "border-left: 5px solid #0d6efd;"; badgeColorStyle = "background-color: #0d6efd!important;"; }
             else if (q.id >= 191 && q.id <= 250) { badgeText = "Tense & Modals"; borderStyle = "border-left: 5px solid #0d6efd;"; badgeColorStyle = "background-color: #0d6efd!important;"; }
 
-            // --- İPUCU KUTUSU MANTIĞI (GÜNCELLENDİ) ---
+            // --- NUMARALANDIRMA EKLEME (YENİ) ---
+            // Bölümdeki toplam soru sayısını ve mevcut sırayı ekliyoruz
+            badgeText += ` #${index + 1} / ${qList.length}`;
+
+            // --- İPUCU KUTUSU MANTIĞI ---
             let initialTipContent = "";
             let initialTipDisplay = "none";
-
-            // Eğer "Yanlışlarım" bölümündeysek, AI verisi olsa bile GİZLİ başla.
-            // (Kullanıcı tekrar yanlış yaparsa checkAnswer fonksiyonu bunu açacak)
             const isMistakeSection = (currentSectionKey === 'mistakes');
 
             if (q.aiAnalysisData) {
                 initialTipContent = `<strong><i class="bi bi-translate"></i> Analiz & Çeviri:</strong><br><br>${q.aiAnalysisData}`;
-                // Yanlışlarım bölümü değilse göster, Yanlışlarımsa gizle
                 if (!isMistakeSection) initialTipDisplay = "block";
             } 
             else if (q.aiTipData) {
@@ -7776,7 +7776,7 @@ function renderQuestions(qList) {
                 </div>`;
             }
 
-            // --- HTML ÇIKTISI ---
+            // --- HTML BAS ---
             area.insertAdjacentHTML('beforeend', `
             <div class="card mb-4 border-start-0" id="card-${q.id}" style="${borderStyle}">
                 <div class="card-body">
