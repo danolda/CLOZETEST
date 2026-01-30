@@ -8153,11 +8153,17 @@ function saveApiKey() {
         const promptText = `
             YDS sınavı için soru klonla.
             Orijinal Soru: "${sourceQ.text}"
-            Cevap: ${sourceQ.correctAnswer}
+            Doğru Cevap Şıkkı: ${sourceQ.correctAnswer}
+            Doğru Cevabın İçeriği: "${sourceQ.options[sourceQ.correctAnswer]}"
             
-            Görevin: Bu soruya gramer yapısı, kelime zorluğu ve uzunluk olarak BENZER 3 yeni soru üret.
+            GÖREV: Bu soruya gramer yapısı, zorluk seviyesi ve mantık olarak "BENZER" 3 yeni soru üret.
             
-            Çıktı FORMATI (JSON):
+            KURALLAR (Çok Önemli):
+            1. EĞER KELİME/BAĞLAÇ/EDAT/Relative Clauses SORUSU İSE: Doğru cevap, orijinal sorudaki kelimenin/bağlacın AYNISI olmalıdır. Sadece soru cümlesini değiştir. (Amaç: Aynı kelimeyi farklı bağlamda öğretmek).
+            2. EĞER GRAMER (Tense/Modal/Passive) SORUSU İSE: Doğru cevap, orijinal sorudaki ile AYNI GRAMER YAPISINDA olmalıdır. (Örneğin: Orijinal cevap 'would have gone' [Modal Perfect] ise, yeni sorunun cevabı da 'could have seen' gibi aynı yapıda olmalıdır).
+            3. Çeldirici şıklar kafa karıştırıcı ve YDS formatına uygun olmalıdır.
+            
+            Çıktı FORMATI (Sadece saf JSON dizisi):
             [
               { "text": "Soru metni (boşluk için ___ kullan)", "options": {"A": "...", "B": "...", "C": "...", "D": "...", "E": "..."}, "correctAnswer": "A", "tip": "İpucu (Türkçe)" }
             ]
