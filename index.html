@@ -173,11 +173,45 @@
         </div>
     </div>
 </div>
-
+    
+<!-- Günlük Hedefler Modalı -->
+<div class="modal fade" id="goalModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title"><i class="bi bi-bullseye"></i> Günlük Çalışma Kotası</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <small class="text-muted" id="goal-date-display">Tarih: --/--/----</small>
+                    <button class="btn btn-sm btn-outline-danger" onclick="resetDailyProgressManual()">
+                        <i class="bi bi-arrow-counterclockwise"></i> Sayacı Sıfırla
+                    </button>
+                </div>
+                
+                <div id="goal-list-container">
+                    <!-- Javascript burayı dolduracak -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+                <button type="button" class="btn btn-success" onclick="saveUserGoals()">Hedefleri Kaydet</button>
+            </div>
+        </div>
+    </div>
+</div>
+    
 <nav class="navbar navbar-expand-lg border-bottom px-3 bg-body-tertiary">
     <div class="container-fluid">
-        <a class="navbar-brand fw-bold text-primary" href="#"><i class="bi bi-mortarboard-fill"></i> YDS Mega Test (MelihBABA Edition)</a>
+        <a class="navbar-brand fw-bold text-primary" href="#"><i class="bi bi-mortarboard-fill"></i> YDS Mega Test V5</a>
         <div class="d-flex gap-2">
+            <!-- YENİ EKLENEN HEDEFLER BUTONU -->
+            <button class="btn btn-outline-success btn-sm" onclick="openDailyGoals()">
+                <i class="bi bi-graph-up-arrow"></i> Hedefler
+            </button>
+            
+            <!-- MEVCUT BUTONLAR -->
             <button class="btn btn-outline-primary btn-sm" onclick="openSettings()">
                 <i class="bi bi-gear-fill"></i> API
             </button>
@@ -7817,6 +7851,150 @@ function renderQuestions(qList) {
         if (!text) return "";
         return text.replace(/___/g, "__________");
     }
+
+    /* ================= GÜNLÜK HEDEF TAKİP SİSTEMİ ================= */
+    
+    // Varsayılan Hedef Yapısı
+    const defaultGoals = {
+        date: new Date().toLocaleDateString(),
+        targets: {
+            prep: 20,
+            conj: 20,
+            rel: 20,
+            tense: 20,
+            vocab: 50,
+            examVocab: 20
+        },
+        current: {
+            prep: 0,
+            conj: 0,
+            rel: 0,
+            tense: 0,
+            vocab: 0,
+            examVocab: 0
+        },
+        solvedIds: [] // Aynı gün aynı soruyu tekrar saymamak için
+    };
+
+    let dailyData = JSON.parse(localStorage.getItem('yds_daily_goals')) || JSON.parse(JSON.stringify(defaultGoals));
+
+    // Sayfa Yüklendiğinde Tarih Kontrolü
+    function checkDateAndReset() {
+        const today = new Date().toLocaleDateString();
+        if (dailyData.date !== today) {
+            // Yeni gün! Sayaçları sıfırla ama hedefleri koru
+            dailyData.date = today;
+            dailyData.current = { prep: 0, conj: 0, rel: 0, tense: 0, vocab: 0, examVocab: 0 };
+            dailyData.solvedIds = [];
+            localStorage.setItem('yds_daily_goals', JSON.stringify(dailyData));
+        }
+        document.getElementById('goal-date-display').innerText = `Tarih: ${today}`;
+    }
+
+    // Modal'ı Aç ve Listeyi Oluştur
+    function openDailyGoals() {
+        checkDateAndReset();
+        const container = document.getElementById('goal-list-container');
+        container.innerHTML = "";
+
+        const categories = [
+            { key: 'prep', title: 'Prepositions', color: 'primary' },
+            { key: 'conj', title: 'Conjunctions', color: 'info' },
+            { key: 'rel', title: 'Relative Clauses', color: 'warning' },
+            { key: 'tense', title: 'Tense & Modals', color: 'danger' },
+            { key: 'vocab', title: 'YDS Kelimeler', color: 'success' },
+            { key: 'examVocab', title: 'Çıkmış Kelime', color: 'dark' }
+        ];
+
+        categories.forEach(cat => {
+            const current = dailyData.current[cat.key];
+            const target = dailyData.targets[cat.key];
+            const percent = Math.min(100, Math.round((current / target) * 100));
+            
+            let progressClass = "bg-" + cat.color;
+            if(percent >= 100) progressClass = "bg-success"; // Hedef tamamlandıysa yeşil olsun
+
+            const html = `
+            <div class="mb-3 border p-2 rounded shadow-sm">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <strong class="text-${cat.color}">${cat.title}</strong>
+                    <span class="badge ${percent >= 100 ? 'bg-success' : 'bg-secondary'}">${current} / ${target}</span>
+                </div>
+                <div class="progress mb-2" style="height: 10px;">
+                    <div class="progress-bar ${progressClass}" role="progressbar" style="width: ${percent}%"></div>
+                </div>
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text">Hedef:</span>
+                    <input type="number" class="form-control" id="goal-input-${cat.key}" value="${target}" min="1">
+                </div>
+            </div>`;
+            container.insertAdjacentHTML('beforeend', html);
+        });
+
+        const modal = new bootstrap.Modal(document.getElementById('goalModal'));
+        modal.show();
+    }
+
+    // Kullanıcının Girdiği Hedefleri Kaydet
+    function saveUserGoals() {
+        const keys = ['prep', 'conj', 'rel', 'tense', 'vocab', 'examVocab'];
+        keys.forEach(key => {
+            const val = parseInt(document.getElementById(`goal-input-${key}`).value);
+            if (val > 0) dailyData.targets[key] = val;
+        });
+        localStorage.setItem('yds_daily_goals', JSON.stringify(dailyData));
+        
+        // Modalı kapat
+        const modalEl = document.getElementById('goalModal');
+        const modal = bootstrap.Modal.getInstance(modalEl);
+        modal.hide();
+        alert("Hedefler güncellendi!");
+    }
+
+    // Manuel Sıfırlama
+    function resetDailyProgressManual() {
+        if(!confirm("Bugünkü ilerlemeniz sıfırlanacak. Onaylıyor musunuz?")) return;
+        dailyData.current = { prep: 0, conj: 0, rel: 0, tense: 0, vocab: 0, examVocab: 0 };
+        dailyData.solvedIds = [];
+        localStorage.setItem('yds_daily_goals', JSON.stringify(dailyData));
+        openDailyGoals(); // Ekranı yenile
+    }
+
+    // İLERLEMEYİ KAYDETME (CheckAnswer İçinde Çağrılacak)
+    function trackDailyProgress(qId) {
+        checkDateAndReset();
+
+        // 1. Kural: Yanlışlarim veya AI bölümündeyse sayma
+        if (currentSectionKey === 'mistakes' || currentSectionKey === 'ai') return;
+
+        // 2. Kural: Bu soru bugün zaten çözüldüyse tekrar sayma
+        if (dailyData.solvedIds.includes(qId)) return;
+
+        // Kategoriyi Bul
+        let category = null;
+
+        // ID Aralıklarına Göre Kategori Belirleme
+        if ( (qId >= 1 && qId <= 70) || (qId >= 3000 && qId <= 3200) ) {
+            category = 'prep';
+        } else if ( (qId >= 71 && qId <= 130) || (qId >= 3201 && qId <= 3500) ) {
+            category = 'conj';
+        } else if ( qId >= 131 && qId <= 190 ) {
+            category = 'rel';
+        } else if ( (qId >= 191 && qId <= 250) || (qId >= 3501 && qId <= 3800) ) {
+            category = 'tense';
+        } else if ( qId >= 1000 && qId <= 2999 ) {
+            category = 'vocab';
+        } else if ( qId >= 3801 && qId <= 4200 ) {
+            category = 'examVocab';
+        }
+
+        // Eğer geçerli bir kategoriyse artır
+        if (category) {
+            dailyData.current[category]++;
+            dailyData.solvedIds.push(qId);
+            localStorage.setItem('yds_daily_goals', JSON.stringify(dailyData));
+        }
+    }
     
 function checkAnswer(qId, selectedOpt) {
     let q = allQuestions.find(i => i.id === qId);
@@ -7865,6 +8043,16 @@ function checkAnswer(qId, selectedOpt) {
 
     localStorage.setItem('yds_progress', JSON.stringify(progressData));
     // Progress bar güncellemeyi atlıyoruz, performans için.
+    
+    // --- YENİ EKLENEN SATIR ---
+        trackDailyProgress(qId); // Günlük hedef takibini güncelle
+        // --------------------------
+
+        if (currentSectionKey !== 'mistakes') {
+            // ... (varsa diğer kodlar)
+        }
+
+
 }
 
 function goToFirstUnsolved() {
