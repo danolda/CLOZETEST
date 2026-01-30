@@ -137,6 +137,45 @@
         background-color: #ffc107;
         color: #000; /* Üzerine gelince siyah */
     }
+        
+/* SABİT YUVARLAK HEDEF BUTONU (MOBİL İÇİN) */
+    .floating-btn {
+        position: fixed;
+        bottom: 25px;
+        right: 25px;
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background-color: #198754; /* Yeşil */
+        color: white;
+        border: none;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        z-index: 1050; /* Her şeyin üstünde */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        cursor: pointer;
+    }
+    .floating-btn:hover {
+        transform: scale(1.1);
+        background-color: #157347;
+    }
+    .floating-btn:active {
+        transform: scale(0.95);
+    }
+
+    /* TEBRİK BİLDİRİMİ (TOAST) */
+    .toast-container {
+        z-index: 1100;
+    }
+    .celebration-toast {
+        background-color: #d1e7dd;
+        border-left: 5px solid #198754;
+        color: #0f5132;
+    }
+        
 </style>
 </head>
 <body>
@@ -7960,32 +7999,32 @@ function renderQuestions(qList) {
         openDailyGoals(); // Ekranı yenile
     }
 
-    // İLERLEMEYİ KAYDETME (CheckAnswer İçinde Çağrılacak)
+    // İLERLEMEYİ KAYDETME VE BİLDİRİM KONTROLÜ
     function trackDailyProgress(qId) {
         checkDateAndReset();
 
-        // 1. Kural: Yanlışlarim veya AI bölümündeyse sayma
+        // 1. Yanlışlar veya AI bölümündeyse sayma
         if (currentSectionKey === 'mistakes' || currentSectionKey === 'ai') return;
 
-        // 2. Kural: Bu soru bugün zaten çözüldüyse tekrar sayma
+        // 2. Bu soru bugün zaten çözüldüyse tekrar sayma
         if (dailyData.solvedIds.includes(qId)) return;
 
         // Kategoriyi Bul
         let category = null;
+        let catTitle = "";
 
-        // ID Aralıklarına Göre Kategori Belirleme
         if ( (qId >= 1 && qId <= 70) || (qId >= 3000 && qId <= 3200) ) {
-            category = 'prep';
+            category = 'prep'; catTitle = "Prepositions";
         } else if ( (qId >= 71 && qId <= 130) || (qId >= 3201 && qId <= 3500) ) {
-            category = 'conj';
+            category = 'conj'; catTitle = "Conjunctions";
         } else if ( qId >= 131 && qId <= 190 ) {
-            category = 'rel';
+            category = 'rel'; catTitle = "Relative Clauses";
         } else if ( (qId >= 191 && qId <= 250) || (qId >= 3501 && qId <= 3800) ) {
-            category = 'tense';
+            category = 'tense'; catTitle = "Tense & Modals";
         } else if ( qId >= 1000 && qId <= 2999 ) {
-            category = 'vocab';
+            category = 'vocab'; catTitle = "YDS Kelimeler";
         } else if ( qId >= 3801 && qId <= 4200 ) {
-            category = 'examVocab';
+            category = 'examVocab'; catTitle = "Çıkmış Kelimeler";
         }
 
         // Eğer geçerli bir kategoriyse artır
@@ -7993,7 +8032,28 @@ function renderQuestions(qList) {
             dailyData.current[category]++;
             dailyData.solvedIds.push(qId);
             localStorage.setItem('yds_daily_goals', JSON.stringify(dailyData));
+
+            // --- BİLDİRİM KONTROLÜ (YENİ) ---
+            // Eğer o an hedefe tam ulaşıldıysa (fazlasında değil, tam eşitken)
+            if (dailyData.current[category] === dailyData.targets[category]) {
+                showGoalCelebration(catTitle);
+            }
         }
+    }
+
+    // TEBRİK MESAJINI GÖSTEREN FONKSİYON
+    function showGoalCelebration(categoryTitle) {
+        const toastEl = document.getElementById('goalToast');
+        const toastBody = document.getElementById('goalToastBody');
+        
+        toastBody.innerText = `Harika! Bugünkü "${categoryTitle}" hedefini tamamladın. Başka bir bölüme geçebilirsin! 🚀`;
+        
+        const toast = new bootstrap.Toast(toastEl, { delay: 5000 }); // 5 saniye durur
+        toast.show();
+        
+        // Kutlama sesi efekti (Opsiyonel - browser izin verirse)
+        // const audio = new Audio('https://actions.google.com/sounds/v1/cartoon/clank_car_crash.ogg');
+        // audio.play().catch(e => {}); 
     }
     
 function checkAnswer(qId, selectedOpt) {
@@ -8439,6 +8499,25 @@ function saveApiKey() {
         }
     }
 </script>
+    
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- SABİT YUVARLAK HEDEF BUTONU -->
+<button class="floating-btn" onclick="openDailyGoals()" title="Günlük Hedefler">
+    <i class="bi bi-bullseye"></i>
+</button>
+
+<!-- TEBRİK BİLDİRİM KUTUSU (TOAST) -->
+<div class="toast-container position-fixed top-0 end-0 p-3">
+  <div id="goalToast" class="toast celebration-toast" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="toast-header bg-success text-white">
+      <strong class="me-auto"><i class="bi bi-trophy-fill"></i> Hedef Tamamlandı!</strong>
+      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+    </div>
+    <div class="toast-body fw-bold" id="goalToastBody">
+      <!-- Mesaj Buraya Gelecek -->
+    </div>
+  </div>
+</div>
+    
 </body>
 </html>
