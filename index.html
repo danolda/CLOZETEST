@@ -382,13 +382,34 @@
         </div>
     </div>
 
-    <!-- KATEGORİ SEÇİMİ (Sadece Host Görür) -->
+<!-- KATEGORİ VE AYAR SEÇİMİ (HOST) -->
     <div id="vs-setup" class="card p-4 d-none">
-        <h4 class="mb-3">5 Bölüm Seçiniz (3'er Soru)</h4>
-        <div class="row" id="vs-cat-list">
+        <h4 class="mb-3 fw-bold text-primary">Yarışma Ayarları</h4>
+        
+        <!-- YENİ EKLENEN AYARLAR -->
+        <div class="row g-3 mb-4 border-bottom pb-3">
+            <div class="col-6">
+                <label class="form-label fw-bold">Bölüm Başı Soru:</label>
+                <select id="vs-q-count-input" class="form-select">
+                    <option value="1">1 Soru</option>
+                    <option value="2">2 Soru</option>
+                    <option value="3" selected>3 Soru</option>
+                    <option value="4">4 Soru</option>
+                    <option value="5">5 Soru</option>
+                </select>
+            </div>
+            <div class="col-6">
+                <label class="form-label fw-bold">Süre (Saniye):</label>
+                <input type="number" id="vs-time-input" class="form-control" value="90" min="10" max="300">
+            </div>
+        </div>
+
+        <h5 class="mb-3">Bölümleri Seçiniz (En az 1 tane)</h5>
+        <div class="row text-start" id="vs-cat-list">
             <!-- JS ile doldurulacak -->
         </div>
-        <button class="btn btn-primary w-100 mt-3" onclick="startVsMatch()">
+        
+        <button class="btn btn-primary w-100 mt-3 btn-lg" onclick="startVsMatch()">
             <i class="bi bi-play-circle-fill"></i> YARIŞMAYI BAŞLAT
         </button>
     </div>
@@ -8746,6 +8767,8 @@ let oppScore = 0;
 let myAnswer = null;
 let oppAnswer = null;
 let vsTimerInterval = null;
+let vsTimeLimit = 90; // YENİ DEĞİŞKEN (Varsayılan 90)
+
 
 // Menüden Tıklanınca (Sadece ekranı aç, bağlantı kurma)
 function initVsMode() {
@@ -8866,10 +8889,11 @@ function setupConnection() {
     });
 }
 
-// VERİ ALINDIĞINDA (OYUN MOTORU)
+// VERİ ALINDIĞINDA (GUEST İÇİN GÜNCELLEME)
 function handleData(data) {
     if (data.type === 'START_GAME') {
         vsQuestions = data.questions;
+        vsTimeLimit = data.timeLimit; // HOST'UN BELİRLEDİĞİ SÜREYİ AL
         startGameUI();
     } 
     else if (data.type === 'OPP_ANSWER') {
@@ -8896,31 +8920,45 @@ function renderCategorySelection() {
     });
 }
 
-// OYUNU BAŞLAT (Veriyi Hazırla ve Gönder)
+// OYUNU BAŞLAT (HOST İÇİN GÜNCELLEME)
 function startVsMatch() {
+    // 1. Seçili Bölümleri Al
     const checkboxes = document.querySelectorAll('.vs-cat-check:checked');
-    if (checkboxes.length !== 5) {
-        alert("Lütfen tam olarak 5 bölüm seçiniz!");
+    if (checkboxes.length < 1) {
+        alert("En az 1 bölüm seçmelisiniz!");
         return;
     }
 
+    // 2. Ayarları Al (Soru Sayısı ve Süre)
+    const qPerSection = parseInt(document.getElementById('vs-q-count-input').value);
+    const timeSet = parseInt(document.getElementById('vs-time-input').value);
+    
+    if(timeSet < 10) { alert("Süre en az 10 saniye olmalı!"); return; }
+
+    // 3. Soruları Havuzdan Çek
     let pool = [];
     checkboxes.forEach(chk => {
         const sec = sections.find(s => s.key === chk.value);
-        // O bölümden tüm soruları al
         const sectionQuestions = allQuestions.filter(q => q.id >= sec.start && q.id <= sec.end);
-        // Rastgele 3 tane seç
-        const picked = sectionQuestions.sort(() => 0.5 - Math.random()).slice(0, 3);
+        
+        // Dinamik sayı kadar rastgele seç
+        const picked = sectionQuestions.sort(() => 0.5 - Math.random()).slice(0, qPerSection);
         pool = pool.concat(picked);
     });
 
-    // Soruları karıştır
-    vsQuestions = pool.sort(() => 0.5 - Math.random());
+    if(pool.length === 0) { alert("Seçilen bölümlerde yeterli soru yok!"); return; }
 
-    // Guest'e gönder
-    conn.send({ type: 'START_GAME', questions: vsQuestions });
+    // 4. Hazırla ve Gönder
+    vsQuestions = pool.sort(() => 0.5 - Math.random());
+    vsTimeLimit = timeSet; // Host için süreyi ayarla
+
+    // Guest'e hem soruları hem süreyi gönder
+    conn.send({ 
+        type: 'START_GAME', 
+        questions: vsQuestions, 
+        timeLimit: vsTimeLimit 
+    });
     
-    // Kendinde başlat
     startGameUI();
 }
 
@@ -8971,9 +9009,10 @@ function loadVsQuestion() {
     startTimer();
 }
 
-// SAYAÇ MANTIĞI
+// SAYAÇ MANTIĞINI GÜNCELLE
 function startTimer() {
-    timeLeft = 90; // 1.5 dakika
+    timeLeft = vsTimeLimit; // ARTIK 90 DEĞİL, AYARLANAN SÜRE
+    
     const bar = document.getElementById('vs-timer-bar');
     const txt = document.getElementById('vs-timer-text');
     
@@ -8983,11 +9022,11 @@ function startTimer() {
     vsTimerInterval = setInterval(() => {
         timeLeft--;
         txt.innerText = timeLeft + "sn";
-        bar.style.width = (timeLeft / 90 * 100) + "%";
+        // Yüzdeyi dinamik hesapla
+        bar.style.width = (timeLeft / vsTimeLimit * 100) + "%";
         
         if (timeLeft <= 0) {
             clearInterval(vsTimerInterval);
-            // Süre bitti, cevap vermediyse yanlış say
             if (!myAnswer) submitVsAnswer('X', null); 
         }
     }, 1000);
