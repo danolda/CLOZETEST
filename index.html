@@ -194,16 +194,24 @@
         .waiting-pulse { animation: pulse 1.5s infinite; }
         @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
 
-        /* --- MOBİL DÜZEN DÜZELTMESİ --- */
+   /* --- MOBİL MENÜ DÜZENLEMESİ (SON DÜZELTME) --- */
     @media (max-width: 768px) {
-        /* Mobilde menü yapışmasın, normal dursun */
+        /* Yapışkan özelliği kaldır */
         .sticky-top {
             position: static !important;
             z-index: 0;
+            
+            /* İÇERİĞE GÖRE UZASIN (Kendi içinde kaydırma yapmasın) */
+            max-height: none !important; 
+            overflow-y: visible !important;
+            
+            /* Alt kısımla mesafe bırak */
+            margin-bottom: 25px !important;
         }
-        /* Mobilde menü ve içerik arasına boşluk */
-        .col-md-4 {
-            margin-bottom: 20px !important;
+        
+        /* Menü kartının kenarlarını mobilde biraz daha yumuşat */
+        .card {
+            border-radius: 8px !important;
         }
     }
 
@@ -8974,7 +8982,7 @@ function startGameUI() {
     loadVsQuestion();
 }
 
-// SORUYU EKRANA BAS (RENK SORUNU DÜZELTİLDİ)
+// SORUYU EKRANA BAS (DİNAMİK SAYI + RENK DÜZELTMESİ)
 function loadVsQuestion() {
     if (currentVsIndex >= vsQuestions.length) {
         endGame();
@@ -8985,14 +8993,16 @@ function loadVsQuestion() {
     myAnswer = null;
     oppAnswer = null;
     
-    // UI Güncelle
-    document.getElementById('vs-q-count').innerText = `Soru ${currentVsIndex + 1} / 15`;
+    // UI Güncelle - DİNAMİK SORU SAYISI BURADA
+    document.getElementById('vs-q-count').innerText = `Soru ${currentVsIndex + 1} / ${vsQuestions.length}`;
+    
     document.getElementById('score-me').innerText = myScore;
     document.getElementById('score-opp').innerText = oppScore;
     
-    // DÜZELTME 1: text-dark sınıfını kaldırdık, artık CSS'ten renk alacak (Koyu modda beyaz olur)
+    // Soru Metni
     const qTextEl = document.getElementById('vs-q-text');
     qTextEl.className = "mb-4 font-weight-bold"; 
+    qTextEl.style.color = "var(--text-color)"; // Tema rengine uyumlu
     qTextEl.innerText = formatQuestionText(q.text);
     
     document.getElementById('vs-status-msg').innerHTML = "";
@@ -9000,7 +9010,6 @@ function loadVsQuestion() {
     // Şıkları Bas
     let optsHTML = "";
     ['A', 'B', 'C', 'D', 'E'].forEach(opt => {
-        // DÜZELTME 2: btn-outline-dark yerine vs-opt-btn sınıfını kullanıyoruz
         optsHTML += `<button class="btn text-start p-3 w-100 mb-2 vs-opt-btn" style="border: 1px solid var(--border-color);" onclick="submitVsAnswer('${opt}', this)"><b>${opt})</b> ${q.options[opt]}</button>`;
     });
     document.getElementById('vs-options').innerHTML = optsHTML;
