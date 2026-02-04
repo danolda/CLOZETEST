@@ -25,7 +25,6 @@
         --ai-color: #4285F4;
         --vocab-color: #fd7e14;
         --muted-color: #6c757d;
-        --reminder-color: #6610f2; /* Mor renk */
     }
 
     [data-theme="dark"] {
@@ -231,21 +230,6 @@
         background-color: var(--active-color);
         color: white;
     }
-        
-      /* CSS'in alt kısımlarına ekle: */
-    .sidebar-reminder { 
-        border: 1px solid var(--reminder-color); 
-        color: var(--reminder-color); 
-        background: rgba(102, 16, 242, 0.05); 
-        font-weight: bold; 
-    }
-    .sidebar-reminder.active { 
-        background: var(--reminder-color); 
-        color: white; 
-    }
-    
-    /* Tarih bilgisi için küçük yazı stili */
-    .srs-info { font-size: 0.85rem; color: #6c757d; font-style: italic; margin-top: 5px; }
         
 </style>
 </head>
@@ -7690,10 +7674,6 @@ const rawExamVocabA = `1-C 2-D 3-A 4-A 5-E 6-B 7-E 8-E 9-B 10-A 11-C 12-D 13-C 1
     let progressData = {}; 
     let userApiKey = "";
     let renderLimit = 50;
-       // --- YENİ EKLENENLER ---
-    let srsData = {}; // Yapı: { 101: 1715423000000 } (Soru ID : Hedef Tarih Timestamp)
-    const SRS_INTERVAL = 1 * 60 * 1000; // 7 Gün 7 * 24 * 60 * 60 * 1000 (Milisaniye cinsinden)
-    // Test etmek istersen 7 günü silip yerine şunu yaz: 1 * 60 * 1000 (1 Dakika)
     
     const sections = [
         { key: "sec1", title: "Prepositions & Collocations", start: 1, end: 70 },
@@ -7859,65 +7839,28 @@ function loadData() {
         const vocabQuestions = generateVocabQuestions();
         allQuestions = allQuestions.concat(vocabQuestions);
 
-         // 4. Verileri Çek
+        // 4. Verileri Çek
         if(localStorage.getItem('yds_progress')) progressData = JSON.parse(localStorage.getItem('yds_progress'));
         if(localStorage.getItem('yds_mistakes')) wrongBank = JSON.parse(localStorage.getItem('yds_mistakes'));
         if(localStorage.getItem('yds_generated')) generatedQuestions = JSON.parse(localStorage.getItem('yds_generated'));
-        
-        // --- YENİ SRS VERİSİNİ ÇEK ---
-        if(localStorage.getItem('yds_srs')) srsData = JSON.parse(localStorage.getItem('yds_srs'));
-
-        // MIGRATION: Eski sistemdeki yanlışları hemen çözülecek şekilde SRS'ye ekle
-        let srsChanged = false;
-        wrongBank.forEach(id => {
-            if (!srsData[id]) {
-                srsData[id] = Date.now(); // Tarih yoksa "Şimdi" olarak ayarla
-                srsChanged = true;
-            }
-        });
-        if(srsChanged) localStorage.setItem('yds_srs', JSON.stringify(srsData));
 
         renderMenu();
-    } 
+    }
 
 /* ================= UI FONKSİYONLARI ================= */
 function renderMenu() {
     const menu = document.getElementById('sidebar-menu');
     menu.innerHTML = "";
 
-    // --- SRS HESAPLAMASI ---
-    const now = Date.now();
-    let readyCount = 0; // Süresi gelenler
-    let waitingCount = 0; // Gelecek hafta çözülecekler
-
-    Object.values(srsData).forEach(dueDate => {
-        if (dueDate <= now) readyCount++;
-        else waitingCount++;
-    });
-
-    // --- 1. HATIRLATICI BUTONU (EN ÜSTTE) ---
-    const reminderBtn = document.createElement('div');
-    reminderBtn.className = "sidebar-item sidebar-reminder";
-    reminderBtn.id = "menu-reminder";
-    reminderBtn.innerHTML = `
-        <span><i class="bi bi-alarm-fill"></i> HATIRLATICI</span> 
-        <div>
-            <span class="badge bg-danger" title="Süresi Gelenler">${readyCount}</span>
-            <span class="badge bg-secondary ms-1" title="Bekleyenler" style="opacity:0.5">${waitingCount}</span>
-        </div>
-    `;
-    reminderBtn.onclick = () => showReminderSection(); // Yeni fonksiyon
-    menu.appendChild(reminderBtn);
-
-    // --- 2. YANLIŞLAR BUTONU ---
+    // Yanlışlar Butonu
     const mistakeBtn = document.createElement('div');
     mistakeBtn.className = "sidebar-item sidebar-mistakes";
     mistakeBtn.id = "menu-mistakes";
-    mistakeBtn.innerHTML = `<span><i class="bi bi-exclamation-octagon-fill"></i> TÜM HAVUZ</span> <span class="badge bg-danger">${wrongBank.length}</span>`;
+    mistakeBtn.innerHTML = `<span><i class="bi bi-exclamation-octagon-fill"></i> YANLIŞLARIM</span> <span class="badge bg-danger">${wrongBank.length}</span>`;
     mistakeBtn.onclick = () => showMistakes();
     menu.appendChild(mistakeBtn);
 
-    // --- 3. YAPAY ZEKA ---
+    // AI Butonu
     const aiBtn = document.createElement('div');
     aiBtn.className = "sidebar-item sidebar-ai";
     aiBtn.id = "menu-ai";
@@ -7926,65 +7869,31 @@ function renderMenu() {
     menu.appendChild(aiBtn);
 
     menu.appendChild(document.createElement('hr'));
-    
-    // ... (VS Modu ve Diğer Bölümler aynı kalacak) ...
-    // Alt kısımdaki sections.forEach döngüsü aynen kalsın.
-    const vsBtn = document.createElement('div');
-    vsBtn.className = "sidebar-item";
-    vsBtn.style.border = "1px solid #6f42c1";
-    vsBtn.style.color = "#6f42c1";
-    vsBtn.style.fontWeight = "bold";
-    vsBtn.style.background = "rgba(111, 66, 193, 0.1)";
-    vsBtn.innerHTML = `<span><i class="bi bi-joystick"></i> VS MODU (Online)</span>`;
-    vsBtn.onclick = () => initVsMode();
-    menu.appendChild(vsBtn);
 
+    
+    const vsBtn = document.createElement('div');
+        vsBtn.className = "sidebar-item";
+        vsBtn.style.border = "1px solid #6f42c1";
+        vsBtn.style.color = "#6f42c1";
+        vsBtn.style.fontWeight = "bold";
+        vsBtn.style.background = "rgba(111, 66, 193, 0.1)";
+        vsBtn.innerHTML = `<span><i class="bi bi-joystick"></i> VS MODU (Online)</span>`;
+        vsBtn.onclick = () => initVsMode(); // Bu fonksiyonu aşağıda yazacağız
+        menu.appendChild(vsBtn);
+
+    // Normal Bölümler
     sections.forEach(sec => {
         const div = document.createElement('div');
         div.className = "sidebar-item";
         if(sec.key === 'secVocab') div.classList.add('sidebar-vocab');
+        if(sec.key.startsWith('secExam')) div.classList.add('sidebar-exam');
+        
         div.id = `menu-${sec.key}`;
         div.innerHTML = `<span>${sec.title}</span>`;
         div.onclick = () => showSection(sec.key);
         menu.appendChild(div);
     });
 }
-
-function showReminderSection() {
-    currentSectionKey = 'reminder';
-    renderLimit = 50;
-    updateActiveMenu('menu-reminder');
-    document.getElementById('active-section-title').innerText = "🧠 Zamanı Gelen Tekrarlar";
-    
-    // UI Düzenlemeleri
-    document.getElementById('vs-area').style.display = 'none';
-    document.getElementById('questions-area').style.display = 'block';
-    document.getElementById('progress-badge').style.display = 'inline-block';
-
-    const now = Date.now();
-    // Sadece süresi dolmuş (tarihi geçmiş) soruları bul
-    const dueIds = Object.keys(srsData).filter(id => srsData[id] <= now).map(Number);
-    
-    // Hem ana havuzdan hem yapay zekadan bu ID'leri çek
-    const dueQuestions = allQuestions.filter(q => dueIds.includes(q.id));
-    const dueAi = generatedQuestions.filter(q => dueIds.includes(q.id));
-    const combined = [...dueQuestions, ...dueAi];
-
-    if(combined.length === 0) {
-        document.getElementById('questions-area').innerHTML = `
-            <div class="text-center py-5">
-                <i class="bi bi-check-circle-fill text-success fs-1"></i>
-                <h4 class="mt-3">Harika!</h4>
-                <p class="lead">Şu an tekrar etmen gereken soru yok.</p>
-                <p class="text-muted small">Yanlış yaptığın sorular 1 hafta dolunca burada belirecek.</p>
-            </div>`;
-        document.getElementById('progress-badge').innerText = "0";
-    } else {
-        // TRUE parametresi gönderiyoruz (Clean Mode: Cevapları gizle)
-        renderQuestions(combined, true); 
-        document.getElementById('progress-badge').innerText = combined.length;
-    }
-}    
 
 function showSection(key) {
     currentSectionKey = key;
@@ -8061,19 +7970,12 @@ function updateActiveMenu(id) {
     if(el) el.classList.add('active');
 }
 
-function renderQuestions(qList, isCleanMode = false) {
+function renderQuestions(qList) {
         const area = document.getElementById('questions-area');
         area.innerHTML = "";
         const visibleList = qList.slice(0, renderLimit);
 
         visibleList.forEach((q, index) => {
-
-            // --- DEĞİŞİKLİK BURADA: Eğer Hatırlatıcı modundaysak, cevabı 'null' yap (gösterme) ---
-            let savedStatus = isCleanMode ? null : progressData[q.id];
-            
-            if (currentSectionKey === 'mistakes') {
-                savedStatus = null; 
-            }
             
             // --- CEVAP DURUMU ---
             let savedStatus = progressData[q.id];
@@ -8111,13 +8013,7 @@ function renderQuestions(qList, isCleanMode = false) {
             let initialTipContent = "";
             let initialTipDisplay = "none";
             const isMistakeSection = (currentSectionKey === 'mistakes');
-            
-                 // Eğer hatırlatıcıdaysa Badge rengini mor yap
-            if(currentSectionKey === 'reminder') {
-                badgeText = "Hatırlatma";
-                // badgeColorStyle ve borderStyle değişkenlerini burada override edebilirsin ama zorunlu değil.
-            }   
-            
+
             // Hangi AI verisi varsa onu göster (Öncelik sırasına göre)
             if (q.aiVocabData) {
                 initialTipContent = `<strong><i class="bi bi-chat-quote-fill"></i> Örnek Cümle:</strong><br><br>${q.aiVocabData}`;
@@ -8389,11 +8285,11 @@ function checkAnswer(qId, selectedOpt) {
     if(!q) q = generatedQuestions.find(i => i.id === qId);
     if(!q) return;
 
+    const container = document.getElementById(`opts-${qId}`);
     const feedbackDiv = document.getElementById(`feedback-${qId}`);
     const tipDiv = document.getElementById(`tip-${qId}`);
     
-    // Şıkları kilitleme ve boyama (Aynı kalıyor)
-    const rows = document.querySelectorAll(`#card-${qId} .option-row`);
+    const rows = container.querySelectorAll('.option-row');
     rows.forEach(row => {
         row.classList.add('disabled-opts');
         const btnText = row.querySelector('.btn-circle').innerText;
@@ -8407,60 +8303,40 @@ function checkAnswer(qId, selectedOpt) {
         feedbackDiv.innerHTML = `<div class="mt-2 text-success fw-bold"><i class="bi bi-check-circle"></i> Doğru!</div>`;
         if(!q.aiExplanation && tipDiv) tipDiv.style.display = 'none';
         
-        // --- SRS: DOĞRU BİLİNCE SİL ---
-        // 1. Ana Yanlış Listesinden Sil
         if (wrongBank.includes(qId)) {
             wrongBank = wrongBank.filter(id => id !== qId);
             localStorage.setItem('yds_mistakes', JSON.stringify(wrongBank));
+            renderMenu(); 
         }
-        // 2. SRS Verisinden Sil (Artık hatırlatmaya gerek yok)
-        if (srsData[qId]) {
-            delete srsData[qId];
-            localStorage.setItem('yds_srs', JSON.stringify(srsData));
-            
-            // Eğer hatırlatıcı ekranındaysak kartı yeşil çerçeve yap (Görsel Geri Bildirim)
-            if(currentSectionKey === 'reminder') {
-                document.getElementById(`card-${qId}`).style.border = "2px solid #198754";
-            }
-        }
-
         progressData[qId] = 'correct';
     } else {
         feedbackDiv.innerHTML = `<div class="mt-2 text-danger fw-bold"><i class="bi bi-x-circle"></i> Yanlış. Cevap: ${q.correctAnswer}</div>`;
+        
         if(tipDiv) {
             if (!q.isExam || (q.isExam && q.aiExplanation)) tipDiv.style.display = 'block';
         }
 
-        // --- SRS: YANLIŞ BİLİNCE TARİHİ İLERİ AT ---
-        // 1. Yanlış listesine ekle (Eğer yoksa)
         if (!wrongBank.includes(qId)) {
             wrongBank.push(qId);
             localStorage.setItem('yds_mistakes', JSON.stringify(wrongBank));
+            renderMenu();
         }
-
-        // 2. Gelecek Tarihi Hesapla (Şu an + 7 Gün)
-        const nextDate = Date.now() + SRS_INTERVAL;
-        srsData[qId] = nextDate;
-        localStorage.setItem('yds_srs', JSON.stringify(srsData));
-
-        // 3. Kullanıcıya Bilgi Ver
-        const dateStr = new Date(nextDate).toLocaleDateString();
-        const infoMsg = document.createElement('div');
-        infoMsg.className = "srs-info";
-        infoMsg.innerHTML = `<i class="bi bi-clock-history"></i> Bu soru <strong>${dateStr}</strong> tarihinde tekrar sorulacak.`;
-        feedbackDiv.appendChild(infoMsg);
-
         progressData[qId] = 'wrong';
         progressData[qId + '_selected'] = selectedOpt;
     }
 
     localStorage.setItem('yds_progress', JSON.stringify(progressData));
+    // Progress bar güncellemeyi atlıyoruz, performans için.
     
-    // Günlük hedef takip fonksiyonun varsa burada çağır
-    if(typeof trackDailyProgress === 'function') trackDailyProgress(qId);
-    
-    // Menüdeki sayıları güncelle
-    renderMenu();
+    // --- YENİ EKLENEN SATIR ---
+        trackDailyProgress(qId); // Günlük hedef takibini güncelle
+        // --------------------------
+
+        if (currentSectionKey !== 'mistakes') {
+            // ... (varsa diğer kodlar)
+        }
+
+
 }
 
 function goToFirstUnsolved() {
