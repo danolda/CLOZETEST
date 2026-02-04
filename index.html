@@ -8254,7 +8254,7 @@ function saveApiKey() {
 
         showLoading(q.id, "Örnek cümle hazırlanıyor...");
 
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${userApiKey}`;
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${userApiKey}`;
         
         // AI'ya akıllı talimat veriyoruz: Hangi kelimenin İngilizce olduğunu kendisi bulsun.
         const prompt = `
