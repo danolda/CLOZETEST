@@ -193,6 +193,36 @@
         .locked-answer { pointer-events: none; opacity: 0.7; }
         .waiting-pulse { animation: pulse 1.5s infinite; }
         @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+
+        /* --- MOBİL DÜZEN DÜZELTMESİ --- */
+    @media (max-width: 768px) {
+        /* Mobilde menü yapışmasın, normal dursun */
+        .sticky-top {
+            position: static !important;
+            z-index: 0;
+        }
+        /* Mobilde menü ve içerik arasına boşluk */
+        .col-md-4 {
+            margin-bottom: 20px !important;
+        }
+    }
+
+    /* --- VS MODU RENK DÜZELTMESİ --- */
+    /* Soru metni rengini CSS değişkeninden al (Tema uyumlu) */
+    #vs-q-text {
+        color: var(--text-color) !important;
+    }
+    
+    /* VS Şık Butonları */
+    .vs-opt-btn {
+        color: var(--text-color);
+        border-color: var(--border-color);
+    }
+    .vs-opt-btn:hover {
+        background-color: var(--active-color);
+        color: white;
+    }
+        
 </style>
 </head>
 <body>
@@ -8906,7 +8936,7 @@ function startGameUI() {
     loadVsQuestion();
 }
 
-// SORUYU EKRA BAS
+// SORUYU EKRANA BAS (RENK SORUNU DÜZELTİLDİ)
 function loadVsQuestion() {
     if (currentVsIndex >= vsQuestions.length) {
         endGame();
@@ -8921,13 +8951,19 @@ function loadVsQuestion() {
     document.getElementById('vs-q-count').innerText = `Soru ${currentVsIndex + 1} / 15`;
     document.getElementById('score-me').innerText = myScore;
     document.getElementById('score-opp').innerText = oppScore;
-    document.getElementById('vs-q-text').innerText = formatQuestionText(q.text); // formatQuestionText helper kullanıldı
+    
+    // DÜZELTME 1: text-dark sınıfını kaldırdık, artık CSS'ten renk alacak (Koyu modda beyaz olur)
+    const qTextEl = document.getElementById('vs-q-text');
+    qTextEl.className = "mb-4 font-weight-bold"; 
+    qTextEl.innerText = formatQuestionText(q.text);
+    
     document.getElementById('vs-status-msg').innerHTML = "";
     
     // Şıkları Bas
     let optsHTML = "";
     ['A', 'B', 'C', 'D', 'E'].forEach(opt => {
-        optsHTML += `<button class="btn btn-outline-dark text-start p-3 vs-opt-btn" onclick="submitVsAnswer('${opt}', this)"><b>${opt})</b> ${q.options[opt]}</button>`;
+        // DÜZELTME 2: btn-outline-dark yerine vs-opt-btn sınıfını kullanıyoruz
+        optsHTML += `<button class="btn text-start p-3 w-100 mb-2 vs-opt-btn" style="border: 1px solid var(--border-color);" onclick="submitVsAnswer('${opt}', this)"><b>${opt})</b> ${q.options[opt]}</button>`;
     });
     document.getElementById('vs-options').innerHTML = optsHTML;
 
