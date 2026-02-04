@@ -10,7 +10,7 @@
     <style>
         body { background-color: #f0f2f5; font-family: 'Segoe UI', sans-serif; }
         .card { border-radius: 12px; border: 1px solid #dee2e6; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        .header-area { background: linear-gradient(135deg, #6610f2, #6f42c1); color: white; padding: 25px; border-radius: 0 0 20px 20px; margin-bottom: 25px; text-align: center; }
+        .header-area { background: linear-gradient(135deg, #fd7e14, #d63384); color: white; padding: 25px; border-radius: 0 0 20px 20px; margin-bottom: 25px; text-align: center; }
         .option-row { display: flex; align-items: center; padding: 12px; margin-bottom: 10px; border: 1px solid #dee2e6; border-radius: 10px; cursor: pointer; transition: 0.2s; background: white; }
         .option-row:hover { background-color: #e9ecef; transform: translateX(3px); }
         
@@ -30,7 +30,7 @@
 
 <div class="header-area">
     <h2><i class="bi bi-alarm-fill"></i> Akıllı Tekrar (SRS)</h2>
-    <p class="mb-2">Yanlışlarını zamanı gelince tekrar et.</p>
+    <p class="mb-2">Bağımsız Tekrar Modu</p>
     <a href="index.html" class="btn btn-sm btn-light text-primary fw-bold"><i class="bi bi-arrow-left"></i> Ana Teste Dön</a>
 </div>
 
@@ -64,10 +64,10 @@
 
 <script>
     // ============================================================
-    // BURAYA DİKKAT: index.html İÇİNDEKİ VERİLERİ BURAYA YAPIŞTIR
+    // VERİ ALANI: BURAYA index.html İÇİNDEKİ VERİLERİ YAPIŞTIR
     // ============================================================
     
-    // 1. KELİME LİSTESİ (ydsVocabDB)
+   // 1. KELİME LİSTESİ (ydsVocabDB)
      const ydsVocabDB = [
         // --- A GRUBU ---
         { en: "Abandon", tr: "Terk etmek, vazgeçmek" },
@@ -7267,14 +7267,13 @@ const rawExamVocabA = `1-C 2-D 3-A 4-A 5-E 6-B 7-E 8-E 9-B 10-A 11-C 12-D 13-C 1
 `;
 
     // ============================================================
-    // SİSTEM KODLARI (BURAYA DOKUNMA)
+    // SİSTEM KODLARI (GÜNCELLENDİ)
     // ============================================================
 
     let allQuestions = [];
     let wrongBank = JSON.parse(localStorage.getItem('yds_mistakes')) || [];
     let srsSchedule = JSON.parse(localStorage.getItem('yds_srs_schedule')) || {};
     
-    // Test Modu Kontrolü
     let isTestMode = localStorage.getItem('yds_test_mode') === 'true';
     let ONE_WEEK = 7 * 24 * 60 * 60 * 1000;
     let ONE_MIN = 60 * 1000;
@@ -7284,9 +7283,9 @@ const rawExamVocabA = `1-C 2-D 3-A 4-A 5-E 6-B 7-E 8-E 9-B 10-A 11-C 12-D 13-C 1
         document.getElementById('testModeToggle').checked = isTestMode;
         updateModeText();
         
-        loadAllData(); // Soruları Oluştur
-        syncWithMainApp(); // Ana uygulamadan verileri çek
-        renderQuiz(); // Ekrana bas
+        loadAllData(); 
+        syncWithMainApp(); // Ana uygulamadan yeni yanlışları çek
+        renderQuiz(); 
     };
 
     function toggleTestMode() {
@@ -7294,7 +7293,7 @@ const rawExamVocabA = `1-C 2-D 3-A 4-A 5-E 6-B 7-E 8-E 9-B 10-A 11-C 12-D 13-C 1
         localStorage.setItem('yds_test_mode', isTestMode);
         DELAY_TIME = isTestMode ? ONE_MIN : ONE_WEEK;
         updateModeText();
-        renderQuiz(); // Ekranı yenile
+        renderQuiz(); 
     }
 
     function updateModeText() {
@@ -7304,16 +7303,16 @@ const rawExamVocabA = `1-C 2-D 3-A 4-A 5-E 6-B 7-E 8-E 9-B 10-A 11-C 12-D 13-C 1
         document.getElementById('mode-text').innerHTML = text;
     }
 
-    // --- VERİ İŞLEME (index.html'deki mantık) ---
+    // --- VERİ HAZIRLAMA (GÜNCELLENMİŞ KELİME ÜRETİCİSİ İLE) ---
     function loadAllData() {
         allQuestions = [];
 
-        // 1. Manuel Soruları Parse Et
+        // 1. Gramer Sorularını Parse Et
         if (typeof rawQuestionsText !== 'undefined' && rawQuestionsText.length > 50) {
             allQuestions = allQuestions.concat(parseRawData(rawQuestionsText, rawAnswersText, 0));
         }
         
-        // 2. Kelime Sorularını Üret
+        // 2. Kelime Sorularını Üret (Düzeltilmiş Şık Mantığı)
         if (typeof ydsVocabDB !== 'undefined' && ydsVocabDB.length > 1) {
             allQuestions = allQuestions.concat(generateVocabQuestions());
         }
@@ -7322,20 +7321,60 @@ const rawExamVocabA = `1-C 2-D 3-A 4-A 5-E 6-B 7-E 8-E 9-B 10-A 11-C 12-D 13-C 1
         const aiQ = JSON.parse(localStorage.getItem('yds_generated')) || [];
         allQuestions = allQuestions.concat(aiQ);
         
-        // (Eğer çıkmış soruları da eklediysen buraya concat yapmalısın)
+        // Çıkmış sorular değişkenleri burada tanımlıysa onları da ekle:
+        if (typeof rawExamPrepQ !== 'undefined') allQuestions = allQuestions.concat(parseRawData(rawExamPrepQ, rawExamPrepA, 3000));
+        // ... diğer çıkmış sorular ...
     }
 
-    // Basit Parser (Senin formatına uygun)
+    function generateVocabQuestions() {
+        let qList = [];
+        const totalWords = ydsVocabDB.length;
+        
+        ydsVocabDB.forEach((item, index) => {
+            let isEnToTr = index < (totalWords / 2); 
+            let questionText, correctAns;
+            
+            if (isEnToTr) {
+                questionText = `<strong>"${item.en}"</strong> kelimesinin Türkçe karşılığı nedir?`;
+                correctAns = item.tr;
+            } else {
+                questionText = `<strong>"${item.tr}"</strong> kelimesinin İngilizce karşılığı nedir?`;
+                correctAns = item.en;
+            }
+
+            // Rastgele Çeldirici Üretme (--- yerine gerçek kelime)
+            let distractors = [];
+            while(distractors.length < 4) {
+                let randomIdx = Math.floor(Math.random() * totalWords);
+                let randomItem = ydsVocabDB[randomIdx];
+                // Aynı kelime olmasın
+                if (randomItem.en !== item.en && !distractors.includes(randomItem)) {
+                    let distOption = isEnToTr ? randomItem.tr : randomItem.en;
+                    if(!distractors.includes(distOption)) distractors.push(distOption);
+                }
+            }
+
+            let optionsArr = [...distractors, correctAns].sort(() => Math.random() - 0.5);
+            let optionsObj = { A: optionsArr[0], B: optionsArr[1], C: optionsArr[2], D: optionsArr[3], E: optionsArr[4] };
+
+            qList.push({
+                id: 1000 + index, 
+                text: questionText,
+                options: optionsObj,
+                correctAnswer: Object.keys(optionsObj).find(key => optionsObj[key] === correctAns),
+                tip: "Kelime tekrarı önemlidir.",
+                isVocab: true 
+            });
+        });
+        return qList;
+    }
+
     function parseRawData(qText, aText, offset) {
         const questions = [];
         const answerMap = {};
-        
-        // Cevapları işle
         const ansRegex = /(\d+)\s*[:\-\u2013]\s*([A-E])/g; 
         let match;
-        while ((match = ansRegex.exec(aText)) !== null) {
-            answerMap[match[1]] = match[2];
-        }
+        while ((match = ansRegex.exec(aText)) !== null) { answerMap[match[1]] = match[2]; }
 
         const lines = qText.split('\n');
         let currentQ = null;
@@ -7370,45 +7409,29 @@ const rawExamVocabA = `1-C 2-D 3-A 4-A 5-E 6-B 7-E 8-E 9-B 10-A 11-C 12-D 13-C 1
         return questions;
     }
 
-    function generateVocabQuestions() {
-        // Basitleştirilmiş kelime üretici
-        return ydsVocabDB.map((item, index) => ({
-            id: 1000 + index,
-            text: `"${item.en}" kelimesinin Türkçe karşılığı nedir?`,
-            options: { A: item.tr, B: "---", C: "---", D: "---", E: "---" }, // Şıklar basit tutuldu, index.html'deki gibi random yapılabilir
-            correctAnswer: "A",
-            isVocab: true
-        }));
-    }
-
-    // --- SENKRONİZASYON ---
+    // --- SENKRONİZASYON (BAĞI KOPARILMIŞ HALİ) ---
     function syncWithMainApp() {
         const now = Date.now();
         let changed = false;
 
-        // 1. Ana uygulamada yanlış yapılmış ama Takvimde yoksa EKLE
+        // 1. Sadece YENİ yanlışları ekle.
+        // Ana uygulamada bir soru yanlış yapılmışsa, buraya ekleriz.
         wrongBank.forEach(id => {
-            // String/Int dönüşümü yaparak kontrol et
             if (!srsSchedule[id]) {
-                // YENİ YANLIŞ: Hemen çözdürme, 1 hafta sonraya at (Kullanıcının isteği)
-                // Eğer Test Modu açıksa 1 dakika sonraya at.
+                // Listede yoksa ekle ve süresini başlat
                 srsSchedule[id] = now + DELAY_TIME; 
                 changed = true;
             }
         });
 
-        // 2. Ana uygulamadan silinmişse buradan da SİL
-        Object.keys(srsSchedule).forEach(id => {
-            if (!wrongBank.includes(parseInt(id)) && !wrongBank.includes(id.toString())) {
-                delete srsSchedule[id];
-                changed = true;
-            }
-        });
+        // NOT: Buradan "silme" kodunu çıkarttım.
+        // Artık 'wrongBank'tan silinen soru, 'srsSchedule'dan silinmez.
+        // Hatırlatıcı kendi listesini yönetir.
 
         if(changed) localStorage.setItem('yds_srs_schedule', JSON.stringify(srsSchedule));
     }
 
-    // --- EKRANA BASMA ---
+    // --- RENDER ---
     function renderQuiz() {
         const container = document.getElementById('quiz-container');
         container.innerHTML = "";
@@ -7417,11 +7440,9 @@ const rawExamVocabA = `1-C 2-D 3-A 4-A 5-E 6-B 7-E 8-E 9-B 10-A 11-C 12-D 13-C 1
         let dueList = [];
         let waitCount = 0;
 
-        // Soruları filtrele: Süresi dolmuş mu?
         Object.keys(srsSchedule).forEach(id => {
             const targetTime = srsSchedule[id];
             if (targetTime <= now) {
-                // ID ile soruyu bul
                 const q = allQuestions.find(x => x.id == id);
                 if (q) dueList.push(q);
             } else {
@@ -7444,13 +7465,8 @@ const rawExamVocabA = `1-C 2-D 3-A 4-A 5-E 6-B 7-E 8-E 9-B 10-A 11-C 12-D 13-C 1
             return;
         }
 
-        // Soruları Bas
         dueList.forEach(q => {
             let optsHTML = "";
-            
-            // Eğer kelime sorusuysa şıkları karıştırmak gerekir ama basitlik için düz basıyorum.
-            // Gerçek index.html verilerini yapıştırınca şıklar doğru gelecektir.
-            
             ['A', 'B', 'C', 'D', 'E'].forEach(opt => {
                 optsHTML += `
                 <div class="option-row" onclick="checkAnswer(${q.id}, '${opt}', '${q.correctAnswer}')">
@@ -7478,9 +7494,8 @@ const rawExamVocabA = `1-C 2-D 3-A 4-A 5-E 6-B 7-E 8-E 9-B 10-A 11-C 12-D 13-C 1
         const feedback = document.getElementById(`feedback-${qId}`);
         const rows = card.querySelectorAll('.option-row');
         
-        rows.forEach(r => r.style.pointerEvents = 'none'); // Kilitle
+        rows.forEach(r => r.style.pointerEvents = 'none'); 
 
-        // Boyama
         rows.forEach(row => {
             const btnText = row.querySelector('.btn-circle').innerText;
             if (btnText === correctOpt) row.classList.add('opt-correct');
@@ -7488,20 +7503,17 @@ const rawExamVocabA = `1-C 2-D 3-A 4-A 5-E 6-B 7-E 8-E 9-B 10-A 11-C 12-D 13-C 1
         });
 
         if (selectedOpt === correctOpt) {
-            // DOĞRU: SİL (ÖĞRENİLDİ)
-            feedback.innerHTML = `<span class="text-success"><i class="bi bi-check-circle"></i> Doğru! Soru listeden silindi.</span>`;
+            // DOĞRU: Sadece HATIRLATICI listesinden sil.
+            // (Ana 'wrongBank' listesinden silmiyoruz, kullanıcı öyle istedi)
+            feedback.innerHTML = `<span class="text-success"><i class="bi bi-check-circle"></i> Doğru! Hatırlatıcıdan silindi.</span>`;
             
-            // Listelerden sil
             delete srsSchedule[qId];
             localStorage.setItem('yds_srs_schedule', JSON.stringify(srsSchedule));
             
-            wrongBank = wrongBank.filter(id => id != qId);
-            localStorage.setItem('yds_mistakes', JSON.stringify(wrongBank));
-
             setTimeout(() => { card.style.display = 'none'; }, 1500);
 
         } else {
-            // YANLIŞ: SÜREYİ UZAT (TEKRAR ET)
+            // YANLIŞ: Süreyi uzat
             const nextDate = Date.now() + DELAY_TIME;
             const dateStr = new Date(nextDate).toLocaleString();
             
@@ -7510,8 +7522,6 @@ const rawExamVocabA = `1-C 2-D 3-A 4-A 5-E 6-B 7-E 8-E 9-B 10-A 11-C 12-D 13-C 1
             srsSchedule[qId] = nextDate;
             localStorage.setItem('yds_srs_schedule', JSON.stringify(srsSchedule));
         }
-        
-        // İstatistikleri anlık güncellemek zor (sayfa yenileme gerekir), o yüzden bırakıyoruz.
     }
 
 </script>
