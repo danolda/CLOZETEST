@@ -7762,7 +7762,6 @@ function renderQuestions(qList) {
         area.innerHTML = "";
         const visibleList = qList.slice(0, renderLimit);
 
-        // --- DÖNGÜYE 'index' PARAMETRESİ EKLENDİ ---
         visibleList.forEach((q, index) => {
             
             // --- CEVAP DURUMU ---
@@ -7771,7 +7770,7 @@ function renderQuestions(qList) {
                 savedStatus = null; 
             }
 
-            // --- ETİKET VE RENK BELİRLEME ---
+            // --- ETİKET VE RENKLER ---
             let badgeText = "Soru";
             let badgeColorStyle = "background-color: #6c757d !important;";
             let borderStyle = "";
@@ -7795,16 +7794,19 @@ function renderQuestions(qList) {
             else if (q.id >= 131 && q.id <= 190) { badgeText = "Relative Clauses"; borderStyle = "border-left: 5px solid #0d6efd;"; badgeColorStyle = "background-color: #0d6efd!important;"; }
             else if (q.id >= 191 && q.id <= 250) { badgeText = "Tense & Modals"; borderStyle = "border-left: 5px solid #0d6efd;"; badgeColorStyle = "background-color: #0d6efd!important;"; }
 
-            // --- NUMARALANDIRMA EKLEME (YENİ) ---
-            // Bölümdeki toplam soru sayısını ve mevcut sırayı ekliyoruz
             badgeText += ` #${index + 1} / ${qList.length}`;
 
-            // --- İPUCU KUTUSU MANTIĞI ---
+            // --- İPUCU İÇERİĞİ ---
             let initialTipContent = "";
             let initialTipDisplay = "none";
             const isMistakeSection = (currentSectionKey === 'mistakes');
 
-            if (q.aiAnalysisData) {
+            // Hangi AI verisi varsa onu göster (Öncelik sırasına göre)
+            if (q.aiVocabData) {
+                initialTipContent = `<strong><i class="bi bi-chat-quote-fill"></i> Örnek Cümle:</strong><br><br>${q.aiVocabData}`;
+                if (!isMistakeSection) initialTipDisplay = "block";
+            }
+            else if (q.aiAnalysisData) {
                 initialTipContent = `<strong><i class="bi bi-translate"></i> Analiz & Çeviri:</strong><br><br>${q.aiAnalysisData}`;
                 if (!isMistakeSection) initialTipDisplay = "block";
             } 
@@ -7832,9 +7834,18 @@ function renderQuestions(qList) {
                 </div>`;
             });
 
-            // --- BUTONLAR ---
+            // --- BUTONLAR (GÜNCELLENDİ) ---
             let buttonsHTML = "";
-            if (!q.isVocab) {
+            
+            // Eğer Kelime Sorusuyse -> Sadece Örnek Cümle Butonu
+            if (q.isVocab) {
+                buttonsHTML = `
+                <button type="button" class="btn btn-sm btn-outline-info" onclick="getAiVocabExample(${q.id})" title="Kelimeyi cümle içinde gör">
+                    <i class="bi bi-chat-quote"></i> <span class="d-none d-md-inline">Örnek Cümle</span>
+                </button>`;
+            } 
+            // Eğer Diğer Sorularsa -> Üret / Analiz / Tüyo
+            else {
                 buttonsHTML = `
                 <div class="btn-group" role="group">
                     <button type="button" class="btn btn-sm btn-outline-primary" onclick="generateAiQuestions(${q.id})" title="Benzer Soru Üret">
@@ -8227,7 +8238,48 @@ function saveApiKey() {
         alert("Lütfen geçerli bir anahtar giriniz.");
     }
 }
+    
+// --- KELİME BÖLÜMÜNE ÖZEL: ÖRNEK CÜMLE ---
+    async function getAiVocabExample(questionId) {
+        if(!userApiKey) { alert("API Anahtarı eksik! Ayarlardan ekleyin."); openSettings(); return; }
 
+        let q = allQuestions.find(i => i.id === questionId);
+        if(!q) return;
+
+        // Daha önce hafızaya alındıysa direkt göster
+        if(q.aiVocabData) {
+            showTipBox(q.id, "Örnek Cümle & Çeviri", "bi-chat-quote-fill", q.aiVocabData);
+            return;
+        }
+
+        showLoading(q.id, "Örnek cümle hazırlanıyor...");
+
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${userApiKey}`;
+        
+        // AI'ya akıllı talimat veriyoruz: Hangi kelimenin İngilizce olduğunu kendisi bulsun.
+        const prompt = `
+            Sen bir YDS İngilizce öğretmenisin. Aşağıdaki kelime sorusu verilerini analiz et.
+            
+            SORU METNİ: "${q.text}"
+            DOĞRU CEVAP ŞIKKI: "${q.options[q.correctAnswer]}"
+            
+            GÖREV:
+            1. Bu soruda sorulan asıl "İNGİLİZCE AKADEMİK KELİMEYİ" tespit et. (Soru metninde de olabilir, cevap şıkkında da olabilir).
+            2. Bu kelimeyi kullanarak YDS seviyesinde, akademik ama anlaşılır bir İngilizce cümle kur.
+            3. Bu cümlenin tam Türkçe çevirisini yap.
+            
+            ÇIKTI FORMATI (Düz metin, HTML yok):
+            Kelime: [Tespit Ettiğin Kelime]
+            🇬🇧 [İngilizce Cümle]
+            🇹🇷 [Türkçe Çevirisi]
+        `;
+
+        try {
+            const data = await callGemini(url, prompt);
+            q.aiVocabData = data.replace(/\n/g, '<br>'); // Kaydet
+            showTipBox(q.id, "Örnek Cümle & Çeviri", "bi-chat-quote-fill", q.aiVocabData);
+        } catch (e) { showError(q.id, e.message); }
+    }
 // --- 1. BUTON: SADECE ANALİZ VE ÇEVİRİ ---
     async function getAiAnalysis(questionId) {
         if(!userApiKey) { alert("API Anahtarı eksik!"); openSettings(); return; }
