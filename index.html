@@ -315,25 +315,36 @@
                 <!-- VS MODU ALANI -->
 <div id="vs-area" class="vs-container">
     
-    <!-- LOBİ EKRANI -->
+  <!-- LOBİ EKRANI -->
     <div id="vs-lobby" class="card p-4 text-center">
         <h3 class="text-primary fw-bold mb-4"><i class="bi bi-lightning-charge-fill"></i> YDS MEYDAN OKUMA</h3>
         
         <div class="row g-4">
+            <!-- HOST KISMI (GÜNCELLENDİ) -->
             <div class="col-md-6 border-end">
                 <h5>Oda Kur (Host)</h5>
-                <p class="text-muted small">Arkadaşına vermek için kod oluştur.</p>
-                <button class="btn btn-lg btn-primary w-100 mb-2" onclick="createRoom()">
-                    <i class="bi bi-plus-circle"></i> Kod Oluştur
-                </button>
-                <div id="my-room-id" class="alert alert-info d-none fw-bold user-select-all"></div>
-                <div id="host-status" class="text-success fw-bold mt-2 d-none">Arkadaşın bekleniyor... <div class="spinner-grow spinner-grow-sm"></div></div>
+                <p class="text-muted small">Odanıza bir isim verin (Örn: yds123)</p>
+                
+                <div class="input-group mb-2">
+                    <input type="text" id="host-id-input" class="form-control fw-bold" placeholder="Oda İsmi Yazın">
+                    <button class="btn btn-primary" onclick="createCustomRoom()">
+                        <i class="bi bi-plus-circle"></i> Kur
+                    </button>
+                </div>
+                
+                <div id="host-status" class="alert alert-warning d-none">
+                    Oda açılıyor... <div class="spinner-border spinner-border-sm"></div>
+                </div>
+                <div id="host-ready-msg" class="alert alert-success d-none fw-bold">
+                    Oda Hazır! Arkadaşın bekleniyor... <div class="spinner-grow spinner-grow-sm"></div>
+                </div>
             </div>
             
+            <!-- GUEST KISMI (AYNI KALDI) -->
             <div class="col-md-6">
                 <h5>Odaya Katıl (Guest)</h5>
-                <p class="text-muted small">Arkadaşının verdiği kodu gir.</p>
-                <input type="text" id="join-id-input" class="form-control mb-2 text-center" placeholder="Oda Kodu">
+                <p class="text-muted small">Arkadaşının belirlediği oda ismini gir.</p>
+                <input type="text" id="join-id-input" class="form-control mb-2 text-center" placeholder="Oda İsmi">
                 <button class="btn btn-lg btn-success w-100" onclick="joinRoom()">
                     <i class="bi bi-box-arrow-in-right"></i> Katıl
                 </button>
@@ -8694,7 +8705,7 @@ function saveApiKey() {
         }
     }
 
-    /* ================= VS MODU (MULTIPLAYER) MANTIĞI ================= */
+/* ================= VS MODU (MULTIPLAYER - CUSTOM ID) ================= */
 let peer = null;
 let conn = null;
 let amIHost = false;
@@ -8705,69 +8716,123 @@ let oppScore = 0;
 let myAnswer = null;
 let oppAnswer = null;
 let vsTimerInterval = null;
-let timeLeft = 90;
 
-// Menüden Tıklanınca
+// Menüden Tıklanınca (Sadece ekranı aç, bağlantı kurma)
 function initVsMode() {
-    // Normal ekranı gizle, VS ekranını aç
     document.getElementById('questions-area').style.display = 'none';
-    document.getElementById('active-section-title').innerText = "VS Modu (Çok Oyunculu)";
-    document.getElementById('progress-badge').style.display = 'none';
-    
     document.getElementById('vs-area').style.display = 'block';
+    document.getElementById('active-section-title').innerText = "VS Modu (Çok Oyunculu)";
     
-    // PeerJS Başlat
-    if (!peer) {
-        peer = new Peer(); // Rastgele ID alır
-        
-        peer.on('open', (id) => {
-            console.log('Peer ID:', id);
-        });
-
-        // Birisi bize bağlandığında (Host veya Guest fark etmez)
-        peer.on('connection', (c) => {
-            conn = c;
-            setupConnection();
-        });
-    }
+    // Eğer eski bağlantı varsa temizle
+    if(peer) { peer.destroy(); peer = null; }
+    
+    // UI Sıfırla
+    document.getElementById('vs-lobby').classList.remove('d-none');
+    document.getElementById('vs-setup').classList.add('d-none');
+    document.getElementById('host-status').classList.add('d-none');
+    document.getElementById('host-ready-msg').classList.add('d-none');
+    document.getElementById('host-id-input').value = "";
+    document.getElementById('join-id-input').value = "";
 }
 
-// ODA KUR (HOST)
-function createRoom() {
-    amIHost = true;
-    document.getElementById('my-room-id').innerText = peer.id;
-    document.getElementById('my-room-id').classList.remove('d-none');
+// ÖZEL İSİMLE ODA KUR (HOST)
+function createCustomRoom() {
+    const roomId = document.getElementById('host-id-input').value.trim().replace(/[^a-zA-Z0-9_-]/g, ""); // Sadece harf sayı
+    
+    if (roomId.length < 3) {
+        alert("Oda ismi en az 3 karakter olmalı!");
+        return;
+    }
+
+    // UI Güncelle
     document.getElementById('host-status').classList.remove('d-none');
+    document.getElementById('host-status').innerText = "Oda kuruluyor (" + roomId + ")...";
+
+    // Kendi ismimizle Peer başlat
+    peer = new Peer(roomId);
+
+    // Başarılı Açılırsa
+    peer.on('open', (id) => {
+        amIHost = true;
+        document.getElementById('host-status').classList.add('d-none');
+        document.getElementById('host-ready-msg').classList.remove('d-none');
+        // Inputu kilitle
+        document.getElementById('host-id-input').disabled = true;
+    });
+
+    // Hata Olursa (Örn: İsim doluysa)
+    peer.on('error', (err) => {
+        document.getElementById('host-status').classList.add('d-none');
+        if (err.type === 'unavailable-id') {
+            alert("Bu oda ismi (" + roomId + ") zaten kullanılıyor. Başka bir isim deneyin.");
+        } else {
+            alert("Hata oluştu: " + err.type);
+        }
+        document.getElementById('host-id-input').disabled = false;
+        peer = null;
+    });
+
+    // Rakip Bağlanınca
+    peer.on('connection', (c) => {
+        conn = c;
+        setupConnection();
+    });
 }
 
 // ODAYA KATIL (GUEST)
 function joinRoom() {
     const destId = document.getElementById('join-id-input').value.trim();
-    if (!destId) return alert("Lütfen kod girin!");
+    if (!destId) return alert("Lütfen oda ismini girin!");
     
     amIHost = false;
-    conn = peer.connect(destId);
-    setupConnection();
+    
+    // Guest için rastgele ID oluştur (Çakışma olmasın diye)
+    // Guest'in isminin ne olduğu önemli değil, Host'a bağlanması yeterli
+    peer = new Peer(); 
+
+    peer.on('open', (id) => {
+        // Kendi ID'mizi alınca Host'a bağlanmayı dene
+        conn = peer.connect(destId);
+        
+        // Bağlantı hatası olursa (Host yoksa)
+        peer.on('error', (err) => {
+            alert("Oda bulunamadı veya bağlantı hatası!");
+        });
+
+        setupConnection();
+    });
 }
 
-// BAĞLANTI KURULDUĞUNDA
+// BAĞLANTI KURULDUĞUNDA (ORTAK)
 function setupConnection() {
+    if(!conn) return;
+
     conn.on('open', () => {
         console.log("Bağlantı sağlandı!");
         
         if (amIHost) {
-            // Host ise Kategori Seçim Ekranını Göster
+            // Host Kategori Seçimine Geçer
             document.getElementById('vs-lobby').classList.add('d-none');
             document.getElementById('vs-setup').classList.remove('d-none');
             renderCategorySelection();
         } else {
-            // Guest ise bekleme moduna geç
-            document.getElementById('vs-lobby').innerHTML = `<div class="text-center py-5"><h3>Bağlandı! Host'un oyunu başlatması bekleniyor...</h3><div class="spinner-border text-primary"></div></div>`;
+            // Guest Bekleme Ekranına Geçer
+            document.getElementById('vs-lobby').innerHTML = `
+                <div class="text-center py-5">
+                    <h3 class="text-success fw-bold"><i class="bi bi-check-circle-fill"></i> Odaya Girildi!</h3>
+                    <p class="lead">Host'un oyunu başlatması bekleniyor...</p>
+                    <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;"></div>
+                </div>`;
         }
     });
 
     conn.on('data', (data) => {
         handleData(data);
+    });
+    
+    conn.on('close', () => {
+        alert("Bağlantı koptu!");
+        location.reload();
     });
 }
 
