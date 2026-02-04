@@ -7829,8 +7829,16 @@ function showSection(key) {
     currentSectionKey = key;
     renderLimit = 50; 
     updateActiveMenu(`menu-${key}`);
+    
     const secData = sections.find(s => s.key === key);
     document.getElementById('active-section-title').innerText = secData.title;
+    
+    // --- DÜZELTME BAŞLANGICI: Ekranı Normale Döndür ---
+    document.getElementById('vs-area').style.display = 'none';       // VS ekranını gizle
+    document.getElementById('questions-area').style.display = 'block'; // Normal soruları aç
+    document.getElementById('progress-badge').style.display = 'inline-block'; // Sayacı geri getir
+    // --- DÜZELTME BİTİŞİ ---
+
     const filteredQ = allQuestions.filter(q => q.id >= secData.start && q.id <= secData.end);
     renderQuestions(filteredQ);
     updateProgressBadge(filteredQ);
@@ -7841,11 +7849,24 @@ function showMistakes() {
     renderLimit = 50;
     updateActiveMenu('menu-mistakes');
     document.getElementById('active-section-title').innerText = "Yanlış Cevapladığım Sorular";
+    
+    // --- DÜZELTME: Ekranı Normale Döndür ---
+    document.getElementById('vs-area').style.display = 'none';
+    document.getElementById('questions-area').style.display = 'block';
+    document.getElementById('progress-badge').style.display = 'inline-block';
+    // ---------------------------------------
+
     const mistakeQuestions = allQuestions.filter(q => wrongBank.includes(q.id));
     const mistakeAi = generatedQuestions.filter(q => wrongBank.includes(q.id));
     const combined = [...mistakeQuestions, ...mistakeAi];
-    renderQuestions(combined);
-    document.getElementById('progress-badge').innerText = combined.length;
+    
+    if(combined.length === 0) {
+        document.getElementById('questions-area').innerHTML = `<div class="text-center py-5 text-muted">Henüz yanlış sorunuz yok.</div>`;
+        document.getElementById('progress-badge').innerText = "0";
+    } else {
+        renderQuestions(combined);
+        document.getElementById('progress-badge').innerText = combined.length;
+    }
 }
 
 function showAiGenerated() {
@@ -7853,8 +7874,24 @@ function showAiGenerated() {
     renderLimit = 50;
     updateActiveMenu('menu-ai');
     document.getElementById('active-section-title').innerText = "Senin İçin Oluşturulanlar (Gemini)";
-    renderQuestions([...generatedQuestions].reverse());
-    updateProgressBadge(generatedQuestions);
+    
+    // --- DÜZELTME: Ekranı Normale Döndür ---
+    document.getElementById('vs-area').style.display = 'none';
+    document.getElementById('questions-area').style.display = 'block';
+    document.getElementById('progress-badge').style.display = 'inline-block';
+    // ---------------------------------------
+
+    if(generatedQuestions.length === 0) {
+        document.getElementById('questions-area').innerHTML = `
+            <div class="text-center py-5">
+                <i class="bi bi-google fs-1" style="color: var(--ai-color);"></i>
+                <p class="mt-3">Henüz yapay zeka ile soru üretmediniz.</p>
+            </div>`;
+        document.getElementById('progress-badge').innerText = "0";
+    } else {
+        renderQuestions([...generatedQuestions].reverse());
+        updateProgressBadge(generatedQuestions);
+    }
 }
 
 function updateActiveMenu(id) {
