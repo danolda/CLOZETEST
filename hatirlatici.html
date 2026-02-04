@@ -7445,8 +7445,7 @@ const rawExamVocabA = `1-C 2-D 3-A 4-A 5-E 6-B 7-E 8-E 9-B 10-A 11-C 12-D 13-C 1
         if(changed) localStorage.setItem('yds_srs_schedule', JSON.stringify(srsSchedule));
     }
 
-    // --- RENDER ---
-    function renderQuiz() {
+ function renderQuiz() {
         const container = document.getElementById('quiz-container');
         container.innerHTML = "";
         
@@ -7480,6 +7479,27 @@ const rawExamVocabA = `1-C 2-D 3-A 4-A 5-E 6-B 7-E 8-E 9-B 10-A 11-C 12-D 13-C 1
         }
 
         dueList.forEach(q => {
+            // --- AI BUTONLARI MANTIĞI ---
+            let buttonsHTML = "";
+            if (q.isVocab) {
+                // Kelime Sorusu İse
+                buttonsHTML = `
+                <button type="button" class="btn btn-sm btn-outline-info float-end" onclick="getAiVocabExample(${q.id})">
+                    <i class="bi bi-chat-quote"></i> Örnek Cümle
+                </button>`;
+            } else {
+                // Gramer/Sınav Sorusu İse
+                buttonsHTML = `
+                <div class="float-end">
+                    <button type="button" class="btn btn-sm btn-outline-success me-1" onclick="getAiAnalysis(${q.id})">
+                        <i class="bi bi-translate"></i> Analiz
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-warning" onclick="getAiTip(${q.id})">
+                        <i class="bi bi-lightbulb-fill"></i> Tüyo
+                    </button>
+                </div>`;
+            }
+
             let optsHTML = "";
             ['A', 'B', 'C', 'D', 'E'].forEach(opt => {
                 optsHTML += `
@@ -7492,10 +7512,12 @@ const rawExamVocabA = `1-C 2-D 3-A 4-A 5-E 6-B 7-E 8-E 9-B 10-A 11-C 12-D 13-C 1
             container.insertAdjacentHTML('beforeend', `
                 <div class="card mb-4" id="card-${q.id}">
                     <div class="card-body">
+                        ${buttonsHTML} <!-- Butonlar buraya eklendi -->
                         <h5 class="card-title text-primary">Soru #${q.id}</h5>
                         <p class="lead">${q.text.replace(/___/g, "__________")}</p>
                         <div id="opts-${q.id}">${optsHTML}</div>
                         <div id="feedback-${q.id}" class="mt-3 fw-bold"></div>
+                        <div id="tip-${q.id}" class="tip-box"></div> <!-- AI Cevap Kutusu -->
                     </div>
                 </div>
             `);
@@ -7535,6 +7557,103 @@ const rawExamVocabA = `1-C 2-D 3-A 4-A 5-E 6-B 7-E 8-E 9-B 10-A 11-C 12-D 13-C 1
             
             srsSchedule[qId] = nextDate;
             localStorage.setItem('yds_srs_schedule', JSON.stringify(srsSchedule));
+        }
+    }
+
+    let userApiKey = localStorage.getItem('yds_gemini_key') || "";
+
+    // --- 1. BUTON: ANALİZ VE ÇEVİRİ ---
+    async function getAiAnalysis(questionId) {
+        if(!userApiKey) { alert("API Anahtarı eksik! Lütfen ayarlardan ekleyin."); openSettings(); return; }
+
+        // Hem ana havuzda hem yapay zeka havuzunda ara
+        let q = allQuestions.find(i => i.id === questionId) || generatedQuestions.find(i => i.id === questionId);
+        
+        if(!q) { console.error("Soru bulunamadı ID:", questionId); return; }
+
+        // Hafızada varsa direkt göster
+        if(q.aiAnalysisData) {
+            showTipBox(q.id, "Analiz & Çeviri", "bi-translate", q.aiAnalysisData);
+            return;
+        }
+
+        showLoading(q.id, "Analiz yapılıyor...");
+
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${userApiKey}`;
+        const prompt = `
+            Sen uzman bir İngilizce öğretmenisin. Aşağıdaki YDS sorusu için şu formatta yanıt ver:
+            
+            SORU: "${q.text}"
+            ŞIKLAR: A) ${q.options.A}, B) ${q.options.B}, C) ${q.options.C}, D) ${q.options.D}, E) ${q.options.E}
+            DOĞRU: ${q.correctAnswer}
+
+            Lütfen şu 3 başlığı HTML kullanmadan, düz metin ve satır başlarıyla açıkla:
+            1. SORUNUN TÜRKÇE ÇEVİRİSİ: (Cümleyi tam çevir)
+            2. NEDEN DOĞRU?: (Gramer yapısı veya kelime anlamı üzerinden açıkla)
+            3. NEDEN YANLIŞ?: (Diğer şıkların neden olmadığını kısaca açıkla)
+        `;
+
+        try {
+            const data = await callGemini(url, prompt);
+            q.aiAnalysisData = data.replace(/\n/g, '<br>'); // Kaydet
+            showTipBox(q.id, "Analiz & Çeviri", "bi-translate", q.aiAnalysisData);
+        } catch (e) { showError(q.id, e.message); }
+    }
+
+    // --- 2. BUTON: SADECE TÜYO ---
+    async function getAiTip(questionId) {
+        if(!userApiKey) { alert("API Anahtarı eksik! Lütfen ayarlardan ekleyin."); openSettings(); return; }
+
+        let q = allQuestions.find(i => i.id === questionId) || generatedQuestions.find(i => i.id === questionId);
+        
+        if(!q) { console.error("Soru bulunamadı ID:", questionId); return; }
+
+        if(q.aiTipData) {
+            showTipBox(q.id, "Altın Tüyo", "bi-stars", q.aiTipData);
+            return;
+        }
+
+        showLoading(q.id, "Tüyo hazırlanıyor...");
+
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${userApiKey}`;
+        const prompt = `
+            Bu YDS sorusu için öğrencime sadece bir "Sınav Tüyosu" ver.
+            Soru metni: "${q.text}"
+            Cevap: ${q.correctAnswer}
+            
+            İstek: Uzun çeviri veya açıklama yapma. Sadece bu soru tipini çözerken nelere dikkat etmeli, hangi ipucunu yakalamalı? Kısa ve öz bir strateji ver.
+        `;
+
+        try {
+            const data = await callGemini(url, prompt);
+            q.aiTipData = data.replace(/\n/g, '<br>'); // Kaydet
+            showTipBox(q.id, "Altın Tüyo", "bi-stars", q.aiTipData);
+        } catch (e) { showError(q.id, e.message); }
+    }
+
+    // --- YARDIMCI ARAÇLAR (EKSİK OLANLAR BUNLARDI) ---
+    
+    // API Çağrısı Yapan Ortak Fonksiyon
+    async function callGemini(url, promptText) {
+        const response = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
+        });
+        const json = await response.json();
+        
+        if (json.error) throw new Error(json.error.message);
+        if (!json.candidates || !json.candidates[0].content) throw new Error("API yanıt vermedi.");
+        
+        return json.candidates[0].content.parts[0].text;
+    }
+
+    // Ekranda "Yükleniyor" animasyonu gösterir
+    function showLoading(id, msg) {
+        const box = document.getElementById(`tip-${id}`);
+        if(box) {
+            box.style.display = 'block';
+            box.innerHTML = `<div class="d-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-primary"></div> <span>${msg}</span></div>`;
         }
     }
 
