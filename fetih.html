@@ -36,49 +36,39 @@
             display: block;
         }
 
-        /* --- HARİTA STİLLERİ GÜNCELLEME --- */
+        /* --- HARİTA GÖRÜNÜMÜ --- */
         #map-container svg {
             width: 100%;
             height: 100%;
+            filter: drop-shadow(0 0 10px rgba(0,0,0,0.5)); /* Haritaya gölge ver */
         }
         
-        /* İnternetten gelen haritanın varsayılan renklerini eziyoruz */
         path {
-            fill: var(--map-land) !important; /* !important ekledik */
-            stroke: #7f8c8d;
-            stroke-width: 1px;
+            fill: var(--map-land) !important; 
+            stroke: #5e6b6f;       /* İLLER ARASI SINIR RENGİ (Koyu Gri) */
+            stroke-width: 1.5px;   /* SINIR KALINLIĞI (Bunu artırırsan sınırlar kalınlaşır) */
             transition: all 0.3s ease;
             cursor: pointer;
+            vector-effect: non-scaling-stroke; /* Zoom yapınca çizgiler bozulmasın */
         }
         
         path:hover {
             fill: var(--map-hover) !important;
-            opacity: 0.8;
+            stroke: white;         /* Üzerine gelince sınır beyaz olsun */
+            stroke-width: 2px;
+            z-index: 10;           /* Öne çıkar */
         }
         
-        /* Sahiplik Renkleri */
-        .owned-p1 { fill: var(--p1-color) !important; stroke: #2980b9; }
-        .owned-p2 { fill: var(--p2-color) !important; stroke: #c0392b; }
+        /* SAHİPLİK RENKLERİ */
+        .owned-p1 { fill: var(--p1-color) !important; stroke: #fff; }
+        .owned-p2 { fill: var(--p2-color) !important; stroke: #fff; }
         
-        /* Kale Efekti */
+        /* KALE EFEKTİ */
         .base-city { 
             stroke: var(--gold) !important; 
             stroke-width: 4px !important;
-            filter: drop-shadow(0 0 10px var(--gold));
-            z-index: 999;
+            stroke-dasharray: 5, 5; /* Kesik çizgi efekti */
         }
-
-        /* SAHİPLİK RENKLERİ */
-        .owned-p1 { fill: var(--p1-color) !important; stroke: #2980b9; }
-        .owned-p2 { fill: var(--p2-color) !important; stroke: #c0392b; }
-        
-        /* MERKEZ (KALE) EFEKTİ */
-        .base-city { 
-            stroke: var(--gold) !important; 
-            stroke-width: 3px !important;
-            filter: drop-shadow(0 0 5px var(--gold));
-        }
-
         /* SKOR PANELİ */
         .game-header {
             position: absolute; top: 10px; left: 10px; right: 10px;
@@ -227,61 +217,89 @@
     
 
 
-/* ================= HARİTA YÜKLEME (İNTERNETTEN FETCH) ================= */
+/* ================= HARİTA YÜKLEME (İL SINIRLI VERSİYON) ================= */
 async function loadSvgMap() {
     const wrapper = document.getElementById('map-container');
-    wrapper.innerHTML = '<div class="d-flex justify-content-center align-items-center h-100 text-info"><div class="spinner-border me-2"></div> Harita İndiriliyor...</div>';
+    wrapper.innerHTML = '<div class="d-flex justify-content-center align-items-center h-100 text-warning"><div class="spinner-border me-3"></div> Harita Hazırlanıyor...</div>';
     
-    // Güvenilir, açık kaynaklı Türkiye Haritası (ISO kodlu)
-    const mapUrl = 'https://raw.githubusercontent.com/djaiss/mapsicon/master/all/tr/vector.svg';
+    // KAYNAK: Bu haritada 81 il ayrı path olarak tanımlıdır.
+    const mapUrl = 'https://raw.githubusercontent.com/alperenunal/Turkey-Map-SVG/master/turkey-map.svg';
 
     try {
         const response = await fetch(mapUrl);
         if (!response.ok) throw new Error("Harita sunucudan çekilemedi.");
         
-        // SVG metnini al
         let svgText = await response.text();
+        
+        // SVG'yi temizle ve yerleştir
         wrapper.innerHTML = svgText;
-
-        // SVG elementini ayarla
         const svg = wrapper.querySelector('svg');
+        
+        // Boyutlandırma ayarları
         svg.removeAttribute('width');
         svg.removeAttribute('height');
         svg.style.width = '100%';
         svg.style.height = '100%';
 
-        // Pathleri oyuna uyarla
+        // Path (İl) İşlemleri
         const paths = svg.querySelectorAll('path');
         
         paths.forEach(path => {
-            // Haritadaki ID örneği: "TR-01" (Adana) -> Bizim oyunun formatı: "city-1"
-            const rawId = path.getAttribute('id'); // "TR-01"
+            // Bu SVG kaynağında ID'ler plaka koduyla gelir (Örn: id="01" veya id="TR-01")
+            // Veya path class'larında plaka yazar.
             
-            if (rawId && rawId.startsWith('TR-')) {
-                // "TR-01"den "01"i al, sayıya çevir (1)
-                const plate = parseInt(rawId.split('-')[1]); 
-                
-                // Oyundaki ID formatına çevir
+            let rawId = path.getAttribute('id') || path.getAttribute('data-plaka');
+            
+            // Eğer ID yoksa parent elementten (g) almaya çalış (bazı svglerde gruplama vardır)
+            if (!rawId && path.parentElement.tagName === 'g') {
+                rawId = path.parentElement.getAttribute('id') || path.parentElement.getAttribute('data-plaka');
+            }
+
+            // ID'yi temizle (TR-01 -> 1 veya 01 -> 1)
+            let plate = null;
+            if (rawId) {
+                // Sadece sayıları al
+                const match = rawId.match(/(\d+)/);
+                if (match) {
+                    plate = parseInt(match[0], 10);
+                }
+            }
+
+            if (plate && plate > 0 && plate <= 81) {
+                // Oyuna uygun ID ata
                 path.setAttribute('id', `city-${plate}`);
                 
-                // Varsayılan renkleri temizle (CSS devreye girsin diye)
+                // Varsayılan renkleri sil (CSS kontrol etsin)
                 path.removeAttribute('fill');
                 path.removeAttribute('style');
+                path.setAttribute('class', 'map-province'); // CSS sınıfı ekle
                 
-                // Tıklama olayını ekle
-                path.onclick = () => onCityClick(plate);
+                // Tıklama olayı
+                path.onclick = (e) => {
+                    // SVG tıklamalarında bazen event yayılması (propagation) olur, durduralım
+                    e.stopPropagation();
+                    onCityClick(plate);
+                };
 
-                // Tooltip ekle (Şehir ismi path title'ında zaten var ama biz plakayı da ekleyelim)
-                const originalTitle = path.getAttribute('title') || 'Şehir';
-                path.innerHTML = `<title>${originalTitle} (Plaka: ${plate})</title>`;
+                // Tooltip (İl Adı)
+                // Bu SVG'de genellikle title tag'i yoktur, data-name attribute'u olabilir.
+                let cityName = path.getAttribute('data-name') || path.parentElement.getAttribute('data-name') || `İl ${plate}`;
+                
+                // Varolan title varsa sil, yenisini ekle
+                const oldTitle = path.querySelector('title');
+                if(oldTitle) oldTitle.remove();
+
+                const titleEl = document.createElementNS("http://www.w3.org/2000/svg", "title");
+                titleEl.textContent = `${cityName} (Plaka: ${plate})`;
+                path.appendChild(titleEl);
             }
         });
 
-        console.log("Harita başarıyla yüklendi ve uyarlandı.");
+        console.log("Harita ve il sınırları başarıyla yüklendi.");
 
     } catch (error) {
         console.error(error);
-        wrapper.innerHTML = `<div class="text-danger text-center mt-5">Harita yüklenemedi!<br>Hata: ${error.message}<br>Lütfen internet bağlantını kontrol et.</div>`;
+        wrapper.innerHTML = `<div class="text-danger text-center mt-5"><h3>Harita Yüklenemedi</h3><p>${error.message}</p></div>`;
     }
 }
     
