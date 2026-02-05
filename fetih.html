@@ -209,26 +209,21 @@
     </div>
 </div>
 
-<!-- AYARLAR (YENİ SİSTEM: GENEL SAYI - ÖZEL SÜRE) -->
+<!-- AYARLAR (GÜNCELLENMİŞ) -->
 <div id="screen-setup" class="container d-flex flex-column justify-content-center align-items-center vh-100 d-none">
     <div class="card bg-dark p-4 shadow-lg border-warning" style="width: 700px; max-width: 95%;">
         <h3 class="text-warning text-center mb-3"><i class="bi bi-sliders"></i> Savaş Kuralları</h3>
         
-        <!-- GENEL SORU SAYISI AYARI -->
-        <div class="row g-2 mb-4 justify-content-center">
-            <div class="col-8">
-                <label class="form-label text-white fw-bold">Her Bölümden Kaç Soru?</label>
-                <select id="setup-q-count" class="form-select form-select-lg bg-secondary text-white border-0">
-                    <option value="1">1 Soru (Çok Hızlı)</option>
-                    <option value="3">3 Soru (Hızlı)</option>
-                    <option value="5" selected>5 Soru (İdeal)</option>
-                    <option value="10">10 Soru (Uzun)</option>
-                    <option value="20">20 Soru (Maraton)</option>
-                </select>
+        <!-- EKSİK OLAN KISIM BURASIYDI (BURAYA EKLENDİ) -->
+        <div class="row g-2 mb-3 justify-content-center">
+            <div class="col-6">
+                <label class="form-label text-white small fw-bold text-center w-100">Soru Başına Süre (Saniye)</label>
+                <input type="number" id="setup-timer" class="form-control text-center fw-bold text-warning bg-secondary border-0" value="30" min="10" max="180">
             </div>
         </div>
+        <!-- -------------------------------------------- -->
 
-        <h5 class="text-light border-bottom pb-2 mb-3 small">Kategoriler ve Süreleri</h5>
+        <h5 class="text-light border-bottom pb-2 mb-3 small">Konular ve Soru Adetleri</h5>
         
         <!-- KATEGORİ LİSTESİ -->
         <div id="category-list" class="row g-2 text-start" style="max-height: 350px; overflow-y: auto;">
@@ -7734,43 +7729,58 @@ const rawExamVocabA = `1-C 2-D 3-A 4-A 5-E 6-B 7-E 8-E 9-B 10-A 11-C 12-D 13-C 1
         if(timeInp) timeInp.disabled = !chk.checked;
     }
 
-  /* ================= 2. OYUNU BAŞLATMA (DÜZELTİLMİŞ) ================= */
+ /* ================= 2. OYUNU BAŞLATMA (GÜVENLİ & DÜZELTİLMİŞ) ================= */
     function startGameConfig() {
         // 1. Seçili Kategorileri Al
         const selectedCheckboxes = document.querySelectorAll('.cat-select:checked');
         if (selectedCheckboxes.length === 0) return alert("En az bir kategori seçmelisiniz!");
 
-        // 2. Süre Ayarını Al
-        gameTimeLimit = parseInt(document.getElementById('setup-timer').value);
+        // 2. Süre Ayarını Al (Hata Kontrollü)
+        const timerEl = document.getElementById('setup-timer');
+        if (!timerEl) {
+            console.error("HATA: 'setup-timer' id'li kutu HTML'de bulunamadı! Varsayılan 30sn kullanılıyor.");
+            gameTimeLimit = 30;
+        } else {
+            gameTimeLimit = parseInt(timerEl.value) || 30;
+        }
 
-        // 3. Soruları Havuzdan Çek (Her kategori için kendi adedi kadar)
+        // 3. Soruları Havuzdan Çek
         let pool = [];
         
         selectedCheckboxes.forEach(chk => {
             const catId = chk.value;
             const cat = CATEGORY_POOL.find(c => c.id === catId);
             
-            // O kategoriye özel istenen soru sayısını inputtan al
+            // O kategoriye özel istenen soru sayısını inputtan al (Hata Kontrollü)
             const countInput = document.getElementById(`num-${catId}`);
-            let countRequested = parseInt(countInput.value);
+            let countRequested = 5; // Varsayılan değer
 
-            // Güvenlik kontrolleri (Eldeki sorudan fazlasını isteyemesin)
+            if (countInput) {
+                countRequested = parseInt(countInput.value);
+            } else {
+                console.warn(`UYARI: 'num-${catId}' id'li adet kutusu bulunamadı. Varsayılan 5 alındı.`);
+            }
+
+            // Güvenlik kontrolleri
             if(isNaN(countRequested) || countRequested < 1) countRequested = 1;
-            if(countRequested > cat.data.length) countRequested = cat.data.length;
+            // Eğer kategori datası varsa sınırla
+            if(cat && cat.data && countRequested > cat.data.length) countRequested = cat.data.length;
 
-            if(cat && cat.data.length > 0) {
-                // Karıştır ve İstenen (countRequested) kadar al
+            if(cat && cat.data && cat.data.length > 0) {
+                // Karıştır ve İstenen kadar al
                 const shuffled = [...cat.data].sort(() => 0.5 - Math.random()).slice(0, countRequested);
                 pool = pool.concat(shuffled);
             }
         });
 
-        if(pool.length === 0) return alert("Hata: Seçilen kategorilerden soru çekilemedi.");
+        if(pool.length === 0) return alert("Hata: Seçilen kategorilerden soru çekilemedi veya veri boş.");
 
-        // 4. Tüm havuzu tekrar karıştır (konular karışık gelsin)
+        // 4. Tüm havuzu tekrar karıştır
         gameQuestions = pool.sort(() => 0.5 - Math.random());
-        // Global soru listesine ata
-        questions = gameQuestions; // <--- EKLENDİ: Soruların oyun motoruna aktarılması lazım
+        // Global soru değişkenine ata (Oyun motorunun çalışması için kritik)
+        questions = gameQuestions; 
+
+        console.log(`Oyun ${questions.length} soru ile başlıyor.`);
 
         // 5. Oyunu Başlat ve Verileri Gönder
         const payload = { 
@@ -7782,9 +7792,8 @@ const rawExamVocabA = `1-C 2-D 3-A 4-A 5-E 6-B 7-E 8-E 9-B 10-A 11-C 12-D 13-C 1
         conn.send(payload);
         startGameUI();
         
-        // HATALI SATIR BURADAYDI VE SİLİNDİ:
-        // setTimeout(startNewTurn, 1000);  <--- BU SATIR SİLİNMELİ!
-        // Çünkü önce kale seçilmeli. Kale seçilince checkGameStart() zaten turu başlatacak.
+        // NOT: Buradaki setTimeout satırı önceki hatanın sebebiydi, kaldırdık.
+        // checkGameStart() fonksiyonu kale seçimi bitince turu başlatacak.
     }
     function startGameUI() {
         document.getElementById('screen-lobby').classList.add('d-none');
