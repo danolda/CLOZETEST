@@ -216,7 +216,7 @@
 
 <script>
     /* ================= AYARLAR ================= */
-    const ICON_SIZE = 60; // Asker ve kale boyutu (px)
+    const ICON_SIZE = 55; // Asker ve kale boyutu (px)
     const SVG_URL = './tr.svg'; 
     const ICONS = {
         CASTLE: './castle.svg',
@@ -280,6 +280,8 @@
     /* ================= OYUN SİSTEMİ ================= */
     let peer = null, conn = null, isHost = false, gameState = "LOBBY";
     let currentTurn = 0;
+    let timerInterval = null;
+    let canExpand = false; // Fetih sırası bende mi?
     
     // Demo Sorular
     const questions = [
@@ -334,12 +336,20 @@
         else if(data.type === 'JOIN') { players.p2.name = data.p2Name; goToSetup(); }
         else if(data.type === 'START_GAME') { players = data.players; startGameUI(); if(isHost) setTimeout(startNewTurn, 1000); }
         else if(data.type === 'UPDATE_MAP') { 
-    players = data.players; 
-    renderMapState(); 
-    if(data.msg) showStatus(data.msg);
-    // EKLEME BURADA: Eğer Host isek ve harita güncellendiyse (yani rakip kalesini seçtiyse) oyun başlasın mı diye kontrol et.
-    if(isHost) checkGameStart(); 
-}
+            players = data.players; 
+            renderMapState(); 
+            if(data.msg) showStatus(data.msg);
+        
+            // EĞER HOST İSEK VE OYUN MODU 'EXPANSION' İSE (Yani rakip fethettiyse)
+            if(isHost && gameState === "EXPANSION") {
+                gameState = "PLAYING";
+                currentTurn++;
+                setTimeout(startNewTurn, 5000);
+            }
+            
+            // İlk oyun başlama kontrolü (daha önce eklemiştik, durabilir)
+            if(isHost && gameState === "BASE_SELECT") checkGameStart();
+        }
         else if(data.type === 'NEW_TURN') { currentTurn = data.turnIndex; showQuestion(data.question); }
         else if(data.type === 'OPPONENT_ANSWER') { if(isHost) resolveTurn(data.ans, 'p2'); }
         else if(data.type === 'TURN_RESULT') { handleTurnResult(data); }
@@ -478,28 +488,57 @@
         conn.send({ type: 'NEW_TURN', question: q, turnIndex: currentTurn });
         showQuestion(q);
     }
-
-    function showQuestion(q) {
-        const modal = new bootstrap.Modal(document.getElementById('questionModal'));
-        document.getElementById('q-text').innerText = q.q;
-        document.getElementById('q-counter').innerText = `Soru ${currentTurn+1}`;
-        let html = '';
-        for(let key in q.opts) {
-            html += `<button class="option-btn" onclick="submitAnswer('${key}')"><b>${key})</b> ${q.opts[key]}</button>`;
+    function startTimer() {
+    let timeLeft = 30; // Ayarlardaki setup-time buraya bağlanabilir ama şimdilik 30 sabit
+    const timerEl = document.getElementById('q-timer');
+    timerEl.innerText = timeLeft;
+    
+    if(timerInterval) clearInterval(timerInterval);
+    
+    timerInterval = setInterval(() => {
+        timeLeft--;
+        timerEl.innerText = timeLeft;
+        if(timeLeft <= 0) {
+            clearInterval(timerInterval);
+            // Süre bitince boş cevap gönder (zaman doldu)
+            submitAnswer(null); 
         }
-        document.getElementById('q-options').innerHTML = html;
-        document.getElementById('wait-msg').classList.add('d-none');
-        modal.show();
-    }
+    }, 1000);
+}
 
-    function submitAnswer(ans) {
-        document.querySelectorAll('.option-btn').forEach(b => {
-            b.classList.add('locked');
-            if(b.innerText.startsWith(ans)) b.classList.add('selected');
-        });
-        document.getElementById('wait-msg').classList.remove('d-none');
-        isHost ? (myAnswer = ans, checkTurnEnd()) : conn.send({ type: 'OPPONENT_ANSWER', ans: ans });
+function showQuestion(q) {
+    const modal = new bootstrap.Modal(document.getElementById('questionModal'));
+    document.getElementById('q-text').innerText = q.q;
+    document.getElementById('q-counter').innerText = `Soru ${currentTurn+1}`;
+    
+    // ŞIKLARI DÖŞEME
+    let html = '';
+    for(let key in q.opts) {
+        html += `<button class="option-btn" onclick="submitAnswer('${key}')"><b>${key})</b> ${q.opts[key]}</button>`;
     }
+    document.getElementById('q-options').innerHTML = html;
+    document.getElementById('wait-msg').classList.add('d-none');
+    
+    modal.show();
+    
+    // --- YENİ EKLENEN KISIM: SAYAÇ BAŞLAT ---
+    startTimer();
+}
+
+function submitAnswer(ans) {
+    // --- YENİ EKLENEN KISIM: SAYAÇ DURDUR ---
+    if(timerInterval) clearInterval(timerInterval);
+
+    document.querySelectorAll('.option-btn').forEach(b => {
+        b.classList.add('locked');
+        if(ans && b.innerText.startsWith(ans)) b.classList.add('selected');
+    });
+    document.getElementById('wait-msg').classList.remove('d-none');
+    
+    // Eğer süre dolup ans=null geldiyse 'X' gönderelim ki eşleşmesin
+    const finalAns = ans || 'X'; 
+    isHost ? (myAnswer = finalAns, checkTurnEnd()) : conn.send({ type: 'OPPONENT_ANSWER', ans: finalAns });
+}
 
     function resolveTurn(p2Ans) {
         p2AnswerTemp = p2Ans;
@@ -541,27 +580,43 @@
         }
     }
 
-    function startExpansion(winnerKey) {
-        gameState = "EXPANSION";
-        const amIWinner = (isHost && winnerKey === 'p1') || (!isHost && winnerKey === 'p2');
-        amIWinner ? showStatus("TEBRİKLER! Fethetmek için bir ile tıkla!") : showStatus("Rakip fetih yapıyor...");
+function startExpansion(winnerKey) {
+    gameState = "EXPANSION";
+    // Kazanan ben miyim kontrolü
+    canExpand = (isHost && winnerKey === 'p1') || (!isHost && winnerKey === 'p2');
+    
+    if (canExpand) {
+        showStatus("TEBRİKLER! Fethetmek için bir ile tıkla!");
+    } else {
+        showStatus("Rakip fetih yapıyor, bekleniyor...");
     }
+}
 
-    function claimCity(plate) {
-        const me = isHost ? 'p1' : 'p2';
-        if(players.p1.cities.includes(plate) || players.p2.cities.includes(plate)) return alert("Bu il zaten dolu!");
-        
-        players[me].cities.push(plate);
-        players[me].score += 50;
+function claimCity(plate) {
+    // KONTROL 1: Sıra bende mi?
+    if (!canExpand) return showStatus("Sıra rakipte, fetih yapamazsın!");
 
-        if(isHost) {
-            syncMap(`${players.p1.name} bir il fethetti!`);
-            gameState = "PLAYING"; currentTurn++; setTimeout(startNewTurn, 1000);
-        } else {
-            conn.send({ type: 'UPDATE_MAP', players: players, msg: `${players.p2.name} bir il fethetti!` });
-            renderMapState();
-        }
+    const me = isHost ? 'p1' : 'p2';
+    if(players.p1.cities.includes(plate) || players.p2.cities.includes(plate)) return alert("Bu il zaten dolu!");
+    
+    players[me].cities.push(plate);
+    players[me].score += 50;
+    canExpand = false; // Bir kere tıkladı, hakkı bitti.
+
+    if(isHost) {
+        // HOST KENDİ SEÇTİ
+        syncMap(`${players.p1.name} fethetti! 5 sn sonra yeni soru...`);
+        gameState = "PLAYING"; 
+        currentTurn++; 
+        // 5 SANİYE BEKLEME
+        setTimeout(startNewTurn, 5000);
+    } else {
+        // MİSAFİR SEÇTİ -> Host'a bildir
+        conn.send({ type: 'UPDATE_MAP', players: players, msg: `${players.p2.name} fethetti! 5 sn sonra yeni soru...` });
+        renderMapState();
+        showStatus("İl alındı, yeni soru bekleniyor...");
     }
+}
 
     function showStatus(msg) {
         const el = document.getElementById('status-bar');
