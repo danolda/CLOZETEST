@@ -93,12 +93,59 @@
 
 <!-- AYARLAR -->
 <div id="screen-setup" class="container d-flex flex-column justify-content-center align-items-center vh-100 d-none">
-    <div class="card bg-dark p-4 shadow-lg w-50 border-warning">
-        <h3 class="text-warning text-center mb-4">Savaş Kuralları</h3>
-        <button class="btn btn-warning btn-lg w-100 mt-3" onclick="startGameConfig()">SAVAŞI BAŞLAT</button>
+    <div class="card bg-dark p-4 shadow-lg w-50 border-warning" style="max-height: 90vh; overflow-y: auto;">
+        <h3 class="text-warning text-center mb-3">Savaş Ayarları</h3>
+        
+        <div id="loading-msg" class="text-info text-center mb-3">
+            <div class="spinner-border spinner-border-sm"></div> Sorular Yükleniyor...
+        </div>
+
+        <div id="setup-form" class="d-none">
+            <label class="text-white fw-bold mb-2 border-bottom w-100">Kelime & Gramer</label>
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="cat-vocab" checked>
+                <label class="form-check-label text-white" for="cat-vocab">YDS Akademik Kelimeler</label>
+            </div>
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="cat-prep">
+                <label class="form-check-label text-white" for="cat-prep">Prepositions (Edatlar)</label>
+            </div>
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="cat-conj">
+                <label class="form-check-label text-white" for="cat-conj">Conjunctions (Bağlaçlar)</label>
+            </div>
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="cat-tense">
+                <label class="form-check-label text-white" for="cat-tense">Tense & Modals</label>
+            </div>
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="cat-relative">
+                <label class="form-check-label text-white" for="cat-relative">Relative Clauses</label>
+            </div>
+
+            <label class="text-warning fw-bold mt-3 mb-2 border-bottom w-100">Çıkmış Sorular</label>
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="exam-prep">
+                <label class="form-check-label text-warning" for="exam-prep">Çıkmış - Prepositions</label>
+            </div>
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="exam-conj">
+                <label class="form-check-label text-warning" for="exam-conj">Çıkmış - Bağlaçlar</label>
+            </div>
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="exam-tense">
+                <label class="form-check-label text-warning" for="exam-tense">Çıkmış - Tense</label>
+            </div>
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="exam-vocab">
+                <label class="form-check-label text-warning" for="exam-vocab">Çıkmış - Kelime</label>
+            </div>
+
+            <button class="btn btn-warning btn-lg w-100 mt-4" onclick="startGameConfig()">SAVAŞI BAŞLAT</button>
+        </div>
     </div>
 </div>
-
+    
 <!-- OYUN EKRANI -->
 <div id="screen-game" class="d-none">
     <div class="game-header">
@@ -246,13 +293,150 @@
     let currentTurn = 0, timerInterval = null;
     let turnQueue = []; // Fetih sırasını tutan kuyruk: ['p1', 'p2'] gibi
 
-    const questions = [
-        { q: "She is interested ___ music.", opts: {A:'on',B:'in',C:'at',D:'for'}, ans: 'B' },
-        { q: "He works ___ a bank.", opts: {A:'at',B:'on',C:'to',D:'by'}, ans: 'A' },
-        { q: "I am afraid ___ dogs.", opts: {A:'from',B:'of',C:'by',D:'in'}, ans: 'B' },
-        { q: "The book is ___ the table.", opts: {A:'in',B:'on',C:'at',D:'of'}, ans: 'B' },
-        { q: "Capital of Turkey?", opts: {A:'Istanbul',B:'Ankara',C:'Izmir',D:'Bursa'}, ans: 'B' }
-    ];
+    /* ================= DİNAMİK SORU SİSTEMİ ================= */
+    let questions = []; // Artık const değil let, içi boş başlıyor
+    let LOADED_DATA = {}; // Dosyadan çekilen ham veriler buraya dolacak
+
+    // Sayfa yüklendiğinde sorular.txt dosyasını çek
+    window.onload = function() {
+        fetch('./sorular.txt')
+            .then(response => response.text())
+            .then(text => {
+                parseTextFile(text);
+                // Eğer Setup ekranındaysak yükleme bittiğini göster
+                const loadMsg = document.getElementById('loading-msg');
+                const formMsg = document.getElementById('setup-form');
+                if(loadMsg && formMsg) {
+                    loadMsg.classList.add('d-none');
+                    formMsg.classList.remove('d-none');
+                }
+            })
+            .catch(err => {
+                alert("Sorular dosyası yüklenemedi! Lütfen dosya adının 'sorular.txt' olduğundan emin olun.");
+                console.error(err);
+            });
+    };
+
+    /* --- PARSER: Text Dosyasını İşleme --- */
+    function parseTextFile(text) {
+        // 1. YDS Kelimeleri (Array yapısını string içinden çıkarıp parse etme)
+        // const ydsVocabDB = [...] kısmını bulur
+        const vocabMatch = text.match(/const ydsVocabDB\s*=\s*(\[[\s\S]*?\]);/);
+        if (vocabMatch) {
+            // Güvenli olmayan eval yerine Function constructor ile array'e çeviriyoruz
+            try {
+                LOADED_DATA.vocabDB = new Function("return " + vocabMatch[1])();
+            } catch(e) { console.error("Kelime listesi parse hatası", e); }
+        }
+
+        // 2. Backtick (`) arasındaki büyük metinleri ayıkla
+        // Helper: Değişken adından içeriği bulur
+        const extractVar = (varName) => {
+            const regex = new RegExp(`const ${varName}\\s*=\\s*\`([\\s\\S]*?)\`;`);
+            const match = text.match(regex);
+            return match ? match[1] : "";
+        };
+
+        LOADED_DATA.rawQuestions = extractVar('rawQuestionsText');
+        LOADED_DATA.rawAnswers = extractVar('rawAnswersText'); // Sorular.txt en sonuna cevap anahtarını eklediyseniz
+        
+        LOADED_DATA.examPrepQ = extractVar('rawExamPrepQ');
+        LOADED_DATA.examPrepA = extractVar('rawExamPrepA');
+        
+        LOADED_DATA.examConjQ = extractVar('rawExamConjQ');
+        LOADED_DATA.examConjA = extractVar('rawExamConjA');
+        
+        LOADED_DATA.examTenseQ = extractVar('rawExamTenseQ');
+        LOADED_DATA.examTenseA = extractVar('rawExamTenseA');
+        
+        LOADED_DATA.examVocabQ = extractVar('rawExamVocabQ');
+        LOADED_DATA.examVocabA = extractVar('rawExamVocabA');
+    }
+
+    /* --- SORU OLUŞTURUCULAR --- */
+    function generateVocabQuestions(count = 10) {
+        if (!LOADED_DATA.vocabDB) return [];
+        const shuffled = [...LOADED_DATA.vocabDB].sort(() => 0.5 - Math.random());
+        return shuffled.slice(0, count).map(item => {
+            const distractors = LOADED_DATA.vocabDB
+                .filter(w => w.en !== item.en)
+                .sort(() => 0.5 - Math.random()).slice(0, 3).map(w => w.tr);
+            const optionsArr = [item.tr, ...distractors].sort(() => 0.5 - Math.random());
+            const optsObj = {}; const letters = ['A', 'B', 'C', 'D'];
+            let ans = '';
+            optionsArr.forEach((opt, i) => { optsObj[letters[i]] = opt; if(opt===item.tr) ans=letters[i]; });
+            return { q: `Meaning of: <b>${item.en}</b>`, opts: optsObj, ans: ans };
+        });
+    }
+
+    function parseQuestionsWithKey(qText, aText, isExamFormat = false) {
+        if(!qText || !aText) return [];
+        const questions = [];
+        const answerMap = {};
+        // Cevap anahtarını işle (1-A, 1:A vb.)
+        const answerMatches = aText.match(/(\d+)[\s:-]+([A-E])/g);
+        if (answerMatches) answerMatches.forEach(m => { const p = m.split(/[\s:-]+/); answerMap[p[0]] = p[1]; });
+
+        const lines = qText.split('\n');
+        let currentQ = null, qNum = 0;
+
+        lines.forEach(line => {
+            line = line.trim();
+            if (!line) return;
+            // Soru başlangıcı: "1) ..." veya "1. ..."
+            const match = line.match(isExamFormat ? /^(\d+)\.\s+(.*)/ : /^(\d+)\)\s+(.*)/);
+            if (match) {
+                if (currentQ) questions.push(currentQ);
+                qNum = match[1];
+                currentQ = { q: match[2], opts: {}, ans: answerMap[qNum] || 'A' };
+            } else if (currentQ) {
+                const optMatch = line.match(/^([A-E])\)\s+(.*)/);
+                if (optMatch) currentQ.opts[optMatch[1]] = optMatch[2];
+                else if (!line.startsWith('TIP') && !line.startsWith('Section')) currentQ.q += " " + line;
+            }
+        });
+        if (currentQ) questions.push(currentQ);
+        return questions;
+    }
+
+    function parseGeneralGrammar(sectionTitle) {
+        if(!LOADED_DATA.rawQuestions) return [];
+        const sections = LOADED_DATA.rawQuestions.split('Section:');
+        const targetText = sections.find(s => s.includes(sectionTitle));
+        // rawAnswersText genel metnin sonundaysa onu kullanır
+        return targetText ? parseQuestionsWithKey(targetText, LOADED_DATA.rawAnswers || "", false) : []; 
+    }
+
+    /* --- OYUN BAŞLATMA MANTIĞI --- */
+    function startGameConfig() {
+        if(!isHost) return;
+        let gameQ = [];
+
+        // Checkbox durumlarına göre ekle
+        if(document.getElementById('cat-vocab').checked) gameQ = gameQ.concat(generateVocabQuestions(15));
+        
+        if(document.getElementById('cat-prep').checked) gameQ = gameQ.concat(parseGeneralGrammar("Prepositions"));
+        if(document.getElementById('cat-conj').checked) gameQ = gameQ.concat(parseGeneralGrammar("Conjunctions"));
+        if(document.getElementById('cat-relative').checked) gameQ = gameQ.concat(parseGeneralGrammar("Relative Clauses"));
+        if(document.getElementById('cat-tense').checked) gameQ = gameQ.concat(parseGeneralGrammar("Tense"));
+
+        if(document.getElementById('exam-prep').checked) gameQ = gameQ.concat(parseQuestionsWithKey(LOADED_DATA.examPrepQ, LOADED_DATA.examPrepA, true));
+        if(document.getElementById('exam-conj').checked) gameQ = gameQ.concat(parseQuestionsWithKey(LOADED_DATA.examConjQ, LOADED_DATA.examConjA, true));
+        if(document.getElementById('exam-tense').checked) gameQ = gameQ.concat(parseQuestionsWithKey(LOADED_DATA.examTenseQ, LOADED_DATA.examTenseA, true));
+        if(document.getElementById('exam-vocab').checked) gameQ = gameQ.concat(parseQuestionsWithKey(LOADED_DATA.examVocabQ, LOADED_DATA.examVocabA, true));
+
+        if(gameQ.length === 0) {
+            alert("En az bir kategori seçmelisin! Varsayılan kelime soruları yüklendi.");
+            gameQ = generateVocabQuestions(10);
+        }
+
+        // Karıştır ve global değişkene ata
+        questions = gameQ.sort(() => 0.5 - Math.random()); // Hepsini kullanmak isterseniz slice yapmayın
+        
+        // Misafire de soruları gönder
+        conn.send({ type: 'START_GAME', players: players, questions: questions });
+        startGameUI();
+    }
 
     let players = {
         p1: { name: "", base: null, cities: [], score: 0, hp: 3, id: 'p1', time: 0 },
@@ -290,7 +474,13 @@
     function handleData(data) {
         if(data.type === 'INIT') { players.p1.name = data.p1Name; document.getElementById('lobby-status').innerText = "Bağlandı!"; }
         else if(data.type === 'JOIN') { players.p2.name = data.p2Name; goToSetup(); }
-        else if(data.type === 'START_GAME') { players = data.players; startGameUI(); if(isHost) setTimeout(startNewTurn, 1000); }
+        // handleData fonksiyonu içinde START_GAME bloğunu şöyle güncelleyin:
+        else if(data.type === 'START_GAME') { 
+            players = data.players; 
+            if(data.questions) questions = data.questions; // <--- BU SATIR ÇOK ÖNEMLİ
+            startGameUI(); 
+            if(isHost) setTimeout(startNewTurn, 1000); 
+        }
         else if(data.type === 'UPDATE_MAP') { 
             players = data.players; 
             renderMapState(); 
