@@ -157,24 +157,89 @@
     const SVG_URL = './tr.svg'; 
     const ICONS = { CASTLE: './castle.svg', HOST_SOLDIER: './hostsoldier.svg', GUEST_SOLDIER: './questsoldier.svg' };
     
-    // TÜRKİYE KOMŞULUK HARİTASI (Plaka Kodları)
+ // GÜNCELLENMİŞ KOMŞULUK HARİTASI (SVG UYUMLU)
     const NEIGHBORS = {
-        1: [33, 51, 42, 07, 70], 2: [44, 21, 63, 27, 46], 3: [26, 42, 06, 18, 20, 32], 4: [25, 36, 76, 65, 13], 5: [60, 52, 58, 19],
-        6: [18, 26, 42, 71, 40, 66, 14, 05, 19], 7: [33, 42, 32, 15, 48], 8: [53, 25, 61, 28], 9: [35, 45, 20, 48], 10: [17, 35, 45],
-        11: [26, 16, 54, 41, 10, 43], 12: [23, 49, 21, 44, 24, 62], 13: [49, 04, 65, 56, 21], 14: [06, 26, 11, 54, 81, 67, 18], 15: [07, 32, 03, 20],
-        16: [11, 41, 54, 10, 43], 17: [10, 59], 18: [06, 14, 37, 57, 19, 71], 19: [05, 55, 60, 66, 71, 18, 37], 20: [09, 45, 43, 03, 15, 48],
-        21: [44, 23, 12, 13, 72, 47, 63, 02], 22: [39, 59, 17], 23: [44, 62, 12, 21], 24: [29, 61, 28, 58, 12, 62], 25: [08, 61, 24, 12, 49, 04, 36, 75, 58],
-        26: [11, 06, 42, 03, 43, 14], 27: [46, 02, 63, 79, 80], 28: [52, 58, 24, 29, 61, 08], 29: [28, 61, 24], 30: [65, 73, 56],
-        31: [80, 01], 32: [07, 15, 03, 42], 33: [07, 42, 51, 01], 34: [41, 59], 35: [10, 45, 09], 36: [75, 25, 04, 76],
-        37: [57, 18, 19, 78], 38: [58, 66, 51, 01, 46, 60], 39: [22, 59], 40: [06, 71, 66], 41: [34, 54, 11, 16],
-        42: [06, 26, 03, 32, 07, 33, 51, 68, 70], 43: [16, 11, 26, 03, 20, 45, 10], 44: [58, 24, 12, 21, 02, 46, 38], 45: [35, 10, 43, 20, 09],
-        46: [38, 44, 02, 27, 80, 01, 58], 47: [72, 21, 63, 73], 48: [09, 20, 15, 07], 49: [25, 04, 13, 12, 21, 72], 50: [40, 66, 38, 51, 68],
-        51: [38, 01, 33, 42, 68, 50], 52: [55, 60, 58, 28], 53: [08, 25, 61], 54: [41, 16, 11, 14, 81], 55: [57, 19, 05, 52, 60],
-        56: [13, 65, 30, 73, 47, 72], 57: [37, 18, 19, 55], 58: [28, 52, 60, 38, 46, 44, 23, 12, 24, 25], 59: [22, 39, 34, 17], 60: [55, 52, 28, 58, 66, 19, 05],
-        61: [53, 08, 25, 24, 29, 28], 62: [24, 12, 23], 63: [02, 21, 47, 27, 79], 64: [43, 03, 20, 45], 65: [04, 13, 56, 30],
-        66: [19, 60, 58, 38, 50, 40, 71], 67: [14, 81, 78, 37], 68: [42, 51, 50, 40], 69: [29, 24, 28], 70: [42, 33, 07],
-        71: [06, 18, 19, 66, 40], 72: [21, 13, 56, 47, 49], 73: [47, 56, 30, 65], 74: [67, 78, 37], 75: [36, 25],
-        76: [36, 04], 77: [34, 16, 41], 78: [74, 37, 19, 14, 67], 79: [27, 63, 80], 80: [27, 46, 01, 31, 79], 81: [54, 14, 67]
+        1: [33, 51, 38, 46, 80, 31], // Adana
+        2: [46, 44, 21, 63, 27], // Adıyaman
+        3: [26, 42, 32, 20, 64, 43], // Afyon
+        4: [25, 36, 76, 65, 13, 49], // Ağrı
+        5: [60, 19, 55], // Amasya
+        6: [14, 26, 42, 68, 40, 71, 18], // Ankara
+        7: [48, 15, 32, 42, 70, 33], // Antalya
+        8: [53, 25, 61, 28], // Artvin (Sadece Ardahan komşu değil SVG'de Rize'ye sınır)
+        9: [35, 45, 20, 48], // Aydın
+        10: [17, 35, 45, 43, 16], // Balıkesir
+        11: [54, 16, 43, 26, 14], // Bilecik
+        12: [62, 24, 25, 49, 21, 23], // Bingöl
+        13: [49, 04, 65, 56, 72, 21], // Bitlis
+        14: [81, 54, 11, 26, 06, 18, 37, 78, 67], // Bolu
+        15: [48, 09, 20, 03, 32, 07], // Burdur
+        16: [77, 41, 54, 11, 43, 10], // Bursa
+        17: [22, 59, 10], // Çanakkale
+        18: [37, 19, 06, 14, 71], // Çankırı
+        19: [57, 55, 05, 66, 71, 18, 37], // Çorum
+        20: [09, 45, 64, 03, 15, 48], // Denizli
+        21: [63, 02, 44, 12, 13, 72, 47], // Diyarbakır
+        22: [59, 39, 17], // Edirne
+        23: [44, 24, 62, 12, 21], // Elazığ
+        24: [58, 28, 29, 61, 12, 62, 23], // Erzincan
+        25: [08, 61, 24, 12, 49, 04, 36, 75], // Erzurum
+        26: [11, 14, 06, 42, 03, 43], // Eskişehir
+        27: [31, 80, 46, 02, 63, 79], // Gaziantep
+        28: [52, 58, 24, 29, 61], // Giresun
+        29: [28, 24, 61], // Gümüşhane (Trabzon ve Bayburt ile)
+        30: [65, 73], // Hakkari (Şırnak, Van)
+        31: [01, 80, 27], // Hatay
+        32: [07, 15, 03, 42], // Isparta
+        33: [07, 70, 42, 51, 01], // Mersin
+        34: [59, 41], // İstanbul
+        35: [10, 45, 09], // İzmir
+        36: [75, 25, 04, 76], // Kars
+        37: [74, 67, 14, 18, 19, 57], // Kastamonu
+        38: [58, 66, 50, 51, 01, 46], // Kayseri
+        39: [22, 59], // Kırklareli
+        40: [71, 18, 06, 68, 50, 66], // Kırşehir
+        41: [34, 59, 16, 54], // Kocaeli
+        42: [07, 32, 03, 26, 06, 68, 51, 33, 70], // Konya
+        43: [10, 16, 11, 26, 03, 64, 45], // Kütahya
+        44: [58, 24, 23, 21, 02, 46, 38], // Malatya
+        45: [35, 10, 43, 64, 20, 09], // Manisa
+        46: [38, 44, 02, 27, 80, 01], // K.Maraş
+        47: [63, 21, 72, 73], // Mardin
+        48: [09, 20, 15, 07], // Muğla
+        49: [04, 25, 12, 13, 21, 72], // Muş
+        50: [40, 71, 06, 68, 51, 38, 66], // Nevşehir (Kırşehir yoğunluklu)
+        51: [38, 01, 33, 42, 68, 50], // Niğde
+        52: [55, 60, 58, 28, 24], // Ordu
+        53: [08, 25, 61], // Rize
+        54: [41, 16, 11, 14, 81], // Sakarya
+        55: [57, 19, 05, 60, 52], // Samsun
+        56: [13, 65, 30, 73, 47, 72], // Siirt
+        57: [37, 19, 55], // Sinop
+        58: [28, 52, 60, 66, 38, 46, 44, 23, 24], // Sivas
+        59: [22, 39, 34, 17, 10], // Tekirdağ
+        60: [55, 05, 19, 66, 58, 52], // Tokat
+        61: [53, 25, 29, 28], // Trabzon
+        62: [24, 12, 23], // Tunceli
+        63: [27, 02, 21, 47], // Şanlıurfa
+        64: [43, 03, 20, 45], // Uşak
+        65: [04, 13, 56, 30, 73], // Van
+        66: [19, 06, 40, 50, 38, 58, 60], // Yozgat
+        67: [81, 14, 37, 74], // Zonguldak
+        68: [42, 06, 40, 50, 51], // Aksaray
+        69: [29, 24, 25, 61], // Bayburt
+        70: [07, 42, 33], // Karaman
+        71: [18, 06, 40, 66, 19], // Kırıkkale
+        72: [21, 13, 56, 47, 49], // Batman
+        73: [47, 56, 30, 65], // Şırnak
+        74: [67, 37], // Bartın
+        75: [36, 25, 08], // Ardahan
+        76: [36, 04], // Iğdır
+        77: [34, 41, 16], // Yalova
+        78: [74, 37, 18, 14, 67], // Karabük
+        79: [27, 63], // Kilis
+        80: [01, 46, 27], // Osmaniye
+        81: [54, 14, 67]  // Düzce
     };
 
     let peer = null, conn = null, isHost = false, gameState = "LOBBY";
@@ -400,14 +465,14 @@ function handleTurnResult(data) {
     }
 
     /* ================= FETİH VE SALDIRI MANTIĞI ================= */
-    function checkTurnProgress() {
-        if (gameState !== "EXPANSION") return;
-        if (turnQueue.length === 0) {
-            gameState = "PLAYING"; currentTurn++;
-            showStatus("Tur bitti! 5 sn sonra yeni soru...");
-            setTimeout(startNewTurn, 5000);
-        } else {
-            conn.send({ type: 'QUEUE_UPDATE', queue: turnQueue });
+   function checkTurnProgress() {
+        // Bu fonksiyonu artık sadece handleData içinde 'UPDATE_MAP' geldiğinde 
+        // host olmayan durumlar için veya çok özel senkronizasyonlar için tutabiliriz.
+        // Ama ana mantığı claimCity içine taşıdık.
+        if (isHost && gameState === "EXPANSION" && turnQueue.length === 0) {
+             gameState = "WAITING";
+             currentTurn++;
+             setTimeout(startNewTurn, 5000);
         }
     }
 
@@ -416,54 +481,75 @@ function handleTurnResult(data) {
         const opp = isHost ? 'p2' : 'p1';
 
         // 1. SIRA KONTROLÜ
+        if (gameState !== "EXPANSION") return; // Ekstra güvenlik
         if (turnQueue.length === 0 || turnQueue[0] !== me) return showStatus("Sıra sende değil!");
 
         // 2. KOMŞULUK KONTROLÜ
         if (!isAdjacent(plate, players[me].cities)) return alert("Sadece sahip olduğun topraklara komşu yerleri seçebilirsin!");
 
-        // 3. EYLEM TÜRÜ BELİRLEME
-        
-        // A) KALE SALDIRISI (Rakip Kale mi?)
+        let actionDone = false;
+        let msg = "";
+
+        // A) KALE SALDIRISI
         if (players[opp].base === plate) {
             players[opp].hp -= 1;
-            turnQueue.shift(); // Hakkı kullan
-            
-            let msg = `KALE SALDIRISI! ${players[opp].name} 1 can kaybetti!`;
+            msg = `KALE SALDIRISI! ${players[opp].name} 1 can kaybetti!`;
             if (players[opp].hp <= 0) {
-                // OYUN BİTTİ - KAZANAN BENİM
                 players[me].score += 500;
                 msg = "KALE YIKILDI! ZAFER!";
-                if(isHost) endGame(players[me].name, "Kale İşgali", formatScores());
-                else conn.send({ type: 'UPDATE_MAP', players: players, gameOver: true, winner: players[me].name, reason: "Kale İşgali", scores: formatScores() });
+                if(isHost) calculateFinalWinner("Kale İşgali");
             }
-            syncMap(msg);
-            return;
+            actionDone = true;
         }
-
-        // B) TOPRAK ÇALMA (Rakip toprağı mı?)
-        if (players[opp].cities.includes(plate)) {
-            // Rakip listesinden çıkar
+        // B) TOPRAK ÇALMA
+        else if (players[opp].cities.includes(plate)) {
             players[opp].cities = players[opp].cities.filter(c => c !== plate);
             players[opp].score -= 150;
-            // Kendine ekle
             players[me].cities.push(plate);
             players[me].score += 150;
-            
-            turnQueue.shift();
-            syncMap(`${players[me].name} toprak ÇALDI!`);
-            return;
+            msg = `${players[me].name} toprak ÇALDI!`;
+            actionDone = true;
         }
-
-        // C) NORMAL FETİH (Boş mu?)
-        if (!players.p1.cities.includes(plate) && !players.p2.cities.includes(plate)) {
+        // C) NORMAL FETİH
+        else if (!players.p1.cities.includes(plate) && !players.p2.cities.includes(plate)) {
             players[me].cities.push(plate);
             players[me].score += 50;
-            turnQueue.shift();
-            syncMap(`${players[me].name} fethetti!`);
-            return;
+            msg = `${players[me].name} fethetti!`;
+            actionDone = true;
         }
-        
-        alert("Bu ilde işlem yapamazsın!");
+
+        if (actionDone) {
+            // Hakkı düş
+            turnQueue.shift(); 
+            
+            // Eğer Host ise işlemi uygula ve kontrol et
+            if (isHost) {
+                renderMapState();
+                
+                // Kuyruk bitti mi kontrolü
+                if (turnQueue.length === 0) {
+                    // HEMEN durumu kilitle ki bir daha basamasınlar
+                    gameState = "WAITING"; 
+                    
+                    // Haritayı güncelle VE kuyruğun bittiğini bildir
+                    conn.send({ type: 'UPDATE_MAP', players: players, msg: msg });
+                    
+                    showStatus("Tur bitti! 5 sn sonra yeni soru...");
+                    currentTurn++;
+                    setTimeout(startNewTurn, 5000);
+                } else {
+                    // Kuyruk bitmedi, sıradaki kişiye bildir
+                    conn.send({ type: 'UPDATE_MAP', players: players, msg: msg });
+                    // Kuyruk bilgisini güncelle
+                    conn.send({ type: 'QUEUE_UPDATE', queue: turnQueue });
+                    updateExpansionStatus();
+                }
+                
+                if(msg) showStatus(msg);
+            } 
+        } else {
+            alert("Bu ilde işlem yapamazsın!");
+        }
     }
 
     function isAdjacent(targetPlate, myCities) {
