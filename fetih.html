@@ -7406,19 +7406,150 @@ const rawExamVocabA = `1-C 2-D 3-A 4-A 5-E 6-B 7-E 8-E 9-B 10-A 11-C 12-D 13-C 1
     // Veya buraya ham veri setlerini (rawQuestionsText vb.) kopyalamalısın.
     
 
+/* ================= VERİ İŞLEME VE YÜKLEME ================= */
+
     function loadQuestionsFromSource() {
-        // Eğer index.html çalıştıysa ve localStorage'da veri varsa oradan alabiliriz
-        // Yoksa basit bir demo yükleriz. 
-        // PROJEDE: index.html içindeki `allQuestions` dizisini buraya taşıman en sağlıklısı.
-        
-        // Şimdilik sistemin çalışması için boş kontrolü:
-        if(typeof rawQuestionsText !== 'undefined') {
-            // Parse fonksiyonunu buraya da eklemelisin (index.html'den kopyala)
-            // ...
-        } else {
-            console.log("Veri kaynağı bulunamadı, Demo modu aktif.");
-            allQuestions = demoQuestions; 
+        console.log("Veriler yükleniyor...");
+        allQuestions = [];
+
+        // 1. Manuel Gramer Soruları (Index 0-250)
+        if (typeof rawQuestionsText !== 'undefined' && typeof rawAnswersText !== 'undefined') {
+            allQuestions = allQuestions.concat(parseRawData(rawQuestionsText, rawAnswersText, 0));
         }
+
+        // 2. Çıkmış Prepositions (Index 3000+)
+        if (typeof rawExamPrepQ !== 'undefined' && typeof rawExamPrepA !== 'undefined') {
+            allQuestions = allQuestions.concat(parseRawData(rawExamPrepQ, rawExamPrepA, 3000));
+        }
+
+        // 3. Çıkmış Bağlaçlar (Index 3200+)
+        if (typeof rawExamConjQ !== 'undefined' && typeof rawExamConjA !== 'undefined') {
+            allQuestions = allQuestions.concat(parseRawData(rawExamConjQ, rawExamConjA, 3200));
+        }
+
+        // 4. Çıkmış Tense/Modals (Index 3500+)
+        if (typeof rawExamTenseQ !== 'undefined' && typeof rawExamTenseA !== 'undefined') {
+            allQuestions = allQuestions.concat(parseRawData(rawExamTenseQ, rawExamTenseA, 3500));
+        }
+
+        // 5. Çıkmış Kelime (Index 3800+)
+        if (typeof rawExamVocabQ !== 'undefined' && typeof rawExamVocabA !== 'undefined') {
+            allQuestions = allQuestions.concat(parseRawData(rawExamVocabQ, rawExamVocabA, 3800));
+        }
+
+        // 6. Kelime Havuzu (Index 1000-2999)
+        if (typeof ydsVocabDB !== 'undefined') {
+            allQuestions = allQuestions.concat(generateVocabQuestions());
+        }
+
+        console.log("Toplam Yüklenen Soru Sayısı: " + allQuestions.length);
+        
+        if (allQuestions.length === 0) {
+            alert("Hata: Veriler okunamadı! Değişken isimlerini kontrol et.");
+        }
+    }
+
+    // YARDIMCI 1: Metin Bazlı Soruları Parse Etme
+    function parseRawData(qText, aText, startIdOffset) {
+        const parsedQuestions = [];
+        const answerMap = {};
+        
+        // Cevap Anahtarını İşle (1-E, 2-A gibi formatları yakalar)
+        const ansRegex = /(\d+)\s*[:\-\u2013]\s*([A-E])/g; 
+        let match;
+        while ((match = ansRegex.exec(aText)) !== null) {
+            answerMap[match[1]] = match[2];
+        }
+
+        const lines = qText.split('\n');
+        let currentQ = null;
+        
+        lines.forEach(line => {
+            line = line.trim();
+            if (!line) return;
+
+            // Soru Başlangıcını Yakala (1., 1), 1- gibi)
+            if (/^\d+[\.\)\-]/.test(line)) {
+                if (currentQ) { 
+                    const realID = startIdOffset + currentQ.localId;
+                    currentQ.id = realID;
+                    currentQ.correctAnswer = answerMap[currentQ.localId];
+                    if(currentQ.correctAnswer) parsedQuestions.push(currentQ);
+                }
+
+                const qNum = parseInt(line.match(/^\d+/)[0]);
+                let textContent = line.replace(/^\d+[\.\)\-]\s*/, '').trim();
+                
+                currentQ = { 
+                    localId: qNum, 
+                    id: 0, 
+                    text: textContent, 
+                    options: {}, 
+                    section: "Genel" // Varsayılan
+                };
+            } 
+            else if (currentQ) {
+                if (line.startsWith('A)')) currentQ.options.A = line.substring(2).trim();
+                else if (line.startsWith('B)')) currentQ.options.B = line.substring(2).trim();
+                else if (line.startsWith('C)')) currentQ.options.C = line.substring(2).trim();
+                else if (line.startsWith('D)')) currentQ.options.D = line.substring(2).trim();
+                else if (line.startsWith('E)')) currentQ.options.E = line.substring(2).trim();
+                else if (!line.startsWith('TIP:') && !line.match(/^[A-E]\)/)) {
+                    currentQ.text += " " + line;
+                }
+            }
+        });
+
+        // Son soruyu ekle
+        if (currentQ) {
+            const realID = startIdOffset + currentQ.localId;
+            currentQ.id = realID;
+            currentQ.correctAnswer = answerMap[currentQ.localId];
+            if(currentQ.correctAnswer) parsedQuestions.push(currentQ);
+        }
+
+        return parsedQuestions;
+    }
+
+    // YARDIMCI 2: Kelime Havuzundan Soru Üretme
+    function generateVocabQuestions() {
+        let qList = [];
+        const totalWords = ydsVocabDB.length;
+        
+        ydsVocabDB.forEach((item, index) => {
+            let isEnToTr = index < (totalWords / 2); 
+            let questionText, correctAns;
+            
+            if (isEnToTr) {
+                questionText = `"${item.en}" kelimesinin Türkçe karşılığı nedir?`;
+                correctAns = item.tr;
+            } else {
+                questionText = `"${item.tr}" kelimesinin İngilizce karşılığı nedir?`;
+                correctAns = item.en;
+            }
+
+            let distractors = [];
+            while(distractors.length < 4) {
+                let randomIdx = Math.floor(Math.random() * totalWords);
+                let randomItem = ydsVocabDB[randomIdx];
+                if (randomItem.en !== item.en && !distractors.includes(randomItem)) {
+                    let distOption = isEnToTr ? randomItem.tr : randomItem.en;
+                    if(!distractors.includes(distOption)) distractors.push(distOption);
+                }
+            }
+
+            let optionsArr = [...distractors, correctAns].sort(() => Math.random() - 0.5);
+            let optionsObj = { A: optionsArr[0], B: optionsArr[1], C: optionsArr[2], D: optionsArr[3], E: optionsArr[4] };
+
+            qList.push({
+                id: 1000 + index, 
+                text: questionText,
+                options: optionsObj,
+                correctAnswer: Object.keys(optionsObj).find(key => optionsObj[key] === correctAns),
+                section: "Kelime"
+            });
+        });
+        return qList;
     }
 
     /* ================= OYUN DEĞİŞKENLERİ ================= */
