@@ -1,5 +1,5 @@
 /* ================= YDS MEGA KELİME HAVUZU (GÜNCELLENMİŞ - 1200+ KELİME) ================= */
-    const ydsVocabDB = [
+    var ydsVocabDB = [
         // --- A GRUBU ---
         { en: "Abandon", tr: "Terk etmek, vazgeçmek" },
         { en: "Abolition", tr: "Yürürlükten kaldırma, iptal" },
@@ -204,12 +204,12 @@
         { en: "Consistent", tr: "Tutarlı, istikrarlı" },
         { en: "Consolidate", tr: "Sağlamlaştırmak, birleştirmek" },
         { en: "Conspire", tr: "Komplo kurmak" },
-        { en: "Constant", tr: "Sürekli, sabit" },
-        { en: "Constitute", tr: "Oluşturmak, teşkil etmek" },
-        { en: "Constrain", tr: "Kısıtlamak, zorlamak" },
-        { en: "Constraint", tr: "Kısıtlama, baskı" },
-        { en: "Construct", tr: "İnşa etmek" },
-        { en: "Constructive", tr: "Yapıcı" },
+        { en: "varant", tr: "Sürekli, sabit" },
+        { en: "varitute", tr: "Oluşturmak, teşkil etmek" },
+        { en: "varrain", tr: "Kısıtlamak, zorlamak" },
+        { en: "varraint", tr: "Kısıtlama, baskı" },
+        { en: "varruct", tr: "İnşa etmek" },
+        { en: "varructive", tr: "Yapıcı" },
         { en: "Consult", tr: "Danışmak" },
         { en: "Consume", tr: "Tüketmek" },
         { en: "Contact", tr: "İletişim kurmak" },
@@ -1479,7 +1479,7 @@
     ];
 
     /* ================= GRAMER SORULARI (RAW TEXT) ================= */
-    const rawQuestionsText = `
+    var rawQuestionsText = `
 Section: Prepositions & Collocations (1–70)
 1) She insisted ___ paying for the damage, even though it wasn't her fault.
    A) at
@@ -3486,7 +3486,7 @@ TIP: Main clause: would have V3 (burada would).
 `;
     
 // 1. PREPOSITIONS
-    const rawExamPrepQ = `
+    var rawExamPrepQ = `
     1. According to anthropologists, until about 100,000 years ago, humans were often hostile ---- strangers to avoid threats, but as they began to live more closely together, they welcomed strangers, which fostered cooperation ---- different communities. (2025 YDT)
     A) from / about
     B) upon / through
@@ -3523,7 +3523,7 @@ TIP: Main clause: would have V3 (burada would).
     C) about / at
     D) on / beyond
     E) over / into
-    7. Today, the Sun is ---- constant surveillance from space because the more we understand the Sun, the better we are able to predict when a potentially dangerous solar storm will be directed ---- the Earth. (2025 TEMMUZ YÖKDİL FEN)
+    7. Today, the Sun is ---- varant surveillance from space because the more we understand the Sun, the better we are able to predict when a potentially dangerous solar storm will be directed ---- the Earth. (2025 TEMMUZ YÖKDİL FEN)
     A) against / within
     B) at / around
     C) under / towards
@@ -3607,7 +3607,7 @@ TIP: Main clause: would have V3 (burada would).
     C) under / on
     D) with / in
     E) about / through
-    21. Foundations ---- linguistics in the ontological sense are established ---- identifying and describing the ultimate constituents or aspects of reality which linguistic theories seek to refer to and to characterise. (2023 NİSAN YDS)
+    21. Foundations ---- linguistics in the ontological sense are established ---- identifying and describing the ultimate varituents or aspects of reality which linguistic theories seek to refer to and to characterise. (2023 NİSAN YDS)
     A) about / from
     B) for / through
     C) in / against
@@ -3823,7 +3823,7 @@ TIP: Main clause: would have V3 (burada would).
     C) at / with
     D) across / of
     E) for / over
-    57. In 1971, construction began on a vast hydroelectric project to dam the rivers that flow ---- James Bay and Hudson Bay, generating electricity ---- use in Canada and the US. (2016 MART YDS)
+    57. In 1971, varruction began on a vast hydroelectric project to dam the rivers that flow ---- James Bay and Hudson Bay, generating electricity ---- use in Canada and the US. (2016 MART YDS)
     A) through / in
     B) by / with
     C) along / about
@@ -3884,12 +3884,12 @@ TIP: Main clause: would have V3 (burada would).
     D) within / by
     E) around / to
     `;
-    const rawExamPrepA = `1-E 2-A 3-B 4-C 5-D 6-B 7-C 8-C 9-C 10-E 11-D 12-C 13-E 14-D 15-C 16-A 17-B 18-B 19-B 20-D 21-B 22-D 23-C 24-E
+    var rawExamPrepA = `1-E 2-A 3-B 4-C 5-D 6-B 7-C 8-C 9-C 10-E 11-D 12-C 13-E 14-D 15-C 16-A 17-B 18-B 19-B 20-D 21-B 22-D 23-C 24-E
     25-B 26-B 27-A 28-D 29-D 30-E 31-B 32-D 33-A 34-B 35-B 36-E 37-D 38-C 39-C 40-D 41-B 42-D 43-A 44-D 45-C 46-C 47-B 48-D 49-B 50-C
     51-B 52-E 53-A 54-B 55-E 56-A 57-E 58-A 59-B 60-C 61-B 62-E 63-B 64-C 65-A 66-B`;
 
 // --- 2. ÇIKMIŞ BAĞLAÇLAR (186 Soru) ---
-const rawExamConjQ = `
+var rawExamConjQ = `
 1. Many Renaissance monarchs had dreams of ruling without interference from nobles and provincial assemblies; ----, no Renaissance king or queen ever achieved absolute power. (2025 YDT)
 A) similarly
 B) however
@@ -3897,7 +3897,7 @@ C) in addition
 D) for example
 E) consequently
 
-2. ---- the reconstruction of ancient agricultural practices can be carried out straightforwardly based on plant and animal remains, the interpretation of prehistoric rituals is a much more difficult task. (2025 YDT)
+2. ---- the revarruction of ancient agricultural practices can be carried out straightforwardly based on plant and animal remains, the interpretation of prehistoric rituals is a much more difficult task. (2025 YDT)
 A) Once
 B) Because
 C) Unless
@@ -4149,7 +4149,7 @@ C) such / that
 D) whether / or
 E) either / or
 
-38. University libraries in Japan reconstructed their library systems in the 1980s ---- the regulations proposed by the Science Council, which aims to eliminate disparities among library catalogues. (2025 MART YDS)
+38. University libraries in Japan revarructed their library systems in the 1980s ---- the regulations proposed by the Science Council, which aims to eliminate disparities among library catalogues. (2025 MART YDS)
 A) in accordance with
 B) irrespective of
 C) with the exception of
@@ -4506,7 +4506,7 @@ C) as long as
 D) although
 E) in case
 
-89. ---- you are a long-time fan ---- casual follower of the series of Street Fighter, you are already well-aware that it is constantly updated with new characters, costumes, and story content. (2021 EKİM YDS)
+89. ---- you are a long-time fan ---- casual follower of the series of Street Fighter, you are already well-aware that it is varantly updated with new characters, costumes, and story content. (2021 EKİM YDS)
 A) Both / and
 B) Neither / nor
 C) Rather / than
@@ -4611,7 +4611,7 @@ C) neither / nor
 D) such / that
 E) so / that
 
-104. ---- the Sun's constant stream of energy, water molecules are continually evaporating from the surfaces of oceans and lakes, adding to the water vapour in the air. (2020 EYLÜL YDS)
+104. ---- the Sun's varant stream of energy, water molecules are continually evaporating from the surfaces of oceans and lakes, adding to the water vapour in the air. (2020 EYLÜL YDS)
 A) Rather than
 B) Thanks to
 C) As opposed to
@@ -5115,7 +5115,7 @@ C) as / as
 D) neither / nor
 E) whether / or
 
-176. ---- the number of people affected, floods undoubtedly constitute the greatest of all natural hazards. (2015 YDT)
+176. ---- the number of people affected, floods undoubtedly varitute the greatest of all natural hazards. (2015 YDT)
 A) In spite of
 B) In terms of
 C) As opposed to
@@ -5192,14 +5192,14 @@ C) for the sake of
 D) instead of
 E) in case of
 `;
-const rawExamConjA = `1-B 2-D 3-C 4-C 5-A 6-B 7-B 8-D 9-A 10-D 11-C 12-A 13-E 14-E 15-A 16-A 17-A 18-A 19-C 20-C 21-D 22-A 23-A 24-B 25-C 26-A 27-A 28-C 29-C 30-B 31-B 32-E 33-D 34-C 35-B 36-B 37-C 38-A 39-B 40-B 41-C 42-C 43-C 44-B
+var rawExamConjA = `1-B 2-D 3-C 4-C 5-A 6-B 7-B 8-D 9-A 10-D 11-C 12-A 13-E 14-E 15-A 16-A 17-A 18-A 19-C 20-C 21-D 22-A 23-A 24-B 25-C 26-A 27-A 28-C 29-C 30-B 31-B 32-E 33-D 34-C 35-B 36-B 37-C 38-A 39-B 40-B 41-C 42-C 43-C 44-B
 45-B 46-E 47-D 48-B 49-B 50-D 51-B 52-E 53-D 54-E 55-C 56-C 57-A 58-C 59-A 60-B 61-D 62-B 63-D 64-B 65-B 66-C 67-A 68-C 69-C 70-B 71-C 72-C 73-C 74-D 75-C 76-C 77-C 78-D 79-B 80-B 81-A 82-D 83-C 84-B 85-C 86-C 87-C 88-A 89-D 90-E
 91-B 92-A 93-C 94-E 95-B 96-E 97-B 98-C 99-A 100-A 101-E 102-C 103-E 104-B 105-C 106-A 107-E 108-E 109-C 110-D 111-E 112-C 113-B 114-B 115-C 116-C 117-C 118-A 119-B 120-B 121-C 122-B 123-B 124-C 125-B 126-B 127-B 128-A 129-C 130-B 131-C
 132-D 133-E 134-E 135-C 136-E 137-B 138-C 139-C 140-D 141-D 142-B 143-B 144-E 145-C 146-A 147-D 148-B 149-C 150-C 151-E 152-E 153-D 154-E 155-D 156-C 157-D 158-D 159-B 160-C 161-B 162-A 163-A 164-B 165-E 166-D 167-D 168-D 169-C 170-A 171-B 172-D
 173-D 174-C 175-B 176-B 177-B 178-A 179-D 180-A 181-A 182-C 183-D 184-E 185-A 186-D`;
 
 // --- 3. ÇIKMIŞ TENSE/MODALS (96 Soru) ---
-const rawExamTenseQ = `
+var rawExamTenseQ = `
 1. The region at the apex of the Nile Delta experienced a period of growth around 3300 BCE, which implies that this area ---- a kingdom in its own right, but there is no evidence to support this, other than much later historical sources ---- to a Memphite kingdom. (2025 YDT)
 A) must have been / to be referring
 B) should have been / refer
@@ -5676,7 +5676,7 @@ C) making / could alter
 D) having made / should have altered
 E) to have been making / must have altered
 
-69. For a long time, scientists ---- aware that the Earth’s atmosphere is not static, but is in constant motion, producing areas of ever-changing pressure around the globe, but from 1700 onward, scientists ---- to discover how and why large-scale atmospheric movements occur. (2018 YDS SONBAHAR)
+69. For a long time, scientists ---- aware that the Earth’s atmosphere is not static, but is in varant motion, producing areas of ever-changing pressure around the globe, but from 1700 onward, scientists ---- to discover how and why large-scale atmospheric movements occur. (2018 YDS SONBAHAR)
 A) had been / have begun
 B) would have been / had begun
 C) have been / began
@@ -5872,11 +5872,11 @@ C) had been admired / having done
 D) was admired / doing
 E) could be admired / being done
 `;
-const rawExamTenseA = `1-C 2-D 3-D 4-D 5-E 6-E 7-A 8-B 9-C 10-E 11-C 12-A 13-B 14-D 15-D 16-C 17-B 18-E 19-C 20-B 21-D 22-C 23-A 24-B 25-B 26-C 27-A 28-C 29-E 30-D 31-B 32-C 33-D 34-B 35-A 36-C 37-C 38-E 39-C 40-B 41-E 42-A 43-C 44-C 45-E 46-D 47-B 48-D 49-C 50-B
+var rawExamTenseA = `1-C 2-D 3-D 4-D 5-E 6-E 7-A 8-B 9-C 10-E 11-C 12-A 13-B 14-D 15-D 16-C 17-B 18-E 19-C 20-B 21-D 22-C 23-A 24-B 25-B 26-C 27-A 28-C 29-E 30-D 31-B 32-C 33-D 34-B 35-A 36-C 37-C 38-E 39-C 40-B 41-E 42-A 43-C 44-C 45-E 46-D 47-B 48-D 49-C 50-B
 51-C 52-B 53-A 54-D 55-D 56-D 57-A 58-D 59-D 60-B 61-D 62-C 63-C 64-D 65-D 66-C 67-D 68-C 69-C 70-E 71-E 72-B 73-B 74-D 75-C 76-A 77-D 78-D 79-C 80-D 81-D 82-C 83-D 84-B 85-C 86-D 87-A 88-B 89-E 91-D 92-E 93-E 94-A 95-B 96-D`;
 
 // --- 4. ÇIKMIŞ KELİME (184 Soru) ---
-const rawExamVocabQ = `
+var rawExamVocabQ = `
 1. While horses were at times a major meat source on the Eurasian steppe, in most of Europe their ---- appears to have been based primarily on their role in transport as well as their wealth and status value. (2025 TEMMUZ YDS)
 A) depletion
 B) resemblance
@@ -5884,7 +5884,7 @@ C) adoption
 D) complexity
 E) restriction
 
-2. Although the Greeks listed notable points on coastal voyages, the ---- of equivalent documents for land travel was primarily a Roman development stemming from construction of roads along which milestones were placed. (2025 TEMMUZ YDS)
+2. Although the Greeks listed notable points on coastal voyages, the ---- of equivalent documents for land travel was primarily a Roman development stemming from varruction of roads along which milestones were placed. (2025 TEMMUZ YDS)
 A) disposal
 B) deduction
 C) abolition
@@ -5912,7 +5912,7 @@ C) conspire
 D) strive
 E) warrant
 
-6. Cellulose and other complex food constituents that are not susceptible to digestion by the animal’s own digestive enzymes are ---- digestible end-products by bacterial fermentation. (2025 TEMMUZ YDS)
+6. Cellulose and other complex food varituents that are not susceptible to digestion by the animal’s own digestive enzymes are ---- digestible end-products by bacterial fermentation. (2025 TEMMUZ YDS)
 A) found out
 B) converted into
 C) identified with
@@ -5976,7 +5976,7 @@ D) adversely
 E) scarcely
 
 15. Proper nutrition and good medical care, especially during the first year of life, significantly ---- an infant’s cognitive and physical development. (2025 YDT)
-A) constrain
+A) varrain
 B) exploit
 C) enhance
 D) overcome
@@ -5989,7 +5989,7 @@ C) wards off
 D) deviates from
 E) prevails over
 
-17. While commonality was once popular, more and more people are now seeking diversity in personal preferences, so consumerism is no longer about rigid ---- to the taste of the general public but about constantly updated individualism. (2024 KASIM YDS)
+17. While commonality was once popular, more and more people are now seeking diversity in personal preferences, so consumerism is no longer about rigid ---- to the taste of the general public but about varantly updated individualism. (2024 KASIM YDS)
 A) resolution
 B) exception
 C) alteration
@@ -6001,7 +6001,7 @@ A) inclinations
 B) oddities
 C) incentives
 D) ramifications
-E) constraints
+E) varraints
 
 19. Some sociologists suggest that cultural identity is such an ---- concept that it is hard to precisely define; rather, they prefer to list cultural elements unique to a particular society. (2024 KASIM YDS)
 A) ambiguous
@@ -6050,7 +6050,7 @@ A) restricted
 B) sustainable
 C) convenient
 D) distinctive
-E) constructive
+E) varructive
 
 26. Where nutrient material favourable to plant growth is supplied to a lake in large amounts, aquatic plants may grow so ---- that the entire lake may become choked with organic debris. (2024 NİSAN YDS)
 A) abundantly
@@ -6062,7 +6062,7 @@ E) eccentrically
 27. Psychologists believe friendships ---- many different types of associations, from casual relationships to more intimate, collaborative, and enduring bonds. (2024 NİSAN YDS)
 A) comprise
 B) dispel
-C) constrain
+C) varrain
 D) contend
 E) allocate
 
@@ -6322,7 +6322,7 @@ E) neglect
 A) evident
 B) arbitrary
 C) convenient
-D) constructive
+D) varructive
 E) mediocre
 
 65. The population of koalas dropped ---- during the early part of the 20th century because they were over-hunted for their fur. (2021 EKİM YDS)
@@ -6940,7 +6940,7 @@ C) empirical
 D) subtle
 E) hectic
 
-153. An understanding of the physiology of stress does not ---- clarify its meaning, thus several models have been constructed in an attempt to better define and explain it. (2016 EYLÜL YDS)
+153. An understanding of the physiology of stress does not ---- clarify its meaning, thus several models have been varructed in an attempt to better define and explain it. (2016 EYLÜL YDS)
 A) arguably
 B) jointly
 C) eventually
@@ -7115,7 +7115,7 @@ C) qualified
 D) fluctuated
 E) weakened
 
-178. By 2008, the UK had begun to return to nuclear power by ---- the construction of new reactors. (2015 NİSAN YDS)
+178. By 2008, the UK had begun to return to nuclear power by ---- the varruction of new reactors. (2015 NİSAN YDS)
 A) calling for
 B) turning over
 C) putting off
@@ -7164,13 +7164,13 @@ C) coped with
 D) brought about
 E) kept away
 `;
-const rawExamVocabA = `1-C 2-D 3-A 4-A 5-E 6-B 7-E 8-E 9-B 10-A 11-C 12-D 13-C 14-A 15-C 16-B 17-E 18-C 19-A 20-C 21-C 22-E 23-C 24-E 25-D 26-A 27-A 28-D 29-C 30-D 31-B 32-E 33-C 34-D 35-C 36-C 37-D 38-D 39-A 40-B 41-A 42-D 43-D 44-C 45-B 46-A 47-D
+var rawExamVocabA = `1-C 2-D 3-A 4-A 5-E 6-B 7-E 8-E 9-B 10-A 11-C 12-D 13-C 14-A 15-C 16-B 17-E 18-C 19-A 20-C 21-C 22-E 23-C 24-E 25-D 26-A 27-A 28-D 29-C 30-D 31-B 32-E 33-C 34-D 35-C 36-C 37-D 38-D 39-A 40-B 41-A 42-D 43-D 44-C 45-B 46-A 47-D
 48-C 49-A 50-A 51-B 52-C 53-B 54-D 55-C 56-B 57-B 58-B 59-B 60-B 61-A 62-B 63-D 64-A 65-B 66-C 67-E 68-C 69-E 70-A 71-E 72-A 73-D 74-B 75-E 76-A 77-A 78-B 79-B 80-A 81-D 82-E 83-B 84-D 85-A 86-A 87-C 88-A 89-C 90-A 91-B 92-C 93-D 94-B 95-D 96-B 97-E
 98-B 99-D 100-B 101-C 102-D 103-D 104-D 105-E 106-B 107-D 108-C 109-B 110-E 111-B 112-B 113-A 114-E 115-A 116-E 117-A 118-A 119-D 120-A 121-C 122-B 123-B 124-C 125-B 126-B 127-B 128-A 129-C 130-B 131-C 132-D 133-E 134-E 135-C 136-E 137-B 138-C 139-C 140-D
 141-D 142-B 143-B 144-E 145-C 146-A 147-D 148-B 149-C 150-C 151-E 152-E 153-D 154-E 155-D 156-C 157-D 158-D 159-B 160-C 161-B 162-A 163-A 164-B 165-E 166-D 167-D 168-C 169-E 170-C 171-A 172-A 173-B 174-A 175-A 176-A 177-D 178-A 179-C 180-D 181-A 182-B 183-C 184-D`;
 
     
-    const rawAnswersText = `
+    var rawAnswersText = `
 1:E  2:E  3:C  4:E  5:B  6:E  7:E  8:D  9:B  10:B
 11:C  12:C  13:D  14:A  15:C  16:B  17:C  18:A  19:A  20:D
 21:B  22:D  23:E  24:D  25:B  26:B  27:E  28:B  29:C  30:A
@@ -7196,4 +7196,5 @@ const rawExamVocabA = `1-C 2-D 3-A 4-A 5-E 6-B 7-E 8-E 9-B 10-A 11-C 12-D 13-C 1
 221:E  222:C  223:E  224:D  225:D  226:A  227:B  228:E  229:D  230:B
 231:B  232:A  233:D  234:C  235:B  236:B  237:B  238:B  239:B  240:E
 241:E  242:A  243:C  244:C  245:A  246:C  247:C  248:A  249:E  250:A
+
 `;
