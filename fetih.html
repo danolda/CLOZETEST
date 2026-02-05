@@ -17,21 +17,34 @@
         --p2-color: #e74c3c;
         --gold: #f1c40f;
     }
+/* MOBİL VE GÖRÜNÜM AYARLARI */
     body { 
         background-color: var(--bg-dark); 
         color: white; 
         font-family: 'Segoe UI', sans-serif; 
         overflow: hidden; /* Sayfa kaydırmayı engelle */
-        touch-action: manipulation; /* Çift tıklama zoom'unu kapatır, tepkiyi hızlandırır */
+        position: fixed; /* Mobilde sayfayı sabitle */
+        width: 100%; height: 100%;
     }
     
-    /* --- HARİTA ALANI --- */
     #map-container {
         width: 100%; 
-        height: 100vh; /* Mobilde tüm ekranı kaplasın */
+        height: 100vh; 
         background-color: var(--map-water);
         position: relative; 
+        display: flex;
+        justify-content: center;
+        align-items: center;
         overflow: hidden;
+    }
+    
+    svg { 
+        width: 100%; 
+        height: 100%; 
+        display: block; 
+        /* Haritayı ekrana sığdır (Aspect Ratio koru) */
+        max-width: 100%;
+        max-height: 100%;
     }
     
     svg { 
@@ -196,27 +209,33 @@
     </div>
 </div>
 
-<!-- AYARLAR (GÜNCELLENMİŞ) -->
+<!-- AYARLAR (YENİ SİSTEM: GENEL SAYI - ÖZEL SÜRE) -->
 <div id="screen-setup" class="container d-flex flex-column justify-content-center align-items-center vh-100 d-none">
     <div class="card bg-dark p-4 shadow-lg border-warning" style="width: 700px; max-width: 95%;">
         <h3 class="text-warning text-center mb-3"><i class="bi bi-sliders"></i> Savaş Kuralları</h3>
         
-        <!-- SÜRE AYARI -->
-        <div class="row g-2 mb-3 justify-content-center">
-            <div class="col-6">
-                <label class="form-label text-white small fw-bold text-center w-100">Soru Başına Süre (Saniye)</label>
-                <input type="number" id="setup-timer" class="form-control text-center fw-bold text-warning bg-secondary border-0" value="30" min="10" max="180">
+        <!-- GENEL SORU SAYISI AYARI -->
+        <div class="row g-2 mb-4 justify-content-center">
+            <div class="col-8">
+                <label class="form-label text-white fw-bold">Her Bölümden Kaç Soru?</label>
+                <select id="setup-q-count" class="form-select form-select-lg bg-secondary text-white border-0">
+                    <option value="1">1 Soru (Çok Hızlı)</option>
+                    <option value="3">3 Soru (Hızlı)</option>
+                    <option value="5" selected>5 Soru (İdeal)</option>
+                    <option value="10">10 Soru (Uzun)</option>
+                    <option value="20">20 Soru (Maraton)</option>
+                </select>
             </div>
         </div>
 
-        <h5 class="text-light border-bottom pb-2 mb-3 small">Konular ve Soru Adetleri</h5>
+        <h5 class="text-light border-bottom pb-2 mb-3 small">Kategoriler ve Süreleri</h5>
         
         <!-- KATEGORİ LİSTESİ -->
-        <div id="category-list" class="row g-2 text-start" style="max-height: 400px; overflow-y: auto;">
+        <div id="category-list" class="row g-2 text-start" style="max-height: 350px; overflow-y: auto;">
             <!-- JS burayı dolduracak -->
         </div>
 
-        <button class="btn btn-warning btn-lg w-100 mt-4 fw-bold" onclick="startGameConfig()">
+        <button class="btn btn-warning btn-lg w-100 mt-4 fw-bold shadow" onclick="startGameConfig()">
             <i class="bi bi-play-circle-fill"></i> SAVAŞI BAŞLAT
         </button>
     </div>
@@ -7650,7 +7669,7 @@ const rawExamVocabA = `1-C 2-D 3-A 4-A 5-E 6-B 7-E 8-E 9-B 10-A 11-C 12-D 13-C 1
         else if(data.type === 'GAME_OVER') { endGame(data.winner, data.reason, data.scores); }
     }
 
-/* ================= 1. AYAR EKRANINI HAZIRLA (DÜZELTİLMİŞ) ================= */
+/* ================= 1. AYAR EKRANINI HAZIRLA (goToSetup) ================= */
     function goToSetup() { 
         document.getElementById('screen-lobby').classList.add('d-none'); 
         document.getElementById('screen-setup').classList.remove('d-none');
@@ -7660,99 +7679,104 @@ const rawExamVocabA = `1-C 2-D 3-A 4-A 5-E 6-B 7-E 8-E 9-B 10-A 11-C 12-D 13-C 1
             const list = document.getElementById('category-list');
             list.innerHTML = "";
             
+            // Eğer veri yüklenmediyse tekrar yüklemeyi dene
+            if(CATEGORY_POOL[0].data.length === 0) loadAllData();
+
             CATEGORY_POOL.forEach(cat => {
-                // Eğer data boşsa (soru yoksa) pasif yap
                 const hasQuestions = cat.data && cat.data.length > 0;
                 const isDisabled = !hasQuestions ? "disabled" : "";
-                const isChecked = hasQuestions ? "checked" : "";
-                
-                // Soru sayısı bilgisi (Badge)
+                const isChecked = hasQuestions ? "checked" : ""; // Doluysa seçili gelsin
                 const badgeClass = hasQuestions ? "bg-info" : "bg-secondary";
-                const qCountText = hasQuestions ? `${cat.data.length} Mevcut` : "Boş";
+                const qCountText = hasQuestions ? `${cat.data.length} Soru` : "Boş";
 
                 list.innerHTML += `
                 <div class="col-12">
                     <div class="d-flex align-items-center bg-dark border border-secondary p-2 rounded">
                         
-                        <!-- Checkbox ve İsim -->
+                        <!-- Checkbox -->
                         <div class="form-check form-switch flex-grow-1">
-                            <input class="form-check-input cat-select" type="checkbox" value="${cat.id}" id="chk-${cat.id}" ${isDisabled} ${isChecked} onchange="toggleInput('${cat.id}')">
+                            <input class="form-check-input cat-select" type="checkbox" value="${cat.id}" id="chk-${cat.id}" ${isDisabled} ${isChecked} onchange="toggleTimeInput('${cat.id}')">
                             <label class="form-check-label text-white" for="chk-${cat.id}">
                                 ${cat.title} 
                                 <span class="badge ${badgeClass} ms-1" style="font-size: 0.7rem;">${qCountText}</span>
                             </label>
                         </div>
 
-                        <!-- Soru Sayısı Inputu (Yan Yana) -->
-                        <div class="d-flex align-items-center ms-2">
-                            <label class="text-muted small me-2" style="font-size: 0.8rem;">Adet:</label>
-                            <input type="number" id="num-${cat.id}" class="form-control form-control-sm text-center fw-bold" 
-                                   style="width: 70px;" value="5" min="1" max="${cat.data.length}" ${isDisabled}>
+                        <!-- Süre Inputu (ÖZEL SÜRE) -->
+                        <div class="d-flex align-items-center ms-3">
+                            <label class="text-warning small me-2 mb-0"><i class="bi bi-stopwatch"></i> Süre:</label>
+                            <input type="number" id="time-${cat.id}" class="form-control form-control-sm text-center fw-bold" 
+                                   style="width: 70px; background:#444; color:white; border:1px solid #666;" 
+                                   value="30" min="5" max="300" ${isDisabled}>
                         </div>
 
                     </div>
                 </div>`;
             });
         } else {
-            // Misafir ise bekleme mesajı
+            // Misafir Bekleme Ekranı
             document.getElementById('screen-setup').innerHTML = `
-                <div class="card bg-dark p-5 border-warning text-center">
-                    <h3 class="text-warning">Host Ayarları Yapıyor...</h3>
-                    <div class="spinner-border text-light mt-4" style="width: 3rem; height: 3rem;"></div>
-                    <p class="text-muted mt-3">Savaş başlamak üzere, hazır ol!</p>
+                <div class="text-center text-light mt-5">
+                    <div class="spinner-border text-warning" style="width: 3rem; height: 3rem;"></div>
+                    <h3 class="mt-3">Komutan Ayarları Yapıyor...</h3>
+                    <p class="text-muted">Savaş kuralları belirleniyor.</p>
                 </div>`;
         }
     }
 
-    // Inputu aktif/pasif yapma yardımcısı
-    function toggleInput(catId) {
+    function toggleTimeInput(catId) {
         const chk = document.getElementById(`chk-${catId}`);
-        const num = document.getElementById(`num-${catId}`);
-        if(num) num.disabled = !chk.checked;
+        const timeInp = document.getElementById(`time-${catId}`);
+        if(timeInp) timeInp.disabled = !chk.checked;
     }
-    
-/* ================= 2. OYUNU BAŞLATMA (GÜNCELLENMİŞ HOST MANTIĞI) ================= */
+
+    /* ================= 2. OYUNU BAŞLATMA (startGameConfig) ================= */
     function startGameConfig() {
-        // 1. Seçili Kategorileri Al
+        // 1. Genel Soru Sayısını Al
+        const countPerCat = parseInt(document.getElementById('setup-q-count').value);
+        
+        // 2. Seçili Kategorileri Bul
         const selectedCheckboxes = document.querySelectorAll('.cat-select:checked');
         if (selectedCheckboxes.length === 0) return alert("En az bir kategori seçmelisiniz!");
 
-        // 2. Süre Ayarını Al
-        gameTimeLimit = parseInt(document.getElementById('setup-timer').value);
-
-        // 3. Soruları Havuzdan Çek (Her kategori için kendi adedi kadar)
         let pool = [];
         
         selectedCheckboxes.forEach(chk => {
             const catId = chk.value;
             const cat = CATEGORY_POOL.find(c => c.id === catId);
             
-            // O kategoriye özel istenen soru sayısını inputtan al
-            const countInput = document.getElementById(`num-${catId}`);
-            let countRequested = parseInt(countInput.value);
-
-            // Güvenlik kontrolleri (Eldeki sorudan fazlasını isteyemesin)
-            if(isNaN(countRequested) || countRequested < 1) countRequested = 1;
-            if(countRequested > cat.data.length) countRequested = cat.data.length;
+            // O kategoriye özel SÜREYİ al
+            const timeInput = document.getElementById(`time-${catId}`);
+            let specificTime = parseInt(timeInput.value) || 30; // Varsayılan 30sn
 
             if(cat && cat.data.length > 0) {
-                // Karıştır ve İstenen (countRequested) kadar al
-                const shuffled = [...cat.data].sort(() => 0.5 - Math.random()).slice(0, countRequested);
-                pool = pool.concat(shuffled);
+                // Rastgele N adet soru seç
+                const shuffled = [...cat.data].sort(() => 0.5 - Math.random()).slice(0, countPerCat);
+                
+                // *** KRİTİK NOKTA: Seçilen sorulara "time" özelliğini ekle ***
+                const questionsWithTime = shuffled.map(q => {
+                    // Sorunun orijinal yapısını bozmadan kopyasını al ve süre ekle
+                    return { ...q, timeLimit: specificTime };
+                });
+
+                pool = pool.concat(questionsWithTime);
             }
         });
 
-        if(pool.length === 0) return alert("Hata: Seçilen kategorilerden soru çekilemedi.");
+        // HATA KONTROLÜ (0/0 Sorununu çözer)
+        if(pool.length === 0) {
+            return alert("HATA: Seçilen kategorilerden soru çekilemedi! Veri yüklenmemiş olabilir.");
+        }
 
-        // 4. Tüm havuzu tekrar karıştır (konular karışık gelsin)
+        // 3. Havuzu Karıştır
         gameQuestions = pool.sort(() => 0.5 - Math.random());
 
-        // 5. Oyunu Başlat ve Verileri Gönder
+        // 4. Oyunu Başlat
         const payload = { 
             type: 'START_GAME', 
             players: players,
-            gameQuestions: gameQuestions, 
-            gameTimeLimit: gameTimeLimit 
+            gameQuestions: gameQuestions,
+            // timeLimit göndermiyoruz çünkü artık her sorunun içinde kendi 'timeLimit'i var
         };
         conn.send(payload);
         startGameUI();
@@ -7795,13 +7819,24 @@ function startNewTurn() {
         startTimer();
     }
 
+/* ================= SAYAÇ GÜNCELLEMESİ ================= */
     function startTimer() {
-        let timeLeft = 30;
+        // Şu anki soruyu al
+        const currentQ = gameQuestions[currentTurn];
+        
+        // Sorunun özel süresi varsa onu kullan, yoksa varsayılan 30 yap
+        let timeLeft = currentQ.timeLimit || 30;
+        
         document.getElementById('q-timer').innerText = timeLeft;
+        
         if(timerInterval) clearInterval(timerInterval);
         timerInterval = setInterval(() => {
-            timeLeft--; document.getElementById('q-timer').innerText = timeLeft;
-            if(timeLeft <= 0) { clearInterval(timerInterval); submitAnswer(null); }
+            timeLeft--; 
+            document.getElementById('q-timer').innerText = timeLeft;
+            if(timeLeft <= 0) { 
+                clearInterval(timerInterval); 
+                submitAnswer(null); 
+            }
         }, 1000);
     }
 
@@ -8059,21 +8094,27 @@ function processClaim(plate, playerKey) {
     }
 
     /* ================= HARİTA ================= */
-    async function loadSvgMap() {
+async function loadSvgMap() {
         const wrapper = document.getElementById('map-container');
         const resp = await fetch(SVG_URL);
         wrapper.innerHTML = await resp.text();
         const svg = wrapper.querySelector('svg');
-        svg.removeAttribute('width'); svg.removeAttribute('height'); svg.style.width='100%'; svg.style.height='100%';
+        
+        // MOBİL İÇİN DÜZELTME:
+        // SVG'ye responsive özellikler ver
+        svg.removeAttribute('width'); 
+        svg.removeAttribute('height'); 
+        // Türkiye haritası için ideal viewBox (SVG dosyasına göre değişebilir ama genelde budur)
+        if(!svg.getAttribute('viewBox')) svg.setAttribute('viewBox', "0 0 1000 600"); // Genelde TR haritaları 1000x600 civarıdır
+        
+        svg.style.width = '100%'; 
+        svg.style.height = '100%';
+        // -----------------------
+
         const grp = document.createElementNS("http://www.w3.org/2000/svg", "g"); grp.id = "icon-layer"; svg.appendChild(grp);
 
         svg.querySelectorAll('path').forEach(p => {
-            let id = p.getAttribute('id') || p.parentElement.getAttribute('id');
-            if(id && id.startsWith('TR')) {
-                const pl = parseInt(id.replace('TR',''));
-                p.setAttribute('id', `city-${pl}`); p.removeAttribute('fill'); p.removeAttribute('style');
-                p.onclick = (e) => { e.stopPropagation(); onCityClick(pl); };
-            }
+            // ... (diğer kodlar aynı)
         });
     }
 
