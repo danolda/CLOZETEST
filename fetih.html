@@ -58,6 +58,21 @@
         @keyframes popIn { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         .pulse-anim { animation: pulse 1.5s infinite; }
         @keyframes pulse { 0% { opacity: 0.8; } 50% { opacity: 1; transform: translateX(-50%) scale(1.05); } 100% { opacity: 0.8; } }
+
+        /* --- CEVAP RENKLENDİRME --- */
+.btn-p1 { background-color: var(--p1-color) !important; color: white !important; }
+.btn-p2 { background-color: var(--p2-color) !important; color: white !important; }
+/* İkisi aynı şıkkı seçerse yarısı mavi yarısı kırmızı */
+.btn-both { 
+    background: linear-gradient(90deg, var(--p1-color) 50%, var(--p2-color) 50%) !important; 
+    color: white !important; text-shadow: 1px 1px 2px black;
+}
+/* Doğru cevap yeşil çerçeve */
+.btn-correct { 
+    border: 4px solid #2ecc71 !important; 
+    box-shadow: 0 0 15px #2ecc71; 
+    transform: scale(1.02);
+}
     </style>
 </head>
 <body>
@@ -289,48 +304,89 @@
 
     function resolveTurn(ans, time) { p2AnswerTemp = ans; p2TimeTemp = time; checkTurnEnd(); }
 
-    function checkTurnEnd() {
-        if(myAnswer && p2AnswerTemp) {
-            const q = questions[currentTurn];
-            const p1C = (myAnswer === q.ans);
-            const p2C = (p2AnswerTemp === q.ans);
-            
-            // Puanlama
-            if(p1C) players.p1.score += 100;
-            if(p2C) players.p2.score += 100;
+function checkTurnEnd() {
+    if(myAnswer && p2AnswerTemp) {
+        const q = questions[currentTurn];
+        const p1Correct = (myAnswer === q.ans);
+        const p2Correct = (p2AnswerTemp === q.ans);
+        
+        // Puanlama
+        if(p1Correct) players.p1.score += 100;
+        if(p2Correct) players.p2.score += 100;
 
-            // KUYRUK MANTIĞI (Queue)
-            turnQueue = [];
-            if (p1C && p2C) {
-                // İkisi de doğru: Hızlı olan önce
-                if (myTime <= p2TimeTemp) turnQueue = ['p1', 'p2'];
-                else turnQueue = ['p2', 'p1'];
-            } else if (p1C) {
-                turnQueue = ['p1', 'p1']; // Sadece P1: 2 Hak
-            } else if (p2C) {
-                turnQueue = ['p2', 'p2']; // Sadece P2: 2 Hak
-            }
-
-            const data = { type: 'TURN_RESULT', p1Correct: p1C, p2Correct: p2C, queue: turnQueue, correct: q.ans, players: players };
-            conn.send(data);
-            handleTurnResult(data);
+        // KUYRUK MANTIĞI (Queue)
+        turnQueue = [];
+        if (p1Correct && p2Correct) {
+            // İkisi de doğru: Hızlı olan önce (Süreye göre sırala)
+            if (myTime <= p2TimeTemp) turnQueue = ['p1', 'p2'];
+            else turnQueue = ['p2', 'p1'];
+        } else if (p1Correct) {
+            turnQueue = ['p1', 'p1']; // P1'e 2 hak
+        } else if (p2Correct) {
+            turnQueue = ['p2', 'p2']; // P2'ye 2 hak
         }
-    }
 
-    function handleTurnResult(data) {
-        bootstrap.Modal.getInstance(document.getElementById('questionModal')).hide();
-        players = data.players;
-        turnQueue = data.queue;
-        updateScoreboard();
+        // VERİ PAKETİ (Cevap anahtarlarını da ekledik: p1Ans, p2Ans)
+        const data = { 
+            type: 'TURN_RESULT', 
+            p1Correct, p2Correct, 
+            p1Ans: myAnswer, p2Ans: p2AnswerTemp, // <--- YENİ EKLENDİ
+            queue: turnQueue, 
+            correct: q.ans, 
+            players: players 
+        };
+        
+        conn.send(data);
+        handleTurnResult(data);
+    }
+}
+
+function handleTurnResult(data) {
+    // 1. ŞIKLARI BOYAMA İŞLEMİ
+    const btns = document.querySelectorAll('.option-btn');
+    btns.forEach(btn => {
+        const key = btn.innerText.substring(0, 1); // "A) ..." kısmından A'yı al
+        
+        // Önce tüm kilitleri kaldırıp temizle (görsel olarak)
+        btn.classList.remove('selected'); 
+
+        // Doğru cevap mı?
+        if (key === data.correct) btn.classList.add('btn-correct');
+
+        // Kim neyi seçti?
+        const p1Chose = (key === data.p1Ans);
+        const p2Chose = (key === data.p2Ans);
+
+        if (p1Chose && p2Chose) btn.classList.add('btn-both');
+        else if (p1Chose) btn.classList.add('btn-p1');
+        else if (p2Chose) btn.classList.add('btn-p2');
+    });
+
+    // 2. VERİLERİ GÜNCELLE
+    players = data.players;
+    turnQueue = data.queue;
+    updateScoreboard();
+
+    // 3. 5 SANİYE BEKLE VE SONRA İLERLE
+    setTimeout(() => {
+        const modalEl = document.getElementById('questionModal');
+        const modalInstance = bootstrap.Modal.getInstance(modalEl);
+        if(modalInstance) modalInstance.hide();
+
         gameState = "EXPANSION";
 
         if (turnQueue.length === 0) {
             showStatus("Kimse bilemedi! Yeni soru...");
-            if(isHost) { currentTurn++; setTimeout(startNewTurn, 4000); }
+            // Eğer host isek ve kimse bilemediyse sıradaki soruya geçişi başlat
+            if(isHost) { 
+                currentTurn++; 
+                setTimeout(startNewTurn, 2000); 
+            }
         } else {
             updateExpansionStatus();
         }
-    }
+    }, 5000); // 5000 ms = 5 saniye bekleme
+}
 
     function updateExpansionStatus() {
         const me = isHost ? 'p1' : 'p2';
@@ -505,15 +561,19 @@
         const el = document.getElementById('status-bar'); el.innerText = msg; el.style.display = 'block';
     }
 
-    function calculateFinalWinner(reason) {
-        let winner = "Berabere", p1 = players.p1.score, p2 = players.p2.score;
-        if(p1 > p2) winner = players.p1.name;
-        else if(p2 > p1) winner = players.p2.name;
-        
-        const scores = formatScores();
-        conn.send({ type: 'GAME_OVER', winner: winner, reason: reason, scores: scores });
-        endGame(winner, reason, scores);
-    }
+function calculateFinalWinner(reason) {
+    let winner = "Berabere", p1 = players.p1.score, p2 = players.p2.score;
+    if(p1 > p2) winner = players.p1.name;
+    else if(p2 > p1) winner = players.p2.name;
+    
+    const scores = formatScores();
+    
+    // Önce karşı tarafa bildir
+    conn.send({ type: 'GAME_OVER', winner: winner, reason: reason, scores: scores });
+    
+    // Sonra kendi ekranında bitir
+    endGame(winner, reason, scores);
+}
 
     function formatScores() { return `${players.p1.name}: ${players.p1.score} - ${players.p2.name}: ${players.p2.score}`; }
 
