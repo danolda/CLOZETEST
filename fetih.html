@@ -96,52 +96,39 @@
     <div class="card bg-dark p-4 shadow-lg w-50 border-warning" style="max-height: 90vh; overflow-y: auto;">
         <h3 class="text-warning text-center mb-3">Savaş Ayarları</h3>
         
-        <div id="loading-msg" class="text-info text-center mb-3">
+        <div id="loading-status" class="alert alert-info text-center">
             <div class="spinner-border spinner-border-sm"></div> Sorular Yükleniyor...
         </div>
 
-        <div id="setup-form" class="d-none">
-            <label class="text-white fw-bold mb-2 border-bottom w-100">Kelime & Gramer</label>
-            <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" id="cat-vocab" checked>
-                <label class="form-check-label text-white" for="cat-vocab">YDS Akademik Kelimeler</label>
-            </div>
-            <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" id="cat-prep">
-                <label class="form-check-label text-white" for="cat-prep">Prepositions (Edatlar)</label>
-            </div>
-            <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" id="cat-conj">
-                <label class="form-check-label text-white" for="cat-conj">Conjunctions (Bağlaçlar)</label>
-            </div>
-            <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" id="cat-tense">
-                <label class="form-check-label text-white" for="cat-tense">Tense & Modals</label>
-            </div>
-            <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" id="cat-relative">
-                <label class="form-check-label text-white" for="cat-relative">Relative Clauses</label>
+        <div id="game-options" class="d-none">
+            <h5 class="text-white border-bottom pb-2">Soru Havuzunu Seç</h5>
+            
+            <div class="form-check form-switch mb-2">
+                <input class="form-check-input" type="checkbox" id="opt-vocab" checked>
+                <label class="form-check-label text-white" for="opt-vocab">YDS Kelimeler (Rastgele)</label>
             </div>
 
-            <label class="text-warning fw-bold mt-3 mb-2 border-bottom w-100">Çıkmış Sorular</label>
-            <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" id="exam-prep">
-                <label class="form-check-label text-warning" for="exam-prep">Çıkmış - Prepositions</label>
+            <div class="form-check form-switch mb-2">
+                <input class="form-check-input" type="checkbox" id="opt-exam-prep">
+                <label class="form-check-label text-warning" for="opt-exam-prep">Çıkmış - Prepositions</label>
             </div>
-            <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" id="exam-conj">
-                <label class="form-check-label text-warning" for="exam-conj">Çıkmış - Bağlaçlar</label>
-            </div>
-            <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" id="exam-tense">
-                <label class="form-check-label text-warning" for="exam-tense">Çıkmış - Tense</label>
-            </div>
-            <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" id="exam-vocab">
-                <label class="form-check-label text-warning" for="exam-vocab">Çıkmış - Kelime</label>
+            
+            <div class="form-check form-switch mb-2">
+                <input class="form-check-input" type="checkbox" id="opt-exam-conj">
+                <label class="form-check-label text-warning" for="opt-exam-conj">Çıkmış - Bağlaçlar</label>
             </div>
 
-            <button class="btn btn-warning btn-lg w-100 mt-4" onclick="startGameConfig()">SAVAŞI BAŞLAT</button>
+            <div class="form-check form-switch mb-2">
+                <input class="form-check-input" type="checkbox" id="opt-exam-tense">
+                <label class="form-check-label text-warning" for="opt-exam-tense">Çıkmış - Tense/Modals</label>
+            </div>
+
+            <div class="form-check form-switch mb-2">
+                <input class="form-check-input" type="checkbox" id="opt-exam-vocab">
+                <label class="form-check-label text-warning" for="opt-exam-vocab">Çıkmış - Kelime</label>
+            </div>
+
+            <button class="btn btn-warning btn-lg w-100 mt-4" onclick="prepareAndStartGame()">SAVAŞI BAŞLAT</button>
         </div>
     </div>
 </div>
@@ -293,30 +280,40 @@
     let currentTurn = 0, timerInterval = null;
     let turnQueue = []; // Fetih sırasını tutan kuyruk: ['p1', 'p2'] gibi
 
-    /* ================= DİNAMİK SORU SİSTEMİ ================= */
-    let questions = []; // Artık const değil let, içi boş başlıyor
-    let LOADED_DATA = {}; // Dosyadan çekilen ham veriler buraya dolacak
+    /* ================= DİNAMİK VERİ YÖNETİMİ ================= */
+    let questions = []; // Sorular buraya dolacak
+    let isDataLoaded = false;
 
-    // Sayfa yüklendiğinde sorular.txt dosyasını çek
-    window.onload = function() {
+    // Sayfa açılınca sorular.txt dosyasını çek ve JS gibi çalıştır
+    window.addEventListener('load', () => {
         fetch('./sorular.txt')
-            .then(response => response.text())
-            .then(text => {
-                parseTextFile(text);
-                // Eğer Setup ekranındaysak yükleme bittiğini göster
-                const loadMsg = document.getElementById('loading-msg');
-                const formMsg = document.getElementById('setup-form');
-                if(loadMsg && formMsg) {
-                    loadMsg.classList.add('d-none');
-                    formMsg.classList.remove('d-none');
+            .then(res => {
+                if (!res.ok) throw new Error("Dosya bulunamadı");
+                return res.text();
+            })
+            .then(jsCode => {
+                // GELEN METNİ JAVASCRIPT KODU OLARAK ÇALIŞTIR
+                // Bu işlem ydsVocabDB, rawExamPrepQ gibi değişkenleri hafızaya alır.
+                try {
+                    window.eval(jsCode); 
+                    console.log("Sorular hafızaya alındı.");
+                    isDataLoaded = true;
+                    
+                    // Yükleme ekranını gizle, butonları göster
+                    if(document.getElementById('loading-status')) {
+                        document.getElementById('loading-status').classList.add('d-none');
+                        document.getElementById('game-options').classList.remove('d-none');
+                    }
+                } catch (e) {
+                    alert("Sorular.txt dosyasında kod hatası var: " + e.message);
                 }
             })
             .catch(err => {
-                alert("Sorular dosyası yüklenemedi! Lütfen dosya adının 'sorular.txt' olduğundan emin olun.");
+                alert("Sorular yüklenemedi! Dosya adının 'sorular.txt' olduğundan emin olun.");
                 console.error(err);
             });
-    };
-
+    });
+    
     /* --- PARSER: Text Dosyasını İşleme --- */
     function parseTextFile(text) {
         // 1. YDS Kelimeleri (Array yapısını string içinden çıkarıp parse etme)
@@ -407,42 +404,139 @@
         return targetText ? parseQuestionsWithKey(targetText, LOADED_DATA.rawAnswers || "", false) : []; 
     }
 
-    /* --- OYUN BAŞLATMA MANTIĞI --- */
-    function startGameConfig() {
-        if(!isHost) return;
-        let gameQ = [];
+    /* ================= SORU PARSER VE HAZIRLIK ================= */
 
-        // Checkbox durumlarına göre ekle
-        if(document.getElementById('cat-vocab').checked) gameQ = gameQ.concat(generateVocabQuestions(15));
+    // 1. Kelime Sorusu Üretici
+    function createVocabQuestions(count = 15) {
+        // window.ydsVocabDB -> eval ile yüklendiği için window objesinden erişiyoruz
+        if (!window.ydsVocabDB) return [];
         
-        if(document.getElementById('cat-prep').checked) gameQ = gameQ.concat(parseGeneralGrammar("Prepositions"));
-        if(document.getElementById('cat-conj').checked) gameQ = gameQ.concat(parseGeneralGrammar("Conjunctions"));
-        if(document.getElementById('cat-relative').checked) gameQ = gameQ.concat(parseGeneralGrammar("Relative Clauses"));
-        if(document.getElementById('cat-tense').checked) gameQ = gameQ.concat(parseGeneralGrammar("Tense"));
+        const shuffled = [...window.ydsVocabDB].sort(() => 0.5 - Math.random());
+        return shuffled.slice(0, count).map(item => {
+            // Yanlış şık üret
+            const distractors = window.ydsVocabDB
+                .filter(w => w.en !== item.en)
+                .sort(() => 0.5 - Math.random())
+                .slice(0, 3)
+                .map(w => w.tr);
+            
+            const optionsArr = [item.tr, ...distractors].sort(() => 0.5 - Math.random());
+            const optsObj = {}; 
+            const letters = ['A', 'B', 'C', 'D'];
+            let ans = '';
+            
+            optionsArr.forEach((opt, i) => { 
+                optsObj[letters[i]] = opt; 
+                if(opt === item.tr) ans = letters[i]; 
+            });
 
-        if(document.getElementById('exam-prep').checked) gameQ = gameQ.concat(parseQuestionsWithKey(LOADED_DATA.examPrepQ, LOADED_DATA.examPrepA, true));
-        if(document.getElementById('exam-conj').checked) gameQ = gameQ.concat(parseQuestionsWithKey(LOADED_DATA.examConjQ, LOADED_DATA.examConjA, true));
-        if(document.getElementById('exam-tense').checked) gameQ = gameQ.concat(parseQuestionsWithKey(LOADED_DATA.examTenseQ, LOADED_DATA.examTenseA, true));
-        if(document.getElementById('exam-vocab').checked) gameQ = gameQ.concat(parseQuestionsWithKey(LOADED_DATA.examVocabQ, LOADED_DATA.examVocabA, true));
+            return { q: `Meaning: <b>${item.en}</b>`, opts: optsObj, ans: ans };
+        });
+    }
 
-        if(gameQ.length === 0) {
-            alert("En az bir kategori seçmelisin! Varsayılan kelime soruları yüklendi.");
-            gameQ = generateVocabQuestions(10);
+    // 2. Çıkmış Soru Metni Ayrıştırıcı (Regex ile)
+    function parseRawExamText(rawQ) {
+        if (!rawQ) return [];
+        const extractedQuestions = [];
+        
+        // Regex Mantığı: Soru numarasını, metni ve şıkları yakala
+        // Örnek: "1. Soru metni... A) şık... E) şık..."
+        const questionRegex = /(\d+)\.\s+([\s\S]*?)(?=\n\s*\d+\.\s+|$)/g;
+        
+        let match;
+        while ((match = questionRegex.exec(rawQ)) !== null) {
+            const fullBlock = match[0];
+            const qText = match[2].split(/A\)/)[0].trim(); // A şıkkına kadar olan kısım soru
+            
+            // Şıkları yakala
+            const opts = {};
+            const optRegex = /([A-E])\)\s+([\s\S]*?)(?=\s+[A-E]\)|$)/g;
+            let optMatch;
+            while ((optMatch = optRegex.exec(fullBlock)) !== null) {
+                opts[optMatch[1]] = optMatch[2].trim();
+            }
+
+            // Eğer 5 şık varsa listeye ekle (Cevap anahtarı şimdilik rastgele veya metnin sonundan parse edilmeli)
+            // NOT: Senin attığın metinde cevaplar soru içinde YOK. Genelde en altta olur.
+            // Bu basit versiyonda cevapları bulamazsa 'A' işaretler.
+            // Gelişmiş versiyon için cevap anahtarı değişkenini de parse etmek gerekir.
+            // Şimdilik cevapları rawExamPrepA gibi değişkenlerden alacağız.
+            
+            extractedQuestions.push({ 
+                id: match[1], // Soru numarası
+                q: qText, 
+                opts: opts, 
+                ans: 'A' // Geçici, aşağıda düzelteceğiz
+            });
+        }
+        return extractedQuestions;
+    }
+
+    // Cevap Anahtarını Eşleştirme
+    function mapAnswersToQuestions(questionsArr, answerString) {
+        if(!answerString) return questionsArr;
+        
+        // 1-E, 2-A gibi yapıları bul
+        const map = {};
+        const matches = answerString.match(/(\d+)[\s:-]+([A-E])/g);
+        if(matches) {
+            matches.forEach(m => {
+                const parts = m.split(/[\s:-]+/);
+                map[parts[0]] = parts[1];
+            });
         }
 
-        // Karıştır ve global değişkene ata
-        questions = gameQ.sort(() => 0.5 - Math.random()); // Hepsini kullanmak isterseniz slice yapmayın
-        
-        // Misafire de soruları gönder
+        questionsArr.forEach(q => {
+            if(map[q.id]) q.ans = map[q.id];
+        });
+        return questionsArr;
+    }
+
+    /* ================= OYUNU BAŞLATMA ================= */
+    function prepareAndStartGame() {
+        if(!isHost) return;
+        if(!isDataLoaded) return alert("Veriler henüz yüklenmedi!");
+
+        let gameQ = [];
+
+        // 1. Seçilenleri Ekle
+        if(document.getElementById('opt-vocab').checked) {
+            gameQ = gameQ.concat(createVocabQuestions(15));
+        }
+
+        // Helper: Ham metni al, parse et, cevapları eşle
+        const loadCategory = (rawQ, rawA) => {
+            let qList = parseRawExamText(rawQ);
+            return mapAnswersToQuestions(qList, rawA);
+        };
+
+        if(document.getElementById('opt-exam-prep').checked) {
+            gameQ = gameQ.concat(loadCategory(window.rawExamPrepQ, window.rawExamPrepA));
+        }
+        if(document.getElementById('opt-exam-conj').checked) {
+            gameQ = gameQ.concat(loadCategory(window.rawExamConjQ, window.rawExamConjA));
+        }
+        if(document.getElementById('opt-exam-tense').checked) {
+            gameQ = gameQ.concat(loadCategory(window.rawExamTenseQ, window.rawExamTenseA));
+        }
+        if(document.getElementById('opt-exam-vocab').checked) {
+            gameQ = gameQ.concat(loadCategory(window.rawExamVocabQ, window.rawExamVocabA));
+        }
+
+        // 2. Kontrol
+        if(gameQ.length === 0) {
+            alert("Hiçbir kategori seçilmedi! Varsayılan kelimeler yükleniyor.");
+            gameQ = createVocabQuestions(10);
+        }
+
+        // 3. Karıştır ve Ata
+        questions = gameQ.sort(() => 0.5 - Math.random());
+        console.log("Toplam Soru Sayısı:", questions.length);
+
+        // 4. Misafire Gönder ve Başlat
         conn.send({ type: 'START_GAME', players: players, questions: questions });
         startGameUI();
     }
-
-    let players = {
-        p1: { name: "", base: null, cities: [], score: 0, hp: 3, id: 'p1', time: 0 },
-        p2: { name: "", base: null, cities: [], score: 0, hp: 3, id: 'p2', time: 0 }
-    };
-
     /* ================= PEERJS BAĞLANTI ================= */
     function createGame() {
         const room = document.getElementById('room-id').value;
@@ -474,10 +568,14 @@
     function handleData(data) {
         if(data.type === 'INIT') { players.p1.name = data.p1Name; document.getElementById('lobby-status').innerText = "Bağlandı!"; }
         else if(data.type === 'JOIN') { players.p2.name = data.p2Name; goToSetup(); }
-        // handleData fonksiyonu içinde START_GAME bloğunu şöyle güncelleyin:
         else if(data.type === 'START_GAME') { 
             players = data.players; 
-            if(data.questions) questions = data.questions; // <--- BU SATIR ÇOK ÖNEMLİ
+            
+            // EĞER SORULAR HOST TARAFINDAN GÖNDERİLDİYSE AL
+            if(data.questions && data.questions.length > 0) {
+                questions = data.questions;
+            }
+            
             startGameUI(); 
             if(isHost) setTimeout(startNewTurn, 1000); 
         }
