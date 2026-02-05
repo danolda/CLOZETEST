@@ -7641,8 +7641,12 @@ const rawExamVocabA = `1-C 2-D 3-A 4-A 5-E 6-B 7-E 8-E 9-B 10-A 11-C 12-D 13-C 1
     function handleData(data) {
         if(data.type === 'INIT') { players.p1.name = data.p1Name; document.getElementById('lobby-status').innerText = "Bağlandı!"; }
         else if(data.type === 'JOIN') { players.p2.name = data.p2Name; goToSetup(); }
-        else if(data.type === 'START_GAME') { players = data.players; startGameUI(); if(isHost) setTimeout(startNewTurn, 1000); }
-        else if(data.type === 'UPDATE_MAP') { 
+    else if(data.type === 'START_GAME') { 
+        players = data.players; 
+        // questions = data.gameQuestions; // Misafir tarafında soruları alması için bu satırı da eklemeniz iyi olur.
+        startGameUI(); 
+    }       
+    else if(data.type === 'UPDATE_MAP') { 
             players = data.players; 
             renderMapState(); 
             if(data.msg) showStatus(data.msg);
@@ -7730,61 +7734,58 @@ const rawExamVocabA = `1-C 2-D 3-A 4-A 5-E 6-B 7-E 8-E 9-B 10-A 11-C 12-D 13-C 1
         if(timeInp) timeInp.disabled = !chk.checked;
     }
 
-    /* ================= 2. OYUNU BAŞLATMA (startGameConfig) ================= */
+  /* ================= 2. OYUNU BAŞLATMA (DÜZELTİLMİŞ) ================= */
     function startGameConfig() {
-        // 1. Genel Soru Sayısını Al
-        const countPerCat = parseInt(document.getElementById('setup-q-count').value);
-        
-        // 2. Seçili Kategorileri Bul
+        // 1. Seçili Kategorileri Al
         const selectedCheckboxes = document.querySelectorAll('.cat-select:checked');
         if (selectedCheckboxes.length === 0) return alert("En az bir kategori seçmelisiniz!");
 
+        // 2. Süre Ayarını Al
+        gameTimeLimit = parseInt(document.getElementById('setup-timer').value);
+
+        // 3. Soruları Havuzdan Çek (Her kategori için kendi adedi kadar)
         let pool = [];
         
         selectedCheckboxes.forEach(chk => {
             const catId = chk.value;
             const cat = CATEGORY_POOL.find(c => c.id === catId);
             
-            // O kategoriye özel SÜREYİ al
-            const timeInput = document.getElementById(`time-${catId}`);
-            let specificTime = parseInt(timeInput.value) || 30; // Varsayılan 30sn
+            // O kategoriye özel istenen soru sayısını inputtan al
+            const countInput = document.getElementById(`num-${catId}`);
+            let countRequested = parseInt(countInput.value);
+
+            // Güvenlik kontrolleri (Eldeki sorudan fazlasını isteyemesin)
+            if(isNaN(countRequested) || countRequested < 1) countRequested = 1;
+            if(countRequested > cat.data.length) countRequested = cat.data.length;
 
             if(cat && cat.data.length > 0) {
-                // Rastgele N adet soru seç
-                const shuffled = [...cat.data].sort(() => 0.5 - Math.random()).slice(0, countPerCat);
-                
-                // *** KRİTİK NOKTA: Seçilen sorulara "time" özelliğini ekle ***
-                const questionsWithTime = shuffled.map(q => {
-                    // Sorunun orijinal yapısını bozmadan kopyasını al ve süre ekle
-                    return { ...q, timeLimit: specificTime };
-                });
-
-                pool = pool.concat(questionsWithTime);
+                // Karıştır ve İstenen (countRequested) kadar al
+                const shuffled = [...cat.data].sort(() => 0.5 - Math.random()).slice(0, countRequested);
+                pool = pool.concat(shuffled);
             }
         });
 
-        // HATA KONTROLÜ (0/0 Sorununu çözer)
-        if(pool.length === 0) {
-            return alert("HATA: Seçilen kategorilerden soru çekilemedi! Veri yüklenmemiş olabilir.");
-        }
+        if(pool.length === 0) return alert("Hata: Seçilen kategorilerden soru çekilemedi.");
 
-        // 3. Havuzu Karıştır
+        // 4. Tüm havuzu tekrar karıştır (konular karışık gelsin)
         gameQuestions = pool.sort(() => 0.5 - Math.random());
+        // Global soru listesine ata
+        questions = gameQuestions; // <--- EKLENDİ: Soruların oyun motoruna aktarılması lazım
 
-        // 4. Oyunu Başlat
+        // 5. Oyunu Başlat ve Verileri Gönder
         const payload = { 
             type: 'START_GAME', 
             players: players,
-            gameQuestions: gameQuestions,
-            // timeLimit göndermiyoruz çünkü artık her sorunun içinde kendi 'timeLimit'i var
+            gameQuestions: gameQuestions, 
+            gameTimeLimit: gameTimeLimit 
         };
         conn.send(payload);
         startGameUI();
         
-        // Host hemen ilk turu başlatır
-        setTimeout(startNewTurn, 1000); 
+        // HATALI SATIR BURADAYDI VE SİLİNDİ:
+        // setTimeout(startNewTurn, 1000);  <--- BU SATIR SİLİNMELİ!
+        // Çünkü önce kale seçilmeli. Kale seçilince checkGameStart() zaten turu başlatacak.
     }
-    
     function startGameUI() {
         document.getElementById('screen-lobby').classList.add('d-none');
         document.getElementById('screen-setup').classList.add('d-none');
