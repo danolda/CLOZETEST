@@ -7285,6 +7285,7 @@ const rawExamVocabA = `1-C 2-D 3-A 4-A 5-E 6-B 7-E 8-E 9-B 10-A 11-C 12-D 13-C 1
     // ============================================================
 
     let allQuestions = [];
+    let generatedQuestions = []; // EKLENDİ: Hata almamak için bu değişken şart
     let wrongBank = JSON.parse(localStorage.getItem('yds_mistakes')) || [];
     let srsSchedule = JSON.parse(localStorage.getItem('yds_srs_schedule')) || {};
     
@@ -7561,6 +7562,43 @@ const rawExamVocabA = `1-C 2-D 3-A 4-A 5-E 6-B 7-E 8-E 9-B 10-A 11-C 12-D 13-C 1
     }
 
     let userApiKey = localStorage.getItem('yds_gemini_key') || "";
+    
+    // --- EKLENEN FONKSİYON: KELİME ÖRNEK CÜMLE ---
+    async function getAiVocabExample(questionId) {
+        if(!userApiKey) { alert("API Anahtarı eksik! index.html üzerinden ayarlayın."); return; }
+
+        let q = allQuestions.find(i => i.id === questionId);
+        if(!q) return;
+
+        if(q.aiVocabData) {
+            showTipBox(q.id, "Örnek Cümle & Çeviri", "bi-chat-quote-fill", q.aiVocabData);
+            return;
+        }
+
+        showLoading(q.id, "Örnek cümle hazırlanıyor...");
+
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${userApiKey}`;
+        
+        const prompt = `
+            Sen bir YDS İngilizce öğretmenisin. 
+            Kelime: "${q.text}" (Soru metnindeki ana kelimeyi bul)
+            Doğru Cevap: "${q.options[q.correctAnswer]}"
+            
+            GÖREV:
+            1. Bu kelimeyi kullanarak YDS seviyesinde, akademik bir İngilizce cümle kur.
+            2. Bu cümlenin tam Türkçe çevirisini yap.
+            
+            ÇIKTI FORMATI (Düz metin):
+            🇬🇧 [İngilizce Cümle]
+            🇹🇷 [Türkçe Çevirisi]
+        `;
+
+        try {
+            const data = await callGemini(url, prompt);
+            q.aiVocabData = data.replace(/\n/g, '<br>'); 
+            showTipBox(q.id, "Örnek Cümle & Çeviri", "bi-chat-quote-fill", q.aiVocabData);
+        } catch (e) { showError(q.id, e.message); }
+    }
 
     // --- 1. BUTON: ANALİZ VE ÇEVİRİ ---
     async function getAiAnalysis(questionId) {
@@ -7656,7 +7694,25 @@ const rawExamVocabA = `1-C 2-D 3-A 4-A 5-E 6-B 7-E 8-E 9-B 10-A 11-C 12-D 13-C 1
             box.innerHTML = `<div class="d-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-primary"></div> <span>${msg}</span></div>`;
         }
     }
+// --- EKLENEN YARDIMCI FONKSİYONLAR ---
+    
+    // Sonucu Ekrana Basar
+    function showTipBox(id, title, icon, content) {
+        const box = document.getElementById(`tip-${id}`);
+        if(box) {
+            box.style.display = 'block';
+            box.innerHTML = `<strong><i class="bi ${icon}"></i> ${title}:</strong><br><br>${content}`;
+        }
+    }
 
+    // Hata Mesajı Gösterir
+    function showError(id, msg) {
+        const box = document.getElementById(`tip-${id}`);
+        if(box) {
+            box.style.display = 'block';
+            box.innerHTML = `<span class="text-danger">Hata: ${msg}</span>`;
+        }
+    }
 </script>
 </body>
 </html>
