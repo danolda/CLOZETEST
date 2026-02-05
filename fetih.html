@@ -157,7 +157,7 @@
         // SENİN YEREL DOSYAN
     const SVG_URL = './tr.svg';       
     const ICONS = { 
-        CASTLE: 'https://cdn-icons-png.flaticon.com/512/2909/2909653.png', 
+        CASTLE: 'https://danolda.github.io/CLOZETEST/castle.svg', 
         HOST_SOLDIER: 'https://cdn-icons-png.flaticon.com/512/1533/1533913.png', 
         GUEST_SOLDIER: 'https://cdn-icons-png.flaticon.com/512/1533/1533908.png' 
     };
@@ -1683,16 +1683,14 @@
             if (!response.ok) throw new Error("Dosya bulunamadı");
             let text = await response.text();
 
-            // --- 1. GÜRÜLTÜ TEMİZLİĞİ ---
-            // 'const x = `', '`', 'TIP: ...', 'Section: ...' ve '// Yorumlar' silinir
-            text = text.replace(/^const\s+\w+\s*=\s*`/gm, ''); // const raw = ` sil
-            text = text.replace(/`\s*;?/g, ''); // Kapanış backticklerini sil
-            text = text.replace(/^TIP:.*$/gm, ''); // TIP satırlarını sil
-            text = text.replace(/^Section:.*$/gm, ''); // Section satırlarını sil
-            text = text.replace(/^\/\/.*$/gm, ''); // // ile başlayan yorum satırlarını sil
-            text = text.replace(/\(20\d\d.*?\)/g, ''); // (2025 YDT) gibi etiketleri sil
+            // GÜRÜLTÜ TEMİZLİĞİ
+            text = text.replace(/^const\s+\w+\s*=\s*`/gm, ''); 
+            text = text.replace(/`\s*;?/g, ''); 
+            text = text.replace(/^TIP:.*$/gm, ''); 
+            text = text.replace(/^Section:.*$/gm, ''); 
+            text = text.replace(/^\/\/.*$/gm, ''); 
+            text = text.replace(/\(20\d\d.*?\)/g, ''); 
 
-            // --- 2. CEVAPLARI TOPLA ---
             const answersList = [];
             const ansRegex = /(\d+)[\-\:\.]\s*([A-E])/g;
             let ansMatch;
@@ -1700,7 +1698,6 @@
                 answersList.push(ansMatch[2]);
             }
 
-            // --- 3. SORULARI AYIKLA ---
             const rawBlocks = text.split(/(?=\n\s*\d+[\)\.])/g);
             const parsedQuestions = [];
             let ansIndex = 0;
@@ -1743,7 +1740,7 @@
                 });
             });
 
-            console.log(`${parsedQuestions.length} soru ayrıştırıldı.`);
+            console.log(`${parsedQuestions.length} text sorusu yüklendi.`);
             return parsedQuestions;
 
         } catch (e) {
@@ -1762,16 +1759,28 @@
             const distractors = [];
             while (distractors.length < 3) {
                 const rand = ydsVocabDB[Math.floor(Math.random() * ydsVocabDB.length)];
-                if (rand.tr !== item.tr && !distractors.includes(rand.tr)) distractors.push(rand.tr);
+                if (rand.tr !== item.tr && !distractors.includes(rand.tr)) {
+                    distractors.push(rand.tr);
+                }
             }
+            
             const optionsArr = [item.tr, ...distractors].sort(() => 0.5 - Math.random());
             const optKeys = ['A', 'B', 'C', 'D'];
             const opts = {};
             let ansKey = '';
-            optionsArr.forEach((opt, idx) => { opts[optKeys[idx]] = opt; if (opt === item.tr) ansKey = optKeys[idx]; });
             
-            generated.push({ q: `"${item.en}" anlamı?`, opts: opts, ans: ansKey });
+            optionsArr.forEach((opt, idx) => {
+                opts[optKeys[idx]] = opt;
+                if (opt === item.tr) ansKey = optKeys[idx];
+            });
+            
+            generated.push({
+                q: `"${item.en}" kelimesinin anlamı nedir?`,
+                opts: opts,
+                ans: ansKey
+            });
         }
+        console.log(`${generated.length} kelime sorusu üretildi.`);
         return generated;
     }
 
@@ -1830,18 +1839,16 @@
     async function startGameConfig() {
         document.getElementById('screen-setup').innerHTML = '<h3 class="text-warning">Savaş Hazırlanıyor...</h3><div class="spinner-border text-light"></div>';
         
-        // 1. Text dosyasından soruları çek ve temizle
+        // 1. Dosya Soruları
         const textQuestions = await loadQuestionsFromTextFile();
-        // 2. Kelime soruları üret
-        const vocabQuestions = generateVocabQuestions(30);
+        // 2. Kelime Soruları (Otomatik Üretilen)
+        const vocabQuestions = generateVocabQuestions(50);
         
         // 3. Birleştir ve Karıştır
         let allQ = [...textQuestions, ...vocabQuestions];
         
-        // Eğer boşsa varsayılan
-        if(allQ.length === 0) allQ = [{ q: "Error loading questions. 2+2?", opts: {A:'3',B:'4',C:'5',D:'6'}, ans: 'B' }];
+        if(allQ.length === 0) allQ = [{ q: "Error loading questions.", opts: {A:'A',B:'B',C:'C',D:'D'}, ans: 'A' }];
         
-        // Fisher-Yates Shuffle (Tam Rastgele)
         for (let i = allQ.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [allQ[i], allQ[j]] = [allQ[j], allQ[i]];
@@ -1864,7 +1871,7 @@
 
     function startNewTurn() {
         if(currentTurn >= questions.length) return calculateFinalWinner("Sorular Bitti!");
-        myAnswer = null; p2AnswerTemp = null; turnQueue = [];
+        myAnswer = null; p2AnswerTemp = null; turnQueue = []; turnLockedCities = []; // Kilitli şehirleri sıfırla
         const q = questions[currentTurn];
         conn.send({ type: 'NEW_TURN', question: q, turnIndex: currentTurn });
         showQuestion(q);
@@ -1883,7 +1890,7 @@
     }
 
     function startTimer() {
-        let timeLeft = 45;
+        let timeLeft = 45; // !!! SÜRE AYARI BURADA (Saniye cinsinden) !!!
         document.getElementById('q-timer').innerText = timeLeft;
         if(timerInterval) clearInterval(timerInterval);
         timerInterval = setInterval(() => {
@@ -1907,19 +1914,33 @@
 
     function resolveTurn(ans, time) { p2AnswerTemp = ans; p2TimeTemp = time; checkTurnEnd(); }
 
+    // --- ORİJİNAL HAK (MOVE) HESAPLAMA MANTIĞI ---
     function checkTurnEnd() {
         if(myAnswer && p2AnswerTemp) {
             const q = questions[currentTurn];
             const p1Correct = (myAnswer === q.ans);
             const p2Correct = (p2AnswerTemp === q.ans);
+            
             if(p1Correct) players.p1.score += 100;
             if(p2Correct) players.p2.score += 100;
             
             turnQueue = [];
+            // MANTIK:
+            // Sadece biri bilirse -> 2 Hak (['p1', 'p1'])
+            // İkisi de bilirse -> Hızlı olan 1. , Yavaş olan 2. (['p1', 'p2'])
+            
             if (p1Correct && p2Correct) {
-                if (myTime <= p2TimeTemp) turnQueue = ['p1', 'p2']; else turnQueue = ['p2', 'p1'];
-            } else if (p1Correct) turnQueue = ['p1', 'p1'];
-            else if (p2Correct) turnQueue = ['p2', 'p2'];
+                // İkisi de bildi: Hıza göre 1'er hak
+                if (myTime <= p2TimeTemp) turnQueue = ['p1', 'p2']; 
+                else turnQueue = ['p2', 'p1'];
+            } else if (p1Correct) {
+                // Sadece P1 bildi: 2 Hak
+                turnQueue = ['p1', 'p1'];
+            } else if (p2Correct) {
+                // Sadece P2 bildi: 2 Hak
+                turnQueue = ['p2', 'p2'];
+            }
+            // Kimse bilemezse kuyruk boş kalır
 
             const data = { type: 'TURN_RESULT', p1Correct, p2Correct, p1Ans: myAnswer, p2Ans: p2AnswerTemp, queue: turnQueue, correct: q.ans, players: players };
             conn.send(data); handleTurnResult(data);
@@ -1974,6 +1995,16 @@
     function processClaim(plate, playerKey) {
         const oppKey = playerKey === 'p1' ? 'p2' : 'p1';
         if (turnQueue.length === 0 || turnQueue[0] !== playerKey) return;
+
+        // 1. AYNI TURDA AYNI ŞEHİR KİLİDİ
+        if (turnLockedCities.includes(plate)) {
+            const msg = "Bu şehir bu turda el değiştirdi! (Kilitli)";
+            if(playerKey === 'p2') conn.send({ type: 'UPDATE_MAP', players: players, msg: msg });
+            else showStatus(msg);
+            return;
+        }
+
+        // 2. KOMŞULUK KONTROLÜ
         if (!isAdjacent(plate, players[playerKey].cities)) {
             const msg = "Sadece sınır komşusu illeri alabilirsin!";
             if(playerKey === 'p2') conn.send({ type: 'UPDATE_MAP', players: players, msg: msg });
@@ -1982,25 +2013,55 @@
         }
 
         let msg = ""; let success = false;
+        let consumedMoves = 1; // Standart hamle maliyeti
+
+        // A) KALE SALDIRISI (2 HAK GEREKTİRİR)
         if (players[oppKey].base === plate) {
-            players[oppKey].hp -= 1; msg = `KALE SALDIRISI! ${players[oppKey].name} hasar aldı!`;
+            // Kontrol: Oyuncunun kuyrukta en az 2 hakkı var mı? (Örn: ['p1', 'p1'])
+            if (turnQueue.length < 2 || turnQueue[1] !== playerKey) {
+                const errorMsg = "Kaleye saldırmak için 2 Fetih Hakkı (Tek başına bilmek) gerekir!";
+                if(playerKey === 'p2') conn.send({ type: 'UPDATE_MAP', players: players, msg: errorMsg });
+                else showStatus(errorMsg);
+                return;
+            }
+
+            players[oppKey].hp -= 1; 
+            msg = `KALE SALDIRISI! ${players[oppKey].name} hasar aldı!`;
+            consumedMoves = 2; // 2 hak düşülecek
+            
             if (players[oppKey].hp <= 0) return calculateFinalWinner("Kale İşgali");
             success = true;
-        } else if (players[oppKey].cities.includes(plate)) {
+        } 
+        // B) TOPRAK ÇALMA
+        else if (players[oppKey].cities.includes(plate)) {
             players[oppKey].cities = players[oppKey].cities.filter(c => c !== plate);
             players[oppKey].score -= 150; players[playerKey].cities.push(plate); players[playerKey].score += 150;
-            msg = `${players[playerKey].name} toprak ÇALDI!`; success = true;
-        } else if (!players.p1.cities.includes(plate) && !players.p2.cities.includes(plate)) {
+            msg = `${players[playerKey].name} toprak ÇALDI!`; 
+            success = true;
+        } 
+        // C) BOŞ TOPRAK
+        else if (!players.p1.cities.includes(plate) && !players.p2.cities.includes(plate)) {
             players[playerKey].cities.push(plate); players[playerKey].score += 50;
-            msg = `${players[playerKey].name} fethetti!`; success = true;
+            msg = `${players[playerKey].name} fethetti!`; 
+            success = true;
         }
 
         if (success) {
-            turnQueue.shift(); renderMapState();
+            // Hakkı düş (Eğer kale ise 2 defa shift yap)
+            for(let k=0; k<consumedMoves; k++) turnQueue.shift();
+            
+            // Şehri bu tur için kilitle
+            turnLockedCities.push(plate);
+
+            renderMapState();
             conn.send({ type: 'UPDATE_MAP', players: players, msg: msg });
             conn.send({ type: 'QUEUE_UPDATE', queue: turnQueue });
             updateExpansionStatus(); if(msg) showStatus(msg);
-            if (turnQueue.length === 0) { gameState = "WAITING"; showStatus("Tur bitti! Yeni soru..."); currentTurn++; setTimeout(startNewTurn, 4000); }
+            
+            if (turnQueue.length === 0) { 
+                gameState = "WAITING"; showStatus("Tur bitti! Yeni soru..."); 
+                currentTurn++; setTimeout(startNewTurn, 4000); 
+            }
         }
     }
 
@@ -2019,7 +2080,6 @@
         const grp = document.createElementNS("http://www.w3.org/2000/svg", "g"); grp.id = "icon-layer"; svg.appendChild(grp);
         svg.querySelectorAll('path').forEach(p => {
             let id = p.getAttribute('id');
-            // TR01 -> 1 Dönüşümü (SVG'deki ID'lerin TR ile başladığını varsayıyoruz)
             if(id && id.startsWith('TR')) {
                 const pl = parseInt(id.replace('TR',''));
                 p.setAttribute('id', `city-${pl}`); p.removeAttribute('fill'); p.removeAttribute('style');
