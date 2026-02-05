@@ -217,109 +217,115 @@
     
 
 
-/* ================= HARİTA YÜKLEME (YEDEKLİ SİSTEM) ================= */
+/* ================= HARİTA YÜKLEME (81 İL AYRILMIŞ - KESİN ÇÖZÜM) ================= */
 async function loadSvgMap() {
     const wrapper = document.getElementById('map-container');
-    wrapper.innerHTML = '<div class="d-flex flex-column justify-content-center align-items-center h-100 text-warning"><div class="spinner-border mb-2"></div><div>Harita Yükleniyor...</div></div>';
+    wrapper.innerHTML = '<div class="d-flex flex-column justify-content-center align-items-center h-100 text-warning"><div class="spinner-border mb-2"></div><div>81 İl Haritası Yükleniyor...</div></div>';
     
-    // 1. Kaynak (Öncelikli)
-    const urlPrimary = 'https://raw.githubusercontent.com/yusufoguzhan/Turkey-Maps-SVG/master/tr.svg';
-    // 2. Kaynak (Yedek - Eğer ilki açılmazsa)
-    const urlBackup = 'https://raw.githubusercontent.com/djaiss/mapsicon/master/all/tr/vector.svg';
-
-    let svgText = null;
+    // BU KAYNAKTA 81 İL AYRI AYRI ÇİZİLMİŞTİR
+    const mapUrl = 'https://raw.githubusercontent.com/ismailarilik/turkey-map-svg/master/turkey-map.svg';
 
     try {
-        // Önce 1. kaynağı dene
-        console.log("1. Kaynak deneniyor...");
-        const response1 = await fetch(urlPrimary);
-        if (response1.ok) {
-            svgText = await response1.text();
-            console.log("1. Kaynaktan yüklendi.");
-        } else {
-            throw new Error("1. Kaynak yanıt vermedi.");
-        }
-    } catch (err1) {
-        console.warn("1. Kaynak hatası:", err1);
-        try {
-            // Hata alırsan 2. kaynağı dene
-            console.log("2. Kaynak (Yedek) deneniyor...");
-            const response2 = await fetch(urlBackup);
-            if (response2.ok) {
-                svgText = await response2.text();
-                console.log("2. Kaynaktan yüklendi.");
-            } else {
-                throw new Error("Tüm kaynaklar başarısız.");
-            }
-        } catch (err2) {
-            console.error(err2);
-            wrapper.innerHTML = `<div class="text-danger text-center mt-5"><h3>Harita Yüklenemedi!</h3><p>İnternet bağlantınızı kontrol edin veya sayfayı yenileyin.</p></div>`;
-            return;
-        }
-    }
-
-    if (svgText) {
-        // SVG'yi yerleştir
+        const response = await fetch(mapUrl);
+        if (!response.ok) throw new Error("Harita kaynağına erişilemedi.");
+        
+        let svgText = await response.text();
+        
+        // SVG'yi ekrana bas
         wrapper.innerHTML = svgText;
         const svg = wrapper.querySelector('svg');
         
-        // Boyutlandırma
+        // SVG ayarlarını yap (Tam ekran oturması için)
         svg.removeAttribute('width');
         svg.removeAttribute('height');
         svg.style.width = '100%';
         svg.style.height = '100%';
-        svg.style.overflow = 'visible'; // Taşmaları engelleme
-
-        // İl sınırlarını belirginleştirmek için stil ekle (Otomatik)
+        svg.style.maxHeight = '75vh'; // Dikey taşmayı engelle
+        
+        // Harita stillerini ekle (Sınır çizgileri için)
         const styleTag = document.createElement('style');
         styleTag.innerHTML = `
-            .map-province { fill: #ecf0f1; stroke: #7f8c8d; stroke-width: 1.5px; transition: all 0.2s; cursor: pointer; }
-            .map-province:hover { fill: #bdc3c7; stroke: white; stroke-width: 2px; z-index: 10; position: relative; }
+            path { 
+                fill: #ecf0f1; 
+                stroke: #7f8c8d; 
+                stroke-width: 1.5px; 
+                cursor: pointer; 
+                transition: all 0.2s;
+            }
+            path:hover { 
+                fill: #bdc3c7; 
+                stroke: #fff; 
+                stroke-width: 2.5px; 
+                filter: drop-shadow(0 0 5px rgba(0,0,0,0.5));
+                z-index: 100; 
+                position: relative;
+            }
+            /* Oyun sınıfları */
+            .owned-p1 { fill: var(--p1-color) !important; stroke: #fff; }
+            .owned-p2 { fill: var(--p2-color) !important; stroke: #fff; }
+            .base-city { stroke: var(--gold) !important; stroke-width: 4px !important; stroke-dasharray: 5,3; }
         `;
-        svg.prepend(styleTag);
+        wrapper.prepend(styleTag);
 
-        // Path (İl) İşlemleri
+        // İLLERİ AYARLA
         const paths = svg.querySelectorAll('path');
-        
+        let count = 0;
+
         paths.forEach(path => {
-            // ID Formatı: TR-01, TR-34 vb.
-            let rawId = path.getAttribute('id') || path.getAttribute('data-id');
+            // Bu haritada illerin ID'si direkt plaka kodudur (Örn: id="1", id="34")
+            // Veya data-plaka="1" şeklindedir.
             
-            // Eğer ID "TR-" ile başlıyorsa (Standart ISO formatı)
-            if (rawId && (rawId.startsWith('TR-') || !isNaN(parseInt(rawId)))) {
+            let rawId = path.getAttribute('id'); // "1", "34" vb. alır
+            let cityName = path.getAttribute('data-name') || path.getAttribute('title');
+
+            // Eğer ID yoksa parent elemente bak (Bazı svglerde gruplama olur)
+            if (!rawId && path.parentElement.tagName === 'g') {
+                rawId = path.parentElement.getAttribute('id');
+                cityName = path.parentElement.getAttribute('data-name');
+            }
+
+            // ID'yi sayıya çevir
+            const plate = parseInt(rawId);
+
+            if (!isNaN(plate) && plate > 0 && plate <= 81) {
+                count++;
                 
-                // "TR-01" -> 1, "TR-34" -> 34 çevrimi
-                let plate = parseInt(rawId.replace('TR-', ''), 10);
-
-                if (plate > 0 && plate <= 81) {
-                    // Oyuna uygun ID ata
-                    path.setAttribute('id', `city-${plate}`);
-                    path.setAttribute('class', 'map-province');
-                    
-                    // Varsayılan renkleri temizle (Bizim CSS geçerli olsun)
-                    path.removeAttribute('fill');
-                    path.removeAttribute('style');
-                    
-                    // Tıklama olayı
-                    path.onclick = (e) => {
-                        e.stopPropagation(); // Arka plana tıklamayı engelle
+                // OYUNUN ANLAYACAĞI ID FORMATINA ÇEVİR
+                path.setAttribute('id', `city-${plate}`);
+                
+                // Varsayılan renkleri sil (CSS kontrol etsin)
+                path.removeAttribute('fill');
+                path.removeAttribute('style');
+                
+                // Tıklama Olayı
+                path.onclick = (e) => {
+                    e.stopPropagation(); // Arka plana tıklamayı engelle
+                    if(typeof onCityClick === 'function') {
                         onCityClick(plate);
-                    };
+                    }
+                };
 
-                    // Tooltip (İsim Ekleme)
-                    const existingTitle = path.querySelector('title');
-                    if(existingTitle) existingTitle.remove(); // Eskisini sil
-                    
-                    const titleEl = document.createElementNS("http://www.w3.org/2000/svg", "title");
-                    // Eğer path üzerinde 'name' veya 'data-name' varsa onu kullan, yoksa Plaka yaz
-                    let cityName = path.getAttribute('name') || path.getAttribute('data-name') || path.getAttribute('title') || `İl ${plate}`;
-                    titleEl.textContent = `${cityName} (Plaka: ${plate})`;
-                    path.appendChild(titleEl);
-                }
+                // İsim Etiketi (Tooltip)
+                const titleEl = document.createElementNS("http://www.w3.org/2000/svg", "title");
+                titleEl.textContent = `${cityName} (Plaka: ${plate})`;
+                // Eski title varsa sil
+                path.querySelectorAll('title').forEach(t => t.remove());
+                path.appendChild(titleEl);
             }
         });
-        
-        console.log("Harita başarıyla işlendi.");
+
+        console.log(`${count} adet il başarıyla yüklendi ve ayrıştırıldı.`);
+
+        if(count === 0) throw new Error("İller ayrıştırılamadı.");
+
+    } catch (error) {
+        console.error(error);
+        wrapper.innerHTML = `
+            <div class="text-danger text-center mt-5">
+                <h3>Harita Hatası</h3>
+                <p>${error.message}</p>
+                <button class="btn btn-outline-light btn-sm mt-3" onclick="location.reload()">Sayfayı Yenile</button>
+            </div>`;
     }
 }
     
