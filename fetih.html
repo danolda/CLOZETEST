@@ -7567,68 +7567,104 @@ const rawExamVocabA = `1-C 2-D 3-A 4-A 5-E 6-B 7-E 8-E 9-B 10-A 11-C 12-D 13-C 1
     }
 
     /* ================= OYUN AKIŞI (HOST YÖNETİR) ================= */
+// Tüm kategorilerin ID aralıklarını tanımlıyoruz
+    const categoryRanges = [
+        { id: 'sec1', t: 'Prepositions', min: 1, max: 70 },
+        { id: 'sec2', t: 'Conjunctions', min: 71, max: 130 },
+        { id: 'sec3', t: 'Relative Clauses', min: 131, max: 190 }, // EKLENDİ
+        { id: 'sec4', t: 'Tense/Modals', min: 191, max: 250 },
+        { id: 'secVocab', t: 'YDS Kelimeler', min: 1000, max: 2999 },
+        { id: 'secExamPrep', t: 'Çıkmış Prepositions', min: 3000, max: 3200 }, // EKLENDİ
+        { id: 'secExamConj', t: 'Çıkmış Bağlaçlar', min: 3201, max: 3500 }, // EKLENDİ
+        { id: 'secExamTense', t: 'Çıkmış Tense', min: 3501, max: 3800 }, // EKLENDİ
+        { id: 'secExamVocab', t: 'Çıkmış Kelime', min: 3801, max: 4200 } // EKLENDİ
+    ];
+
     function goToSetup() {
         document.getElementById('screen-lobby').classList.add('d-none');
         document.getElementById('screen-setup').classList.remove('d-none');
         
         // Kategorileri Listele
         const catContainer = document.getElementById('setup-categories');
-        const sections = [
-            {id:'sec1', t:'Prepositions'}, {id:'sec2', t:'Conjunctions'},
-            {id:'sec4', t:'Tense/Modals'}, {id:'secVocab', t:'Vocabulary'}
-        ];
-        
-        sections.forEach(s => {
+        catContainer.innerHTML = ""; // Temizle
+
+        categoryRanges.forEach(s => {
+            // Buradaki HTML yapısını Grid sistemine (row/col) çevirdik
             catContainer.innerHTML += `
-            <div class="setup-row d-flex align-items-center gap-2">
-                <div class="form-check form-switch" style="width: 150px;">
-                    <input class="form-check-input cat-check" type="checkbox" value="${s.id}" id="chk-${s.id}" checked>
-                    <label class="form-check-label text-white" for="chk-${s.id}">${s.t}</label>
+            <div class="setup-row row align-items-center mb-2">
+                <div class="col-5">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input cat-check" type="checkbox" value="${s.id}" id="chk-${s.id}">
+                        <label class="form-check-label text-white small" for="chk-${s.id}">${s.t}</label>
+                    </div>
                 </div>
-                <input type="number" class="form-control form-control-sm cat-count" placeholder="Sayı" value="5" min="1" max="20" style="width: 80px;">
-                <input type="number" class="form-control form-control-sm cat-time" placeholder="Sn" value="30" min="10" max="120" style="width: 80px;">
+                <div class="col-3">
+                    <input type="number" class="form-control form-control-sm cat-count text-center" placeholder="Sayı" value="5" min="1" max="50">
+                </div>
+                <div class="col-4">
+                    <input type="number" class="form-control form-control-sm cat-time text-center" placeholder="Sn" value="30" min="10" max="180">
+                </div>
             </div>`;
         });
     }
 
-    function startGameConfig() {
+function startGameConfig() {
         // Konfigürasyonu topla
         gameConfig = [];
         let pool = [];
         
-        document.querySelectorAll('.setup-row').forEach(row => {
+        // Eğer sorular yüklenmemişse hata ver
+        if (!allQuestions || allQuestions.length === 0) {
+            alert("Hata: Soru havuzu boş! Lütfen soruları doğru yüklediğinizden emin olun.");
+            return;
+        }
+
+        const rows = document.querySelectorAll('.setup-row');
+        let isAnyChecked = false;
+
+        rows.forEach(row => {
             const chk = row.querySelector('.cat-check');
-            if (chk.checked) {
-                const cnt = parseInt(row.querySelector('.cat-count').value);
-                const time = parseInt(row.querySelector('.cat-time').value);
-                gameConfig.push({ id: chk.value, count: cnt, time: time });
+            
+            if (chk && chk.checked) {
+                isAnyChecked = true;
+                const cnt = parseInt(row.querySelector('.cat-count').value) || 5;
+                const time = parseInt(row.querySelector('.cat-time').value) || 30;
                 
-                // Soruları havuzdan çek (allQuestions dolu varsayıyoruz)
-                // Demo modunda isek allQuestions'dan filtrele
-                // Gerçek modda allQuestions dolu olmalı
-                if(allQuestions.length === 0) loadQuestionsFromSource(); // Fallback
+                // Hangi kategori olduğunu bul ve ID aralığını al
+                const rangeInfo = categoryRanges.find(r => r.id === chk.value);
                 
-                const filtered = allQuestions.filter(q => {
-                    // ID aralıklarına göre filtreleme (Basit simülasyon)
-                    // Gerçek projede section key'ine göre
-                    return true; 
-                }).slice(0, cnt);
-                
-                // Her soruya süre bilgisini ekle
-                filtered.forEach(q => q.timeLimit = time);
-                pool = pool.concat(filtered);
+                if (rangeInfo) {
+                    gameConfig.push({ id: chk.value, count: cnt, time: time });
+                    
+                    // ID ARALIĞINA GÖRE FİLTRELEME (İşte burası hatayı çözer)
+                    const filtered = allQuestions.filter(q => q.id >= rangeInfo.min && q.id <= rangeInfo.max);
+                    
+                    // Rastgele karıştır ve istenen sayı kadar al
+                    const selected = filtered.sort(() => 0.5 - Math.random()).slice(0, cnt);
+                    
+                    // Seçilenlere süre bilgisini ekle ve havuza at
+                    selected.forEach(q => {
+                        // Objeyi kopyala ki orijinal veriyi bozmayalım
+                        let qCopy = JSON.parse(JSON.stringify(q));
+                        qCopy.timeLimit = time;
+                        qCopy.section = rangeInfo.t; // Kategori adını ekle
+                        pool.push(qCopy);
+                    });
+                }
             }
         });
 
-        if (pool.length === 0) return alert("Soru seçilmedi!");
+        if (!isAnyChecked) return alert("Lütfen en az bir bölüm seçin!");
+        if (pool.length === 0) return alert("Seçilen bölümlerde yeterli soru bulunamadı! (ID aralıklarını kontrol et)");
         
+        // Havuzu karıştır
         gameQuestions = pool.sort(() => 0.5 - Math.random());
         
         // Guest'e gönder
         conn.send({ type: 'START_SELECT_BASE', questions: gameQuestions, config: gameConfig, players: players });
         
         goToMapScreen();
-        document.getElementById('game-status').innerText = "KALE ŞEHRİNİ SEÇ (Tıkla)";
+        document.getElementById('game-status').innerText = "KALE ŞEHRİNİ SEÇ (Haritaya Tıkla)";
         gameState = "BASE_SELECT";
     }
 
