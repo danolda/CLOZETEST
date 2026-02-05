@@ -109,7 +109,7 @@
         @keyframes pulse { 0% { opacity: 0.8; } 50% { opacity: 1; transform: translateX(-50%) scale(1.05); } 100% { opacity: 0.8; } }
 
         /* İKON ANİMASYONU */
-        .map-icon {
+        .map- {
             transform-box: fill-box;
             transform-origin: center;
             animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -291,18 +291,16 @@
             wrapper.innerHTML = `<h3 class="text-danger text-center mt-5">Harita Yüklenemedi: ${error.message}</h3>`;
         }
     }
-    /* ================= PEERJS BAĞLANTI (GÜNCELLENMİŞ) ================= */
+/* ================= PEERJS BAĞLANTI (DÜZELTİLMİŞ) ================= */
+    
     function createGame() {
         const room = document.getElementById('room-id').value;
         const name = document.getElementById('player-name').value || "Mavi";
         if(!room) return alert("Oda ismi girin!");
 
-        // Eğer önceki bir bağlantı kaldıysa temizle
-        if (peer) peer.destroy();
+        if (peer) peer.destroy(); // Eski bağlantıyı temizle
 
-        peer = new Peer(room, {
-            debug: 2
-        });
+        peer = new Peer(room, { debug: 2 });
 
         peer.on('open', id => {
             isHost = true;
@@ -312,13 +310,16 @@
 
         peer.on('error', err => {
             if (err.type === 'unavailable-id') {
-                alert(`HATA: '${room}' ismi şu an kullanılıyor. Lütfen 'fetih${Math.floor(Math.random()*100)}' gibi farklı bir oda ismi girin.`);
+                alert(`BU ODA İSMİ DOLU! '${room}' kullanılıyor. Lütfen başka bir isim girin.`);
             } else {
-                alert("Bağlantı Hatası: " + err.type);
+                alert("Hata: " + err.type);
             }
         });
 
-        peer.on('connection', c => { conn = c; setupConnection(); });
+        peer.on('connection', c => { 
+            conn = c; 
+            setupConnection(); 
+        });
     }
 
     function joinGame() {
@@ -326,38 +327,44 @@
         const name = document.getElementById('player-name').value || "Kırmızı";
         if(!room) return alert("Oda ismi girin!");
 
-        // Önceki bağlantıyı temizle
-        if (peer) peer.destroy();
+        if (peer) peer.destroy(); // Eski bağlantıyı temizle
 
-        // Misafir için ID'yi boş bırakıyoruz (otomatik rastgele ID alır)
-        peer = new Peer();
+        peer = new Peer(); // Rastgele ID ile aç
 
         peer.on('open', id => {
-            // Bağlantı açılınca odaya bağlanmayı dene
             conn = peer.connect(room);
+            isHost = false;
+            players.p2.name = name;
             
-            conn.on('open', () => {
-                isHost = false;
-                players.p2.name = name;
-                setupConnection();
-            });
-
-            // Bağlantı hatalarını yakala (örn: oda yoksa)
-            conn.on('error', (err) => {
-                alert("Odaya bağlanılamadı! Oda ismini kontrol edin.");
-            });
+            // HATA BURADAYDI: Burada connection'ın 'open' olmasını beklemeden
+            // direkt setupConnection çağırmalıyız. Fonksiyonun kendisi bekleyecek.
+            setupConnection();
         });
 
         peer.on('error', err => {
-            alert("Hata: " + err.type);
+            alert("Bağlantı hatası: " + err.type);
         });
     }
 
     function setupConnection() {
-        conn.on('open', () => {
-            isHost ? conn.send({ type: 'INIT', p1Name: players.p1.name }) : conn.send({ type: 'JOIN', p2Name: players.p2.name });
-        });
+        // Veri geldiğinde ne yapacağını belirle
         conn.on('data', handleData);
+
+        // Bağlantı açılınca (veya zaten açıksa) kimlik bilgisini gönder
+        conn.on('open', () => {
+            if (isHost) {
+                conn.send({ type: 'INIT', p1Name: players.p1.name });
+            } else {
+                // Misafir burada ismini gönderince Host bunu alıp 'goToSetup' yapacak
+                conn.send({ type: 'JOIN', p2Name: players.p2.name });
+            }
+        });
+        
+        // Eğer bağlantı çoktan açıldıysa ve 'open' eventini kaçırdıysak diye kontrol:
+        if(conn.open) {
+             if (isHost) conn.send({ type: 'INIT', p1Name: players.p1.name });
+             else conn.send({ type: 'JOIN', p2Name: players.p2.name });
+        }
     }
 
     function handleData(data) {
