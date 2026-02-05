@@ -7538,19 +7538,22 @@ const rawExamVocabA = `1-C 2-D 3-A 4-A 5-E 6-B 7-E 8-E 9-B 10-A 11-C 12-D 13-C 1
     }
 
     // --- SENKRONİZASYON (BAĞI KOPARILMIŞ HALİ) ---
-    function syncWithMainApp() {
-        const now = Date.now();
-        let changed = false;
+  function syncWithMainApp() {
+    const now = Date.now();
+    let changed = false;
 
-        // 1. Sadece YENİ yanlışları ekle.
-        // Ana uygulamada bir soru yanlış yapılmışsa, buraya ekleriz.
-        wrongBank.forEach(id => {
-            if (!srsSchedule[id]) {
-                // Listede yoksa ekle ve süresini başlat
-                srsSchedule[id] = now + DELAY_TIME; 
-                changed = true;
-            }
-        });
+    // 1. Sadece YENİ yanlışları ekle.
+    // Ana uygulamada bir soru yanlış yapılmışsa, buraya ekleriz.
+    wrongBank.forEach(id => {
+        if (!srsSchedule[id]) {
+            // Listede yoksa ekle ve süresini başlat (Kullanıcının seçtiği gün sayısı kadar ekle)
+            srsSchedule[id] = now + (userReminderDays * 24 * 60 * 60 * 1000); 
+            changed = true;
+        }
+    });
+
+    if(changed) localStorage.setItem('yds_srs_schedule', JSON.stringify(srsSchedule));
+}
 
         // NOT: Buradan "silme" kodunu çıkarttım.
         // Artık 'wrongBank'tan silinen soru, 'srsSchedule'dan silinmez.
