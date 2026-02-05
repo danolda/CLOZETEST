@@ -216,108 +216,127 @@
 
     
 
-
-/* ================= HARİTA YÜKLEME (GARANTİLİ HİBRİT SİSTEM) ================= */
+/* ================= HARİTA YÜKLEME (GÖMÜLÜ STRATEJİ HARİTASI) ================= */
 async function loadSvgMap() {
     const wrapper = document.getElementById('map-container');
-    wrapper.innerHTML = '<div class="d-flex flex-column justify-content-center align-items-center h-100 text-info"><div class="spinner-border mb-2"></div><div>Harita Yükleniyor...</div></div>';
-    
-    // 1. DENE: Wikimedia Avrupa Haritası (Genelde CORS sorunu çıkarmaz)
-    const onlineMapUrl = 'https://upload.wikimedia.org/wikipedia/commons/4/44/Europe_political_chart_blank.svg';
+    wrapper.innerHTML = ''; // Temizle
 
-    try {
-        const response = await fetch(onlineMapUrl);
-        if (!response.ok) throw new Error("İnternet haritası yüklenemedi.");
-        
-        let svgText = await response.text();
-        wrapper.innerHTML = svgText;
-        
-        const svg = wrapper.querySelector('svg');
-        svg.removeAttribute('width');
-        svg.removeAttribute('height');
-        svg.style.width = '100%';
-        svg.style.height = '100%';
-
-        // Stil Ekle
-        addMapStyles(wrapper);
-
-        // Ülkeleri Tanımla
-        const paths = svg.querySelectorAll('path, polygon');
-        let count = 0;
-        paths.forEach((path, index) => {
-            // Küçük adaları filtrele
-            const len = path.getTotalLength ? path.getTotalLength() : 100;
-            if(len > 50) { 
-                setupPath(path, index + 1);
-                count++;
-            }
-        });
-
-        if(count < 10) throw new Error("Harita bozuk veya boş.");
-        console.log("İnternet haritası yüklendi.");
-
-    } catch (error) {
-        console.warn("Harita indirilemedi, OTOMATİK HARİTA (FALLBACK) oluşturuluyor...", error);
-        // HATA ALIRSA: OTOMATİK STRATEJİ HARİTASI ÇİZ
-        createProceduralMap(wrapper);
-    }
-}
-
-/* --- YARDIMCI: OTOMATİK HARİTA OLUŞTURUCU (Hata durumunda çalışır) --- */
-function createProceduralMap(wrapper) {
-    wrapper.innerHTML = '';
+    // SVG Oluştur
     const svgNS = "http://www.w3.org/2000/svg";
     const svg = document.createElementNS(svgNS, "svg");
-    svg.setAttribute("viewBox", "0 0 1000 600");
+    svg.setAttribute("viewBox", "0 0 1000 500");
     svg.style.width = "100%";
     svg.style.height = "100%";
     svg.style.background = "#2c3e50"; // Deniz Rengi
 
-    addMapStyles(wrapper);
+    // Stilleri Ekle
+    const styleTag = document.createElement('style');
+    styleTag.innerHTML = `
+        .province-poly {
+            fill: #ecf0f1;
+            stroke: #7f8c8d;
+            stroke-width: 2px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .province-poly:hover {
+            fill: #bdc3c7 !important;
+            stroke: #f1c40f !important;
+            stroke-width: 4px;
+            transform: scale(1.05);
+            transform-origin: center;
+            z-index: 100;
+        }
+        /* Takım Renkleri */
+        .owned-p1 { fill: var(--p1-color) !important; stroke: #fff !important; }
+        .owned-p2 { fill: var(--p2-color) !important; stroke: #fff !important; }
+        .base-city { 
+            stroke: var(--gold) !important; 
+            stroke-width: 5px !important; 
+            stroke-dasharray: 8; 
+            filter: drop-shadow(0 0 8px var(--gold));
+        }
+        text { pointer-events: none; font-family: sans-serif; font-weight: bold; fill: rgba(0,0,0,0.4); }
+    `;
+    wrapper.appendChild(styleTag);
+    wrapper.appendChild(svg);
 
-    // 9x9 Izgara şeklinde 81 Bölge Oluştur (Adana'dan Düzce'ye)
-    const cols = 9; 
-    const rows = 9;
-    const boxSize = 80;
-    const gap = 10;
-    const startX = 100;
-    const startY = 50;
+    // TÜRKİYE'NİN COĞRAFİ ŞEKLİNE GÖRE İLLERİ YERLEŞTİRME ALGORİTMASI
+    // Yaklaşık koordinatlar (X, Y) - Batıdan Doğuya doğru
+    const cityCoords = [
+        // Plaka 1 (Adana) - 81 (Düzce) arası yaklaşık bağıl konumlar
+        // Marmara & Ege (Sol Üst - Sol Alt)
+        {id:39,x:150,y:100}, {id:22,x:100,y:110}, {id:59,x:180,y:120}, {id:34,x:230,y:130}, {id:41,x:270,y:140}, {id:54,x:300,y:145}, 
+        {id:17,x:100,y:160}, {id:10,x:180,y:180}, {id:16,x:230,y:180}, {id:11,x:270,y:190}, {id:77,x:250,y:160},
+        {id:45,x:150,y:250}, {id:35,x:100,y:270}, {id:9,x:140,y:310}, {id:20,x:200,y:320}, {id:48,x:160,y:360}, {id:64,x:210,y:280}, {id:43,x:240,y:240},
+        // Akdeniz (Alt Orta)
+        {id:7,x:280,y:380}, {id:15,x:250,y:340}, {id:32,x:280,y:320}, {id:42,x:350,y:300}, {id:70,x:360,y:370}, {id:33,x:420,y:400}, {id:1,x:480,y:390}, {id:31,x:510,y:440}, {id:80,x:520,y:380}, {id:46,x:550,y:350},
+        // İç Anadolu (Orta)
+        {id:6,x:350,y:200}, {id:26,x:300,y:220}, {id:18,x:380,y:170}, {id:71,x:400,y:210}, {id:40,x:420,y:240}, {id:66,x:460,y:230}, {id:50,x:440,y:280}, {id:51,x:460,y:320}, {id:38,x:500,y:280}, {id:58,x:550,y:230}, {id:70,x:370,y:370},
+        // Karadeniz (Üst)
+        {id:81,x:320,y:140}, {id:14,x:340,y:150}, {id:74,x:360,y:120}, {id:67,x:330,y:120}, {id:37,x:400,y:130}, {id:57,x:450,y:110}, {id:55,x:500,y:130}, {id:5,x:480,y:160}, {id:60,x:520,y:180}, {id:52,x:550,y:140}, {id:28,x:590,y:145}, {id:61,x:630,y:150}, {id:53,x:670,y:150}, {id:8,x:710,y:140}, {id:29,x:630,y:190}, {id:69,x:670,y:190},
+        // Doğu Anadolu & Güneydoğu (Sağ)
+        {id:24,x:600,y:230}, {id:62,x:610,y:270}, {id:23,x:600,y:300}, {id:44,x:560,y:310}, {id:2,x:570,y:350}, {id:27,x:550,y:400}, {id:79,x:560,y:420}, {id:63,x:610,y:400}, {id:21,x:660,y:330}, {id:47,x:680,y:380}, {id:72,x:710,y:340}, {id:56,x:740,y:350}, {id:73,x:770,y:370}, {id:30,x:830,y:370},
+        {id:25,x:700,y:220}, {id:36,x:760,y:170}, {id:75,x:740,y:140}, {id:4,x:780,y:220}, {id:76,x:820,y:200}, {id:49,x:720,y:270}, {id:12,x:670,y:270}, {id:13,x:740,y:300}, {id:65,x:800,y:300}
+    ];
 
-    for (let i = 0; i < 81; i++) {
-        const plate = i + 1;
-        const col = i % cols;
-        const row = Math.floor(i / cols);
-
-        // Kare (Bölge) Çiz
-        const rect = document.createElementNS(svgNS, "rect");
-        rect.setAttribute("x", startX + (col * (boxSize + gap)));
-        rect.setAttribute("y", startY + (row * (boxSize + gap)));
-        rect.setAttribute("width", boxSize);
-        rect.setAttribute("height", boxSize);
-        rect.setAttribute("rx", 10); // Köşeleri yuvarla
-        rect.setAttribute("ry", 10);
-        
-        setupPath(rect, plate, `Bölge ${plate}`);
-        
-        // Bölge Numarasını İçine Yaz
-        const text = document.createElementNS(svgNS, "text");
-        text.setAttribute("x", startX + (col * (boxSize + gap)) + boxSize/2);
-        text.setAttribute("y", startY + (row * (boxSize + gap)) + boxSize/2 + 5);
-        text.setAttribute("text-anchor", "middle");
-        text.setAttribute("fill", "rgba(0,0,0,0.5)");
-        text.style.pointerEvents = "none"; // Tıklamayı engellemesin
-        text.style.fontSize = "20px";
-        text.style.fontWeight = "bold";
-        text.textContent = plate;
-
-        svg.appendChild(rect);
-        svg.appendChild(text);
+    // Eksik plakalar için rastgele doldurma (Sistem çökmesin diye)
+    const existingIds = cityCoords.map(c => c.id);
+    for(let i=1; i<=81; i++) {
+        if(!existingIds.includes(i)) {
+            // Boşluklara yerleştir
+            cityCoords.push({id: i, x: Math.random() * 800 + 100, y: Math.random() * 300 + 100});
+        }
     }
 
-    wrapper.appendChild(svg);
-    console.log("Sanal Strateji Haritası oluşturuldu.");
+    // ÇİZİM DÖNGÜSÜ
+    cityCoords.forEach(city => {
+        // Altıgen (Hexagon) Şekli Oluştur
+        const size = 25; // İl boyutu
+        const points = calculateHexagonPoints(city.x, city.y, size);
+        
+        const poly = document.createElementNS(svgNS, "polygon");
+        poly.setAttribute("points", points);
+        poly.setAttribute("id", `city-${city.id}`);
+        poly.setAttribute("class", "province-poly");
+
+        // Tıklama Olayı
+        poly.onclick = (e) => {
+            e.stopPropagation();
+            if(typeof onCityClick === 'function') onCityClick(city.id);
+        };
+
+        // İl Plakasını Yaz
+        const text = document.createElementNS(svgNS, "text");
+        text.setAttribute("x", city.x);
+        text.setAttribute("y", city.y + 5);
+        text.setAttribute("text-anchor", "middle");
+        text.textContent = city.id;
+
+        // Tooltip
+        const title = document.createElementNS(svgNS, "title");
+        title.textContent = `İl Plakası: ${city.id}`;
+        poly.appendChild(title);
+
+        svg.appendChild(poly);
+        svg.appendChild(text);
+    });
+
+    console.log("Strateji Haritası oluşturuldu (URL'siz).");
 }
 
+// Yardımcı: Altıgen Koordinat Hesaplayıcı
+function calculateHexagonPoints(x, y, r) {
+    let points = "";
+    for (let i = 0; i < 6; i++) {
+        const angle_deg = 60 * i - 30;
+        const angle_rad = Math.PI / 180 * angle_deg;
+        const px = x + r * Math.cos(angle_rad);
+        const py = y + r * Math.sin(angle_rad);
+        points += `${px},${py} `;
+    }
+    return points.trim();
+}
 /* --- YARDIMCI: STİLLERİ EKLE --- */
 function addMapStyles(wrapper) {
     // Daha önce eklenmişse sil
