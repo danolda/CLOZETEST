@@ -106,23 +106,33 @@
     .option-btn.selected { background: var(--gold); color: black; font-weight: bold; }
     .locked { pointer-events: none; opacity: 0.6; }
 
-    /* --- STATUS BAR (BİLDİRİMLER) --- */
-    #status-bar {
-        position: absolute; 
-        top: 50%; left: 50%; /* Ortala */
-        transform: translate(-50%, -50%); /* Tam merkez */
-        background: rgba(0,0,0,0.85); 
-        padding: 15px 25px; 
-        border-radius: 15px;
-        font-size: 1.1rem; 
-        font-weight: bold; 
-        border: 2px solid var(--gold);
-        z-index: 200; 
-        display: none; 
-        text-align: center;
-        pointer-events: none; /* Haritaya tıklamayı engellemesin */
-        width: 80%; /* Mobilde taşmasın */
-    }
+/* --- BİLDİRİM ÇUBUĞU (ALTTA SABİT) --- */
+        #status-bar {
+            position: absolute;
+            bottom: 30px; /* Ekranın en altından 30px yukarıda durur */
+            left: 50%;
+            transform: translateX(-50%); /* Sadece yatayda ortalar */
+            
+            background: rgba(0, 0, 0, 0.9); /* Arka planı biraz daha koyu yaptık */
+            padding: 12px 30px;
+            border-radius: 50px; /* Tam oval kenarlar */
+            
+            font-size: 1rem;
+            font-weight: bold;
+            color: white;
+            border: 2px solid var(--gold);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5); /* Okunurluk için gölge */
+            
+            z-index: 200;
+            display: none;
+            text-align: center;
+            pointer-events: none;
+            
+            /* Mobilde taşmayı önlemek için ayarlar */
+            width: auto;
+            max-width: 90%; 
+            white-space: normal; /* Çok uzun yazı gelirse alt satıra geçsin */
+        }
     
     .map-icon { pointer-events: none; }
 
