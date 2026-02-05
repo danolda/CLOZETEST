@@ -70,6 +70,67 @@
 
         /* Setup Ekranı */
         .setup-row { background: #2a2a40; padding: 10px; border-radius: 8px; margin-bottom: 8px; }
+
+        /* --- EKLENECEK CSS: Taktiksel Harita Kutuları --- */
+    #svg-wrapper {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); /* Responsive Izgara */
+        gap: 8px;
+        padding: 15px;
+        overflow-y: auto;
+        height: 100%;
+    }
+
+    .city-box {
+        background-color: var(--map-land);
+        border: 1px solid #555;
+        border-radius: 6px;
+        color: #888;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 60px;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-weight: bold;
+        font-size: 0.9rem;
+        position: relative;
+    }
+
+    .city-box:hover { 
+        background-color: #444; 
+        transform: translateY(-2px); 
+        box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        color: white;
+    }
+
+    /* Sahiplik Renkleri */
+    .city-box.owned-p1 { 
+        background-color: var(--p1-color) !important; 
+        color: white !important; 
+        border-color: #0a58ca;
+    }
+    .city-box.owned-p2 { 
+        background-color: var(--p2-color) !important; 
+        color: white !important; 
+        border-color: #b02a37;
+    }
+    
+    /* Kale Efekti */
+    .city-box.base-city { 
+        border: 3px solid var(--gold) !important; 
+        box-shadow: 0 0 15px var(--gold);
+        z-index: 10;
+    }
+    .city-box.base-city::after {
+        content: '👑';
+        font-size: 1.2rem;
+        position: absolute;
+        top: -10px;
+        right: -10px;
+    }
+        
     </style>
 </head>
 <body>
@@ -7807,26 +7868,52 @@ function startGameConfig() {
         updateScoreboard();
     }
 
-    /* ================= HARİTA İŞLEMLERİ ================= */
-    async function loadSvgMap() {
-        // Basit bir Türkiye SVG'si yüklüyoruz (GitHub raw content)
-        // Kaynak: deldalf/turkey-maps (MIT License)
-        const svgUrl = "https://raw.githubusercontent.com/deldalf/turkey-maps/master/svg/tr-turkey.svg";
+/* ================= HARİTA İŞLEMLERİ (GÜNCELLENDİ: TAKTİKSEL IZGARA) ================= */
+    
+    // Dışarıdan SVG çekmek yerine, güvenilir bir "Taktiksel Harita" oluşturuyoruz.
+    function loadSvgMap() {
+        const wrapper = document.getElementById('svg-wrapper');
+        wrapper.innerHTML = ''; // Temizle
         
-        try {
-            const res = await fetch(svgUrl);
-            let svgText = await res.text();
-            document.getElementById('svg-wrapper').innerHTML = svgText;
+        // 81 İl için Kutu Oluştur
+        for (let i = 1; i <= PROVINCES; i++) {
+            const plateCode = i;
+            const plateStr = i.toString().padStart(2, '0'); // 01, 02...
             
-            // SVG yüklendikten sonra click eventleri
-            const paths = document.querySelectorAll('svg path');
-            paths.forEach(path => {
-                // Plaka kodunu ID veya title'dan çıkarmaya çalış
-                // Bu SVG'de genellikle id="tr-01" formatı var
-                path.onclick = () => onCityClick(path);
-            });
-        } catch (e) {
-            document.getElementById('svg-wrapper').innerHTML = "<h3 class='text-center mt-5'>Harita Yüklenemedi :(</h3>";
+            const div = document.createElement('div');
+            div.id = `tr-${plateStr}`; // ID formatı: tr-01
+            div.className = 'city-box';
+            div.innerHTML = `<span>${plateStr}</span>`;
+            div.title = `İl Plaka: ${plateStr}`;
+            
+            // Tıklama Olayı
+            div.onclick = () => onCityClick(div);
+            
+            wrapper.appendChild(div);
+        }
+        console.log("Taktiksel harita oluşturuldu.");
+    }
+
+    // Tıklama Fonksiyonunu da Div yapısına göre hafifçe güncelliyoruz
+    function onCityClick(element) {
+        // Element ID'sinden (tr-06) plakayı al
+        const idStr = element.getAttribute('id'); 
+        const plate = parseInt(idStr.split('-')[1]); 
+
+        if (gameState === "BASE_SELECT") {
+            if (isHost) {
+                if (players.p1.base) return; 
+                players.p1.base = plate;
+                players.p1.cities.push(plate);
+                element.classList.add('owned-p1', 'base-city'); // Class ekle
+                checkBaseSelectionComplete();
+            } else {
+                if (players.p2.base) return;
+                players.p2.base = plate;
+                players.p2.cities.push(plate);
+                element.classList.add('owned-p2', 'base-city'); // Class ekle
+                conn.send({ type: 'BASE_SELECTED', plate: plate });
+            }
         }
     }
 
