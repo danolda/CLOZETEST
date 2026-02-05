@@ -106,32 +106,48 @@
     .option-btn.selected { background: var(--gold); color: black; font-weight: bold; }
     .locked { pointer-events: none; opacity: 0.6; }
 
-/* --- BİLDİRİM ÇUBUĞU (ALTTA SABİT) --- */
+/* --- BİLDİRİM ÇUBUĞU (SAYDAM & KÜÇÜK) --- */
         #status-bar {
             position: absolute;
-            bottom: 30px; /* Ekranın en altından 30px yukarıda durur */
+            bottom: 15px; /* Alt kenara yakın */
             left: 50%;
-            transform: translateX(-50%); /* Sadece yatayda ortalar */
+            transform: translateX(-50%);
             
-            background: rgba(0, 0, 0, 0.9); /* Arka planı biraz daha koyu yaptık */
-            padding: 12px 30px;
-            border-radius: 50px; /* Tam oval kenarlar */
+            /* %50 Saydamlık: Siyahın alpha değeri 0.5 */
+            background: rgba(0, 0, 0, 0.5); 
             
-            font-size: 1rem;
-            font-weight: bold;
+            /* Genel boyutları küçülttük */
+            padding: 8px 20px; 
+            font-size: 0.9rem; /* Yazı boyutu ideal */
+            border-radius: 30px;
+            
             color: white;
-            border: 2px solid var(--gold);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5); /* Okunurluk için gölge */
+            /* Çerçeveyi incelttik ve rengini koruduk */
+            border: 1px solid var(--gold); 
             
             z-index: 200;
             display: none;
             text-align: center;
-            pointer-events: none;
+            pointer-events: none; /* Arkasındaki haritaya tıklanabilsin */
             
-            /* Mobilde taşmayı önlemek için ayarlar */
-            width: auto;
-            max-width: 50%; 
-            white-space: normal; /* Çok uzun yazı gelirse alt satıra geçsin */
+            /* Yazı okunurluğu için hafif gölge */
+            text-shadow: 1px 1px 2px black;
+            
+            /* Geçiş efekti (yanıp sönme animasyonu için yumuşaklık) */
+            transition: all 0.3s ease;
+        }
+
+        /* --- MOBİL İÇİN EKSTRA KÜÇÜLTME --- */
+        @media (max-width: 768px) {
+            #status-bar {
+                bottom: 10px; /* Daha aşağıda */
+                font-size: 0.75rem; /* Telefondaki yazıyı iyice küçült */
+                padding: 5px 12px;  /* Kutuyu daralt */
+                max-width: 90%;     /* Ekrandan taşmasın */
+                white-space: normal; /* Uzun mesaj gelirse alt satıra geçsin */
+                line-height: 1.2;
+                border-width: 1px;
+            }
         }
     
     .map-icon { pointer-events: none; }
