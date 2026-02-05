@@ -156,6 +156,8 @@
     const ICON_SIZE = 55; 
     const SVG_URL = './tr.svg'; 
     const ICONS = { CASTLE: './castle.svg', HOST_SOLDIER: './hostsoldier.svg', GUEST_SOLDIER: './questsoldier.svg' };
+    let protectedCities = []; // Bu tur işlem gören iller
+    let canAttackBase = false; // Kale saldırısı mümkün mü?
     
  // GÜNCELLENMİŞ KOMŞULUK HARİTASI (SVG UYUMLU)
     const NEIGHBORS = {
@@ -334,7 +336,13 @@
     function startNewTurn() {
         if(currentTurn >= questions.length) return calculateFinalWinner("Soru Bitti");
         
-        myAnswer = null; p2AnswerTemp = null; turnQueue = [];
+        // HER YENİ SORUDA SIFIRLAMALAR
+        myAnswer = null; 
+        p2AnswerTemp = null; 
+        turnQueue = [];
+        protectedCities = []; // Koruma kalkanlarını kaldır
+        canAttackBase = false; // Kale saldırı iznini sıfırla
+
         const q = questions[currentTurn];
         conn.send({ type: 'NEW_TURN', question: q, turnIndex: currentTurn });
         showQuestion(q);
@@ -375,42 +383,48 @@
 
     function resolveTurn(ans, time) { p2AnswerTemp = ans; p2TimeTemp = time; checkTurnEnd(); }
 
-function checkTurnEnd() {
-    if(myAnswer && p2AnswerTemp) {
-        const q = questions[currentTurn];
-        const p1Correct = (myAnswer === q.ans);
-        const p2Correct = (p2AnswerTemp === q.ans);
-        
-        // Puanlama
-        if(p1Correct) players.p1.score += 100;
-        if(p2Correct) players.p2.score += 100;
+    function checkTurnEnd() {
+        if(myAnswer && p2AnswerTemp) {
+            const q = questions[currentTurn];
+            const p1Correct = (myAnswer === q.ans);
+            const p2Correct = (p2AnswerTemp === q.ans);
+            
+            // Puanlama
+            if(p1Correct) players.p1.score += 100;
+            if(p2Correct) players.p2.score += 100;
 
-        // KUYRUK MANTIĞI (Queue)
-        turnQueue = [];
-        if (p1Correct && p2Correct) {
-            // İkisi de doğru: Hızlı olan önce (Süreye göre sırala)
-            if (myTime <= p2TimeTemp) turnQueue = ['p1', 'p2'];
-            else turnQueue = ['p2', 'p1'];
-        } else if (p1Correct) {
-            turnQueue = ['p1', 'p1']; // P1'e 2 hak
-        } else if (p2Correct) {
-            turnQueue = ['p2', 'p2']; // P2'ye 2 hak
+            // KUYRUK VE KALE SALDIRI İZNİ MANTIĞI
+            turnQueue = [];
+            canAttackBase = false; // Varsayılan kapalı
+
+            if (p1Correct && p2Correct) {
+                // İkisi de bildi: Kale saldırısı YOK
+                if (myTime <= p2TimeTemp) turnQueue = ['p1', 'p2'];
+                else turnQueue = ['p2', 'p1'];
+            } else if (p1Correct) {
+                // Sadece P1 bildi: Kale saldırısı SERBEST
+                turnQueue = ['p1', 'p1'];
+                canAttackBase = true;
+            } else if (p2Correct) {
+                // Sadece P2 bildi: Kale saldırısı SERBEST
+                turnQueue = ['p2', 'p2'];
+                canAttackBase = true;
+            }
+
+            // Verileri gönder
+            const data = { 
+                type: 'TURN_RESULT', 
+                p1Correct, p2Correct, 
+                p1Ans: myAnswer, p2Ans: p2AnswerTemp,
+                queue: turnQueue, 
+                correct: q.ans, 
+                players: players 
+            };
+            
+            conn.send(data);
+            handleTurnResult(data);
         }
-
-        // VERİ PAKETİ (Cevap anahtarlarını da ekledik: p1Ans, p2Ans)
-        const data = { 
-            type: 'TURN_RESULT', 
-            p1Correct, p2Correct, 
-            p1Ans: myAnswer, p2Ans: p2AnswerTemp, // <--- YENİ EKLENDİ
-            queue: turnQueue, 
-            correct: q.ans, 
-            players: players 
-        };
-        
-        conn.send(data);
-        handleTurnResult(data);
     }
-}
 
 function handleTurnResult(data) {
     // 1. ŞIKLARI BOYAMA İŞLEMİ
@@ -496,18 +510,17 @@ function claimCity(plate) {
         }
     }
 
-    // TÜM FETİH MANTIĞI BURADA (Sadece Host çalıştırır)
-    function processClaim(plate, playerKey) {
+function processClaim(plate, playerKey) {
         const oppKey = playerKey === 'p1' ? 'p2' : 'p1';
         
-        // 1. Sıra Kontrolü (Güvenlik)
+        // 1. Sıra Kontrolü
         if (turnQueue.length === 0 || turnQueue[0] !== playerKey) return;
 
         // 2. Komşuluk Kontrolü
         if (!isAdjacent(plate, players[playerKey].cities)) {
-            // Eğer istek Misafirden geldiyse ona hata mesajı yolla
-            if(playerKey === 'p2') conn.send({ type: 'UPDATE_MAP', players: players, msg: "Sadece sınır komşusu illeri alabilirsin!" });
-            else showStatus("Sadece sınır komşusu illeri alabilirsin!");
+            const warning = "Sadece sınır komşusu illeri alabilirsin!";
+            if(playerKey === 'p2') conn.send({ type: 'UPDATE_MAP', players: players, msg: warning });
+            else showStatus(warning);
             return;
         }
 
@@ -516,52 +529,68 @@ function claimCity(plate) {
 
         // A) KALE SALDIRISI
         if (players[oppKey].base === plate) {
+            // KURAL: Sadece rakip bilemediyse saldırılabilir
+            if (!canAttackBase) {
+                const failMsg = "Rakip de doğru bildiği için kaleye saldıramazsın!";
+                if(playerKey === 'p2') conn.send({ type: 'UPDATE_MAP', players: players, msg: failMsg });
+                else showStatus(failMsg);
+                return;
+            }
+
             players[oppKey].hp -= 1;
             msg = `KALE SALDIRISI! ${players[oppKey].name} hasar aldı!`;
             if (players[oppKey].hp <= 0) {
                 players[playerKey].score += 500;
-                calculateFinalWinner("Kale İşgali"); // Oyun biter
+                calculateFinalWinner("Kale İşgali"); 
                 return;
             }
             actionSuccess = true;
         }
-        // B) TOPRAK ÇALMA
+        
+        // B) TOPRAK ÇALMA (Rakip toprağı mı?)
         else if (players[oppKey].cities.includes(plate)) {
+            // KURAL: Bu tur el değiştiren toprak korumadadır
+            if (protectedCities.includes(plate)) {
+                const failMsg = "Bu il bu tur fethedildi! Sıra geçmeden geri alamazsın.";
+                if(playerKey === 'p2') conn.send({ type: 'UPDATE_MAP', players: players, msg: failMsg });
+                else showStatus(failMsg);
+                return;
+            }
+
             players[oppKey].cities = players[oppKey].cities.filter(c => c !== plate);
             players[oppKey].score -= 150;
             players[playerKey].cities.push(plate);
             players[playerKey].score += 150;
+            
             msg = `${players[playerKey].name} toprak ÇALDI!`;
+            protectedCities.push(plate); // Bu ili korumaya al
             actionSuccess = true;
         }
+        
         // C) NORMAL FETİH (Boş Toprak)
         else if (!players.p1.cities.includes(plate) && !players.p2.cities.includes(plate)) {
             players[playerKey].cities.push(plate);
             players[playerKey].score += 50;
+            
             msg = `${players[playerKey].name} fethetti!`;
+            protectedCities.push(plate); // Bu ili korumaya al (teknik olarak boştu ama yine de işaretleyelim)
             actionSuccess = true;
         }
 
         if (actionSuccess) {
-            // Hakkı düş (Kuyruğun başındakini sil)
-            turnQueue.shift();
+            turnQueue.shift(); // Sırayı kaydır
 
-            // Herkese güncel durumu bildir
             renderMapState();
             conn.send({ type: 'UPDATE_MAP', players: players, msg: msg });
-            
-            // Kuyruk güncellemesi gönder
             conn.send({ type: 'QUEUE_UPDATE', queue: turnQueue });
             updateExpansionStatus();
 
             if(msg) showStatus(msg);
 
-            // TUR BİTTİ Mİ KONTROLÜ
+            // Tur bitti mi?
             if (turnQueue.length === 0) {
-                gameState = "WAITING"; // Tıklamaları kilitle
+                gameState = "WAITING";
                 showStatus("Tur bitti! 5 sn sonra yeni soru...");
-                
-                // 5 Saniye sonra yeni soru
                 currentTurn++;
                 setTimeout(startNewTurn, 5000);
             }
