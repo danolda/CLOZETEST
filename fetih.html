@@ -8,72 +8,151 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <style>
-        :root {
-            --bg-dark: #2c3e50;
-            --map-water: #34495e;
-            --map-land: #ecf0f1;
-            --map-hover: #bdc3c7;
-            --p1-color: #3498db; /* Mavi */
-            --p2-color: #e74c3c; /* Kırmızı */
-            --gold: #f1c40f;
-        }
-        body { background-color: var(--bg-dark); color: white; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
-        
-        #map-container {
-            width: 100%; height: 75vh;
-            background-color: var(--map-water);
-            border-radius: 10px; box-shadow: 0 0 20px rgba(0,0,0,0.5);
-            position: relative; overflow: hidden;
-        }
-        
-        svg { width: 100%; height: 100%; display: block; }
-        path {
-            fill: var(--map-land) !important; stroke: #95a5a6; stroke-width: 1px;   
-            transition: all 0.3s ease; cursor: pointer; vector-effect: non-scaling-stroke;
-        }
-        path:hover { fill: var(--map-hover) !important; stroke: white; stroke-width: 2px; z-index: 10; }
-        
-        .owned-p1 { fill: #85c1e9 !important; stroke: #fff; }
-        .owned-p2 { fill: #ec7063 !important; stroke: #fff; }
-        
-        .game-header { position: absolute; top: 10px; left: 10px; right: 10px; display: flex; justify-content: space-between; z-index: 100; pointer-events: none; }
-        .player-card { background: rgba(0,0,0,0.8); border-radius: 10px; padding: 15px; min-width: 200px; border: 2px solid #555; pointer-events: auto; }
-        .p1-card { border-color: var(--p1-color); }
-        .p2-card { border-color: var(--p2-color); }
+    :root {
+        --bg-dark: #2c3e50;
+        --map-water: #34495e;
+        --map-land: #ecf0f1;
+        --map-hover: #bdc3c7;
+        --p1-color: #3498db;
+        --p2-color: #e74c3c;
+        --gold: #f1c40f;
+    }
+    body { 
+        background-color: var(--bg-dark); 
+        color: white; 
+        font-family: 'Segoe UI', sans-serif; 
+        overflow: hidden; /* Sayfa kaydırmayı engelle */
+        touch-action: manipulation; /* Çift tıklama zoom'unu kapatır, tepkiyi hızlandırır */
+    }
+    
+    /* --- HARİTA ALANI --- */
+    #map-container {
+        width: 100%; 
+        height: 100vh; /* Mobilde tüm ekranı kaplasın */
+        background-color: var(--map-water);
+        position: relative; 
+        overflow: hidden;
+    }
+    
+    svg { 
+        width: 100%; 
+        height: 100%; 
+        display: block; 
+        touch-action: none; /* Harita sürüklenmesin */
+    }
 
-        .modal-content { background: #2c3e50; color: white; border: 1px solid #555; }
-        .option-btn { width: 100%; text-align: left; padding: 15px; margin-bottom: 8px; background: #34495e; color: white; border: 1px solid #7f8c8d; transition: 0.2s; font-size: 1.1rem; }
-        .option-btn:hover { background: #2c3e50; border-color: white; }
-        .option-btn.selected { background: var(--gold); color: black; font-weight: bold; }
-        .locked { pointer-events: none; opacity: 0.6; }
+    path {
+        fill: var(--map-land) !important; 
+        stroke: #95a5a6; 
+        stroke-width: 1px;   
+        transition: all 0.2s ease; 
+        cursor: pointer; 
+        vector-effect: non-scaling-stroke; /* Zoom yapılsa bile çizgiler kalınlaşmaz */
+    }
+    /* Mobilde dokunulan şehrin daha belirgin olması için */
+    path:active, path:hover { 
+        fill: var(--map-hover) !important; 
+        stroke: white; 
+        stroke-width: 2px; 
+    }
+    
+    .owned-p1 { fill: #85c1e9 !important; stroke: #fff; }
+    .owned-p2 { fill: #ec7063 !important; stroke: #fff; }
+    
+    /* --- SKOR TABLOSU (Mobilde Üstte Sabit) --- */
+    .game-header { 
+        position: absolute; 
+        top: 0; left: 0; right: 0; 
+        display: flex; 
+        justify-content: space-between; 
+        padding: 5px;
+        z-index: 100; 
+        pointer-events: none; 
+        background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
+    }
+    
+    .player-card { 
+        background: rgba(44, 62, 80, 0.9); 
+        border-radius: 8px; 
+        padding: 8px 12px; 
+        min-width: 110px; /* Mobilde küçült */
+        border: 2px solid #555; 
+        pointer-events: auto; 
+        font-size: 0.85rem; /* Yazıları küçült */
+        backdrop-filter: blur(5px);
+    }
+    .player-card h4 { font-size: 1rem; margin-bottom: 2px; font-weight: bold; }
+    .player-card div { line-height: 1.2; }
+    .p1-card { border-color: var(--p1-color); border-left-width: 5px; }
+    .p2-card { border-color: var(--p2-color); border-right-width: 5px; text-align: right; }
 
-        #status-bar {
-            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
-            background: rgba(0,0,0,0.9); padding: 10px 30px; border-radius: 30px;
-            font-size: 1.2rem; font-weight: bold; border: 2px solid var(--gold);
-            z-index: 100; display: none; white-space: nowrap;
-        }
-        
-        .map-icon { transform-box: fill-box; transform-origin: center; animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: none; }
-        @keyframes popIn { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        .pulse-anim { animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0% { opacity: 0.8; } 50% { opacity: 1; transform: translateX(-50%) scale(1.05); } 100% { opacity: 0.8; } }
+    /* --- MODAL (SORU EKRANI) --- */
+    .modal-content { background: #2c3e50; color: white; border: 1px solid #555; }
+    
+    /* Butonları parmakla basılabilir yap */
+    .option-btn { 
+        width: 100%; 
+        text-align: left; 
+        padding: 15px 20px; /* Geniş tıklama alanı */
+        margin-bottom: 10px; 
+        background: #34495e; 
+        color: white; 
+        border: 1px solid #7f8c8d; 
+        font-size: 1.1rem; 
+        border-radius: 8px;
+        touch-action: manipulation;
+    }
+    .option-btn:active { transform: scale(0.98); background: #2c3e50; }
+    .option-btn.selected { background: var(--gold); color: black; font-weight: bold; }
+    .locked { pointer-events: none; opacity: 0.6; }
 
-        /* --- CEVAP RENKLENDİRME --- */
-.btn-p1 { background-color: var(--p1-color) !important; color: white !important; }
-.btn-p2 { background-color: var(--p2-color) !important; color: white !important; }
-/* İkisi aynı şıkkı seçerse yarısı mavi yarısı kırmızı */
-.btn-both { 
-    background: linear-gradient(90deg, var(--p1-color) 50%, var(--p2-color) 50%) !important; 
-    color: white !important; text-shadow: 1px 1px 2px black;
-}
-/* Doğru cevap yeşil çerçeve */
-.btn-correct { 
-    border: 4px solid #2ecc71 !important; 
-    box-shadow: 0 0 15px #2ecc71; 
-    transform: scale(1.02);
-}
-    </style>
+    /* --- STATUS BAR (BİLDİRİMLER) --- */
+    #status-bar {
+        position: absolute; 
+        top: 50%; left: 50%; /* Ortala */
+        transform: translate(-50%, -50%); /* Tam merkez */
+        background: rgba(0,0,0,0.85); 
+        padding: 15px 25px; 
+        border-radius: 15px;
+        font-size: 1.1rem; 
+        font-weight: bold; 
+        border: 2px solid var(--gold);
+        z-index: 200; 
+        display: none; 
+        text-align: center;
+        pointer-events: none; /* Haritaya tıklamayı engellemesin */
+        width: 80%; /* Mobilde taşmasın */
+    }
+    
+    .map-icon { pointer-events: none; }
+
+    /* CEVAP RENKLERİ */
+    .btn-p1 { background-color: var(--p1-color) !important; color: white !important; }
+    .btn-p2 { background-color: var(--p2-color) !important; color: white !important; }
+    .btn-both { background: linear-gradient(90deg, var(--p1-color) 50%, var(--p2-color) 50%) !important; color: white !important; text-shadow: 1px 1px 2px black;}
+    .btn-correct { border: 3px solid #2ecc71 !important; box-shadow: 0 0 10px #2ecc71; }
+
+    /* --- MOBİL İÇİN DÖNDÜRME UYARISI --- */
+    #rotate-warning {
+        display: none;
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: #2c3e50; z-index: 9999;
+        flex-direction: column; justify-content: center; align-items: center;
+        text-align: center; padding: 20px;
+    }
+
+    /* Eğer ekran dik (Portrait) ise uyarıyı göster */
+    @media screen and (orientation: portrait) and (max-width: 850px) {
+        #screen-game #rotate-warning { display: flex !important; }
+        #screen-game .game-header, #screen-game #map-container { opacity: 0.1; }
+    }
+    
+    /* Mobilde Giriş Ekranını Düzenle */
+    @media (max-width: 576px) {
+        .card { width: 95% !important; padding: 20px !important; }
+        .display-3 { font-size: 2.5rem; }
+    }
+</style>
 </head>
 <body>
 
@@ -101,6 +180,13 @@
 
 <!-- OYUN EKRANI -->
 <div id="screen-game" class="d-none">
+       <!-- YENİ EKLENECEK KISIM: MOBİL DÖNDÜRME UYARISI -->
+    <div id="rotate-warning">
+        <i class="bi bi-phone-landscape" style="font-size: 4rem; color: #f1c40f;"></i>
+        <h3 class="mt-3">Lütfen Telefonu Yan Çevirin</h3>
+        <p class="text-muted">Haritayı görebilmek için geniş ekran modu gereklidir.</p>
+    </div>
+    <!-- -------------------------------------------- -->
     <div class="game-header">
         <div class="player-card p1-card">
             <h4 id="p1-name" style="color: var(--p1-color)">Mavi</h4>
@@ -118,7 +204,7 @@
     <div id="map-container"></div>
     <div id="status-bar" class="pulse-anim">Oyun Başlıyor...</div>
 </div>
-
+        
 <!-- SORU MODALI -->
 <div class="modal fade" id="questionModal" data-bs-backdrop="static" data-bs-keyboard="false">
     <div class="modal-dialog modal-dialog-centered modal-lg">
