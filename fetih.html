@@ -198,28 +198,22 @@
 
 <!-- AYARLAR (GÜNCELLENMİŞ) -->
 <div id="screen-setup" class="container d-flex flex-column justify-content-center align-items-center vh-100 d-none">
-    <div class="card bg-dark p-4 shadow-lg border-warning" style="width: 600px; max-width: 95%;">
+    <div class="card bg-dark p-4 shadow-lg border-warning" style="width: 700px; max-width: 95%;">
         <h3 class="text-warning text-center mb-3"><i class="bi bi-sliders"></i> Savaş Kuralları</h3>
         
-        <div class="row g-2 mb-3">
+        <!-- SÜRE AYARI -->
+        <div class="row g-2 mb-3 justify-content-center">
             <div class="col-6">
-                <label class="form-label text-white small">Bölüm Başı Soru Sayısı</label>
-                <select id="setup-q-count" class="form-select form-select-sm">
-                    <option value="1">1 Soru</option>
-                    <option value="3">3 Soru</option>
-                    <option value="5" selected>5 Soru</option>
-                    <option value="10">10 Soru</option>
-                </select>
-            </div>
-            <div class="col-6">
-                <label class="form-label text-white small">Süre (Saniye)</label>
-                <input type="number" id="setup-timer" class="form-control form-control-sm" value="30" min="10" max="180">
+                <label class="form-label text-white small fw-bold text-center w-100">Soru Başına Süre (Saniye)</label>
+                <input type="number" id="setup-timer" class="form-control text-center fw-bold text-warning bg-secondary border-0" value="30" min="10" max="180">
             </div>
         </div>
 
-        <h5 class="text-light border-bottom pb-2 mb-3 small">Dahil Edilecek Konular</h5>
-        <div id="category-list" class="row g-2 text-start" style="max-height: 300px; overflow-y: auto;">
-            <!-- JS ile doldurulacak -->
+        <h5 class="text-light border-bottom pb-2 mb-3 small">Konular ve Soru Adetleri</h5>
+        
+        <!-- KATEGORİ LİSTESİ -->
+        <div id="category-list" class="row g-2 text-start" style="max-height: 400px; overflow-y: auto;">
+            <!-- JS burayı dolduracak -->
         </div>
 
         <button class="btn btn-warning btn-lg w-100 mt-4 fw-bold" onclick="startGameConfig()">
@@ -7656,33 +7650,99 @@ const rawExamVocabA = `1-C 2-D 3-A 4-A 5-E 6-B 7-E 8-E 9-B 10-A 11-C 12-D 13-C 1
         else if(data.type === 'GAME_OVER') { endGame(data.winner, data.reason, data.scores); }
     }
 
-    /* ================= OYUN MANTIĞI ================= */
-    function goToSetup() { document.getElementById('screen-lobby').classList.add('d-none'); document.getElementById('screen-setup').classList.remove('d-none'); }
-    /* ================= 4. OYUN BAŞLATMA (Host) ================= */
+/* ================= 1. AYAR EKRANINI HAZIRLA (DÜZELTİLMİŞ) ================= */
+    function goToSetup() { 
+        document.getElementById('screen-lobby').classList.add('d-none'); 
+        document.getElementById('screen-setup').classList.remove('d-none');
+        
+        // Host ise kategori listesini oluştur
+        if(isHost) {
+            const list = document.getElementById('category-list');
+            list.innerHTML = "";
+            
+            CATEGORY_POOL.forEach(cat => {
+                // Eğer data boşsa (soru yoksa) pasif yap
+                const hasQuestions = cat.data && cat.data.length > 0;
+                const isDisabled = !hasQuestions ? "disabled" : "";
+                const isChecked = hasQuestions ? "checked" : "";
+                
+                // Soru sayısı bilgisi (Badge)
+                const badgeClass = hasQuestions ? "bg-info" : "bg-secondary";
+                const qCountText = hasQuestions ? `${cat.data.length} Mevcut` : "Boş";
+
+                list.innerHTML += `
+                <div class="col-12">
+                    <div class="d-flex align-items-center bg-dark border border-secondary p-2 rounded">
+                        
+                        <!-- Checkbox ve İsim -->
+                        <div class="form-check form-switch flex-grow-1">
+                            <input class="form-check-input cat-select" type="checkbox" value="${cat.id}" id="chk-${cat.id}" ${isDisabled} ${isChecked} onchange="toggleInput('${cat.id}')">
+                            <label class="form-check-label text-white" for="chk-${cat.id}">
+                                ${cat.title} 
+                                <span class="badge ${badgeClass} ms-1" style="font-size: 0.7rem;">${qCountText}</span>
+                            </label>
+                        </div>
+
+                        <!-- Soru Sayısı Inputu (Yan Yana) -->
+                        <div class="d-flex align-items-center ms-2">
+                            <label class="text-muted small me-2" style="font-size: 0.8rem;">Adet:</label>
+                            <input type="number" id="num-${cat.id}" class="form-control form-control-sm text-center fw-bold" 
+                                   style="width: 70px;" value="5" min="1" max="${cat.data.length}" ${isDisabled}>
+                        </div>
+
+                    </div>
+                </div>`;
+            });
+        } else {
+            // Misafir ise bekleme mesajı
+            document.getElementById('screen-setup').innerHTML = `
+                <div class="card bg-dark p-5 border-warning text-center">
+                    <h3 class="text-warning">Host Ayarları Yapıyor...</h3>
+                    <div class="spinner-border text-light mt-4" style="width: 3rem; height: 3rem;"></div>
+                    <p class="text-muted mt-3">Savaş başlamak üzere, hazır ol!</p>
+                </div>`;
+        }
+    }
+
+    // Inputu aktif/pasif yapma yardımcısı
+    function toggleInput(catId) {
+        const chk = document.getElementById(`chk-${catId}`);
+        const num = document.getElementById(`num-${catId}`);
+        if(num) num.disabled = !chk.checked;
+    }
+    
+/* ================= 2. OYUNU BAŞLATMA (GÜNCELLENMİŞ HOST MANTIĞI) ================= */
     function startGameConfig() {
         // 1. Seçili Kategorileri Al
-        const selectedIds = Array.from(document.querySelectorAll('.cat-select:checked')).map(el => el.value);
-        if (selectedIds.length === 0) return alert("En az bir kategori seçmelisiniz!");
+        const selectedCheckboxes = document.querySelectorAll('.cat-select:checked');
+        if (selectedCheckboxes.length === 0) return alert("En az bir kategori seçmelisiniz!");
 
-        // 2. Ayarları Al
-        const countPerCat = parseInt(document.getElementById('setup-q-count').value);
+        // 2. Süre Ayarını Al
         gameTimeLimit = parseInt(document.getElementById('setup-timer').value);
 
-        // 3. Soruları Havuzdan Rastgele Çek
+        // 3. Soruları Havuzdan Çek (Her kategori için kendi adedi kadar)
         let pool = [];
-        selectedIds.forEach(id => {
-            const cat = CATEGORY_POOL.find(c => c.id === id);
+        
+        selectedCheckboxes.forEach(chk => {
+            const catId = chk.value;
+            const cat = CATEGORY_POOL.find(c => c.id === catId);
             
-            // Veri var mı diye kontrol et
-            if(cat && cat.data && cat.data.length > 0) {
-                // Karıştır ve N tane al
-                // Not: slice(0, countPerCat) eğer havuzda az soru varsa olanı alır, hata vermez.
-                const shuffled = [...cat.data].sort(() => 0.5 - Math.random()).slice(0, countPerCat);
+            // O kategoriye özel istenen soru sayısını inputtan al
+            const countInput = document.getElementById(`num-${catId}`);
+            let countRequested = parseInt(countInput.value);
+
+            // Güvenlik kontrolleri (Eldeki sorudan fazlasını isteyemesin)
+            if(isNaN(countRequested) || countRequested < 1) countRequested = 1;
+            if(countRequested > cat.data.length) countRequested = cat.data.length;
+
+            if(cat && cat.data.length > 0) {
+                // Karıştır ve İstenen (countRequested) kadar al
+                const shuffled = [...cat.data].sort(() => 0.5 - Math.random()).slice(0, countRequested);
                 pool = pool.concat(shuffled);
             }
         });
 
-        if(pool.length === 0) return alert("Seçilen kategorilerde soru bulunamadı! Lütfen verileri kontrol edin.");
+        if(pool.length === 0) return alert("Hata: Seçilen kategorilerden soru çekilemedi.");
 
         // 4. Tüm havuzu tekrar karıştır (konular karışık gelsin)
         gameQuestions = pool.sort(() => 0.5 - Math.random());
@@ -7700,6 +7760,7 @@ const rawExamVocabA = `1-C 2-D 3-A 4-A 5-E 6-B 7-E 8-E 9-B 10-A 11-C 12-D 13-C 1
         // Host hemen ilk turu başlatır
         setTimeout(startNewTurn, 1000); 
     }
+    
     function startGameUI() {
         document.getElementById('screen-lobby').classList.add('d-none');
         document.getElementById('screen-setup').classList.add('d-none');
