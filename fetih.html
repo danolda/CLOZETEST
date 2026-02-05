@@ -315,7 +315,7 @@
             // --- YENİ EKLENECEK KISIM ---
         else if(data.type === 'CLAIM_REQUEST') {
             // Sadece Host bu isteği işler
-            if (isHost) processClaim(data.plate, 'p2');
+            if (isHost) (data.plate, 'p2');
         }
         else if(data.type === 'GAME_OVER') { endGame(data.winner, data.reason, data.scores); }
     }
@@ -504,93 +504,99 @@ function claimCity(plate) {
 
         // Eğer Host ise işlemi direkt yap, Misafir ise Host'tan talep et
         if (isHost) {
-            processClaim(plate, 'p1');
+            (plate, 'p1');
         } else {
             conn.send({ type: 'CLAIM_REQUEST', plate: plate });
         }
     }
 
-function processClaim(plate, playerKey) {
+// TÜM FETİH MANTIĞI BURADA (Sadece Host çalıştırır)
+    function processClaim(plate, playerKey) {
         const oppKey = playerKey === 'p1' ? 'p2' : 'p1';
         
-        // 1. Sıra Kontrolü
+        // 1. Sıra Kontrolü (Güvenlik)
         if (turnQueue.length === 0 || turnQueue[0] !== playerKey) return;
 
         // 2. Komşuluk Kontrolü
         if (!isAdjacent(plate, players[playerKey].cities)) {
-            const warning = "Sadece sınır komşusu illeri alabilirsin!";
-            if(playerKey === 'p2') conn.send({ type: 'UPDATE_MAP', players: players, msg: warning });
-            else showStatus(warning);
+            if(playerKey === 'p2') conn.send({ type: 'UPDATE_MAP', players: players, msg: "Sadece sınır komşusu illeri alabilirsin!" });
+            else showStatus("Sadece sınır komşusu illeri alabilirsin!");
             return;
         }
 
         let msg = "";
         let actionSuccess = false;
 
-        // A) KALE SALDIRISI
+        // A) KALE SALDIRISI (GÜNCELLENEN KISIM)
         if (players[oppKey].base === plate) {
-            // KURAL: Sadece rakip bilemediyse saldırılabilir
-            if (!canAttackBase) {
-                const failMsg = "Rakip de doğru bildiği için kaleye saldıramazsın!";
-                if(playerKey === 'p2') conn.send({ type: 'UPDATE_MAP', players: players, msg: failMsg });
-                else showStatus(failMsg);
-                return;
+            // --- DEĞİŞİKLİK BAŞLANGICI ---
+            // 1. Hak Kontrolü: Kaleye vurmak için kuyrukta EN AZ 2 hakkın olmalı
+            const myRights = turnQueue.filter(x => x === playerKey).length;
+            
+            if (myRights < 2) {
+                // Yetersiz hak uyarısı
+                const warnMsg = "KALE SALDIRISI İÇİN 2 HAK GEREKLİ! (Toprak almalısın)";
+                if(playerKey === 'p2') conn.send({ type: 'UPDATE_MAP', players: players, msg: warnMsg });
+                else showStatus(warnMsg);
+                return; // Saldırı gerçekleşmez
             }
 
+            // 2. Saldırı İşlemi
             players[oppKey].hp -= 1;
-            msg = `KALE SALDIRISI! ${players[oppKey].name} hasar aldı!`;
+            msg = `KALE SALDIRISI! ${players[oppKey].name} hasar aldı! (2 Hak Harcandı)`;
+            
+            // 3. İkinci hakkı manuel olarak siliyoruz
+            // (Fonksiyonun en altında standart olarak 1 tane siliniyor, biz burada fazladan 1 tane daha siliyoruz)
+            // Bu sayede toplam 2 hak gitmiş oluyor ve tur bitiyor.
+            const extraIndex = turnQueue.lastIndexOf(playerKey); 
+            if (extraIndex > 0) { // 0. index zaten şu an işlenen tur, ondan sonrakini siliyoruz
+                turnQueue.splice(extraIndex, 1);
+            }
+            // --- DEĞİŞİKLİK BİTİŞİ ---
+
             if (players[oppKey].hp <= 0) {
                 players[playerKey].score += 500;
-                calculateFinalWinner("Kale İşgali"); 
+                calculateFinalWinner("Kale İşgali"); // Oyun biter
                 return;
             }
             actionSuccess = true;
         }
-        
-        // B) TOPRAK ÇALMA (Rakip toprağı mı?)
+        // B) TOPRAK ÇALMA
         else if (players[oppKey].cities.includes(plate)) {
-            // KURAL: Bu tur el değiştiren toprak korumadadır
-            if (protectedCities.includes(plate)) {
-                const failMsg = "Bu il bu tur fethedildi! Sıra geçmeden geri alamazsın.";
-                if(playerKey === 'p2') conn.send({ type: 'UPDATE_MAP', players: players, msg: failMsg });
-                else showStatus(failMsg);
-                return;
-            }
-
             players[oppKey].cities = players[oppKey].cities.filter(c => c !== plate);
             players[oppKey].score -= 150;
             players[playerKey].cities.push(plate);
             players[playerKey].score += 150;
-            
             msg = `${players[playerKey].name} toprak ÇALDI!`;
-            protectedCities.push(plate); // Bu ili korumaya al
             actionSuccess = true;
         }
-        
         // C) NORMAL FETİH (Boş Toprak)
         else if (!players.p1.cities.includes(plate) && !players.p2.cities.includes(plate)) {
             players[playerKey].cities.push(plate);
             players[playerKey].score += 50;
-            
             msg = `${players[playerKey].name} fethetti!`;
-            protectedCities.push(plate); // Bu ili korumaya al (teknik olarak boştu ama yine de işaretleyelim)
             actionSuccess = true;
         }
 
         if (actionSuccess) {
-            turnQueue.shift(); // Sırayı kaydır
+            // Hakkı düş (Kuyruğun en başındakini sil - Bu 1. hak)
+            turnQueue.shift();
 
+            // Herkese güncel durumu bildir
             renderMapState();
             conn.send({ type: 'UPDATE_MAP', players: players, msg: msg });
+            
+            // Kuyruk güncellemesi gönder
             conn.send({ type: 'QUEUE_UPDATE', queue: turnQueue });
             updateExpansionStatus();
 
             if(msg) showStatus(msg);
 
-            // Tur bitti mi?
+            // TUR BİTTİ Mİ KONTROLÜ
             if (turnQueue.length === 0) {
-                gameState = "WAITING";
+                gameState = "WAITING"; 
                 showStatus("Tur bitti! 5 sn sonra yeni soru...");
+                
                 currentTurn++;
                 setTimeout(startNewTurn, 5000);
             }
