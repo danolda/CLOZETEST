@@ -93,35 +93,9 @@
 
 <!-- AYARLAR -->
 <div id="screen-setup" class="container d-flex flex-column justify-content-center align-items-center vh-100 d-none">
-    <div class="card bg-dark p-4 shadow-lg border-warning" style="max-width: 650px; width: 100%;">
-        <h3 class="text-warning text-center mb-4">⚔️ Savaş Kuralları</h3>
-        
-        <!-- Ayarlar -->
-        <div class="row g-3 mb-4">
-            <div class="col-6">
-                <label class="text-white fw-bold mb-2"><i class="bi bi-hash"></i> Bölüm Başı Soru:</label>
-                <select id="q-per-cat" class="form-select">
-                    <option value="2">2 Soru</option>
-                    <option value="3" selected>3 Soru</option>
-                    <option value="4">4 Soru</option>
-                    <option value="5">5 Soru</option>
-                </select>
-            </div>
-            <div class="col-6">
-                <label class="text-white fw-bold mb-2"><i class="bi bi-clock-fill"></i> Soru Başı Süre (sn):</label>
-                <input type="number" id="time-per-q" class="form-control" value="30" min="10" max="120">
-            </div>
-        </div>
-        
-        <!-- Kategori Seçimi -->
-        <h5 class="text-white mb-3"><i class="bi bi-book-fill"></i> Hangi Bölümlerden Soru Gelsin?</h5>
-        <div id="category-checkboxes" class="mb-4" style="max-height: 200px; overflow-y: auto;">
-            <!-- JS ile doldurulacak -->
-        </div>
-        
-        <button class="btn btn-warning btn-lg w-100 mt-3" onclick="startGameConfig()">
-            <i class="bi bi-play-circle-fill"></i> SAVAŞI BAŞLAT
-        </button>
+    <div class="card bg-dark p-4 shadow-lg w-50 border-warning">
+        <h3 class="text-warning text-center mb-4">Savaş Kuralları</h3>
+        <button class="btn btn-warning btn-lg w-100 mt-3" onclick="startGameConfig()">SAVAŞI BAŞLAT</button>
     </div>
 </div>
 
@@ -272,40 +246,13 @@
     let currentTurn = 0, timerInterval = null;
     let turnQueue = []; // Fetih sırasını tutan kuyruk: ['p1', 'p2'] gibi
 
-    const questionBank = {
-        "Grammar": [
-            { q: "Dogs can be good friends to humans ---- they are treated with love and care.", opts: {A:"so that",B:"as if",C:"unless",D:"provided that",E:"even though"}, ans: 'D' },
-            { q: "The risk of breaking a hip is shown to be higher for vegetarian women than those who are regular meat eaters, ---- meat-free diets are possibly deficient in vitamins and minerals.", opts: {A:"whereas",B:"so",C:"because",D:"although",E:"whether"}, ans: 'C' },
-            { q: "---- the vast deserts and steamy rainforests of Africa make this continent a tricky place to look for fossils, in recent years, many areas have been found to be rich in ancient life.", opts: {A:"Once",B:"Even though",C:"Provided that",D:"As long as",E:"As if"}, ans: 'B' },
-            { q: "The prehistoric Mycenaeans built ---- huge stone walls around their citadels, some of them were 14m wide ---- later civilisations believed they were the work of giants.", opts: {A:"not only / but also",B:"as / as",C:"such / that",D:"whether / or",E:"either / or"}, ans: 'C' },
-            { q: "---- lung cancer is globally the leading cause of death from cancer, health experts believe it is also the most preventable type due to smoking's role in its development.", opts: {A:"Even though",B:"Since",C:"If",D:"As long as",E:"Unless"}, ans: 'B' }
-        ],
-        
-        "Vocabulary": [
-            { q: "Scientists studying climate change have developed models to ---- the potential effects of global warming over the next century.", opts: {A:"predict",B:"abandon",C:"ignore",D:"eliminate",E:"conceal"}, ans: 'A' },
-            { q: "The company's new policy aims to ---- workplace efficiency by introducing flexible working hours.", opts: {A:"diminish",B:"enhance",C:"prevent",D:"abandon",E:"overlook"}, ans: 'B' },
-            { q: "Despite numerous warnings, the factory continued to ---- toxic waste into the river.", opts: {A:"purify",B:"discharge",C:"filter",D:"preserve",E:"retain"}, ans: 'B' },
-            { q: "The government decided to ---- funding for the controversial research project.", opts: {A:"increase",B:"expand",C:"withdraw",D:"promote",E:"initiate"}, ans: 'C' }
-        ],
-        
-        "Reading": [
-            { q: "Dolphins are widely considered to be among the most intelligent of creatures. Perhaps their most outstanding feature, aside from this high intelligence, is the way they communicate. ---- When a dolphin is separated from a group, for example, it sends out a whistle that the others recognise. Which of the following best completes the text?", opts: {A:"Scientists have observed that dolphins use these unique sounds to identify and communicate with specific individuals.",B:"There is some dispute over the exact extent to which dolphins are intelligent.",C:"Dolphins may get separated from the main group during a hunt for food.",D:"Whistles and other sounds are essential to the way of life of dolphins.",E:"Dolphins' habitats around the world are being increasingly disturbed."}, ans: 'A' },
-            { q: "The Amazon rainforest produces about 20% of the world's oxygen and plays a crucial role in regulating the global climate. ----, deforestation rates have increased dramatically in recent years. Which transition word best fits?", opts: {A:"Therefore",B:"Similarly",C:"However",D:"Moreover",E:"Consequently"}, ans: 'C' }
-        ],
-        
-        "Cloze Test": [
-            { q: "The human brain is an extraordinary organ that continues to fascinate scientists. It contains approximately 86 billion neurons, each forming thousands of connections. ---- these connections, the brain can process information. Choose the best option:", opts: {A:"Through",B:"Despite",C:"Without",D:"Against",E:"Beyond"}, ans: 'A' },
-            { q: "Recent studies suggest that learning a second language can significantly improve cognitive abilities. ----, bilingual individuals often show enhanced problem-solving skills.", opts: {A:"However",B:"For instance",C:"Nevertheless",D:"On the contrary",E:"Otherwise"}, ans: 'B' }
-        ],
-        
-        "Translation": [
-            { q: "Teknolojik gelişmeler sayesinde insanlar artık dünyanın her yerinden anlık olarak iletişim kurabiliyorlar. En uygun çeviri:", opts: {A:"Thanks to technological developments, people can now communicate instantly from anywhere in the world.",B:"Because of technology developments, people are communicating from everywhere instantly.",C:"By technological progresses, people communicate in the world immediately now.",D:"Through technology improvements, people could connect worldwide in an instant.",E:"With technical advances, people may communicate from global places instantly."}, ans: 'A' }
-        ]
-    };
-    
-    let questions = []; // Oyunda kullanılacak sorular (shuffle edilmiş)
-    let questionsPerCategory = 3; // Varsayılan
-    let timePerQuestion = 30; // Varsayılan
+    const questions = [
+        { q: "She is interested ___ music.", opts: {A:'on',B:'in',C:'at',D:'for'}, ans: 'B' },
+        { q: "He works ___ a bank.", opts: {A:'at',B:'on',C:'to',D:'by'}, ans: 'A' },
+        { q: "I am afraid ___ dogs.", opts: {A:'from',B:'of',C:'by',D:'in'}, ans: 'B' },
+        { q: "The book is ___ the table.", opts: {A:'in',B:'on',C:'at',D:'of'}, ans: 'B' },
+        { q: "Capital of Turkey?", opts: {A:'Istanbul',B:'Ankara',C:'Izmir',D:'Bursa'}, ans: 'B' }
+    ];
 
     let players = {
         p1: { name: "", base: null, cities: [], score: 0, hp: 3, id: 'p1', time: 0 },
@@ -343,13 +290,7 @@
     function handleData(data) {
         if(data.type === 'INIT') { players.p1.name = data.p1Name; document.getElementById('lobby-status').innerText = "Bağlandı!"; }
         else if(data.type === 'JOIN') { players.p2.name = data.p2Name; goToSetup(); }
-        else if(data.type === 'START_GAME') { 
-            players = data.players;
-            questions = data.questions; // Host'tan gelen soruları al
-            timePerQuestion = data.timePerQuestion; // Süreyi al
-            startGameUI(); 
-            if(isHost) setTimeout(startNewTurn, 1000); 
-        }
+        else if(data.type === 'START_GAME') { players = data.players; startGameUI(); if(isHost) setTimeout(startNewTurn, 1000); }
         else if(data.type === 'UPDATE_MAP') { 
             players = data.players; 
             renderMapState(); 
@@ -378,72 +319,8 @@
     }
 
     /* ================= OYUN MANTIĞI ================= */
-    function goToSetup() { 
-        document.getElementById('screen-lobby').classList.add('d-none'); 
-        document.getElementById('screen-setup').classList.remove('d-none');
-        loadCategoryCheckboxes(); // Kategorileri yükle
-    }
-    
-    function loadCategoryCheckboxes() {
-        const container = document.getElementById('category-checkboxes');
-        container.innerHTML = '';
-        
-        Object.keys(questionBank).forEach(cat => {
-            const div = document.createElement('div');
-            div.className = 'form-check mb-2';
-            div.innerHTML = `
-                <input class="form-check-input" type="checkbox" value="${cat}" id="cat-${cat}" checked>
-                <label class="form-check-label text-white" for="cat-${cat}">
-                    <strong>${cat}</strong> (${questionBank[cat].length} soru)
-                </label>
-            `;
-            container.appendChild(div);
-        });
-    }
-    
-    function startGameConfig() {
-        // 1. Seçili kategorileri al
-        const selectedCats = [];
-        document.querySelectorAll('#category-checkboxes input:checked').forEach(cb => {
-            selectedCats.push(cb.value);
-        });
-        
-        if (selectedCats.length === 0) {
-            alert("En az 1 kategori seçmelisiniz!");
-            return;
-        }
-        
-        // 2. Ayarları al
-        questionsPerCategory = parseInt(document.getElementById('q-per-cat').value);
-        timePerQuestion = parseInt(document.getElementById('time-per-q').value);
-        
-        // 3. Soruları havuzdan çek ve karıştır
-        let pool = [];
-        selectedCats.forEach(cat => {
-            const allQs = questionBank[cat];
-            const shuffled = allQs.sort(() => 0.5 - Math.random());
-            const picked = shuffled.slice(0, questionsPerCategory);
-            pool = pool.concat(picked);
-        });
-        
-        if (pool.length === 0) {
-            alert("Yeterli soru bulunamadı!");
-            return;
-        }
-        
-        // 4. Tüm havuzu karıştır
-        questions = pool.sort(() => 0.5 - Math.random());
-        
-        // 5. Guest'e gönder
-        conn.send({ 
-            type: 'START_GAME', 
-            players: players,
-            questions: questions,
-            timePerQuestion: timePerQuestion
-        });
-        
-        startGameUI();
-    }
+    function goToSetup() { document.getElementById('screen-lobby').classList.add('d-none'); document.getElementById('screen-setup').classList.remove('d-none'); }
+    function startGameConfig() { conn.send({ type: 'START_GAME', players: players }); startGameUI(); }
     function startGameUI() {
         document.getElementById('screen-lobby').classList.add('d-none');
         document.getElementById('screen-setup').classList.add('d-none');
@@ -476,7 +353,7 @@
     }
 
     function startTimer() {
-        let timeLeft = timePerQuestion; // DİNAMİK SÜRE
+        let timeLeft = 30;
         document.getElementById('q-timer').innerText = timeLeft;
         if(timerInterval) clearInterval(timerInterval);
         timerInterval = setInterval(() => {
