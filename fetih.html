@@ -245,6 +245,7 @@
     let peer = null, conn = null, isHost = false, gameState = "LOBBY";
     let currentTurn = 0, timerInterval = null;
     let turnQueue = []; // Fetih sırasını tutan kuyruk: ['p1', 'p2'] gibi
+    let turnProtectedCities = []; // Bu tur fethedilen yerleri tutar
 
     const questions = [
         { q: "She is interested ___ music.", opts: {A:'on',B:'in',C:'at',D:'for'}, ans: 'B' },
@@ -331,15 +332,18 @@
     /* ================= TUR VE SORU ================= */
     let myAnswer = null, myTime = 0, p2AnswerTemp = null, p2TimeTemp = 0;
 
-    function startNewTurn() {
+function startNewTurn() {
         if(currentTurn >= questions.length) return calculateFinalWinner("Soru Bitti");
         
+        // --- YENİ: Her yeni soruda koruma listesini temizle ---
+        turnProtectedCities = []; 
+        // ----------------------------------------------------
+
         myAnswer = null; p2AnswerTemp = null; turnQueue = [];
         const q = questions[currentTurn];
         conn.send({ type: 'NEW_TURN', question: q, turnIndex: currentTurn });
         showQuestion(q);
     }
-
     function showQuestion(q) {
         const modal = new bootstrap.Modal(document.getElementById('questionModal'));
         document.getElementById('q-text').innerText = q.q;
@@ -496,12 +500,20 @@ function claimCity(plate) {
         }
     }
 
-// TÜM FETİH MANTIĞI BURADA (Sadece Host çalıştırır)
-    function processClaim(plate, playerKey) {
+function processClaim(plate, playerKey) {
         const oppKey = playerKey === 'p1' ? 'p2' : 'p1';
         
         // 1. Sıra Kontrolü (Güvenlik)
         if (turnQueue.length === 0 || turnQueue[0] !== playerKey) return;
+
+        // --- YENİ: BU TUR ALINAN YERE SALDIRI ENGELİ ---
+        if (turnProtectedCities.includes(plate)) {
+            const warnMsg = "Bu tur el değiştiren yere saldıramazsın!";
+            if(playerKey === 'p2') conn.send({ type: 'UPDATE_MAP', players: players, msg: warnMsg });
+            else showStatus(warnMsg);
+            return;
+        }
+        // -----------------------------------------------
 
         // 2. Komşuluk Kontrolü
         if (!isAdjacent(plate, players[playerKey].cities)) {
@@ -541,6 +553,11 @@ function claimCity(plate) {
             players[oppKey].score -= 150;
             players[playerKey].cities.push(plate);
             players[playerKey].score += 150;
+            
+            // --- YENİ: Şehri korumaya al ---
+            turnProtectedCities.push(plate);
+            // ------------------------------
+
             msg = `${players[playerKey].name} toprak ÇALDI!`;
             actionSuccess = true;
         }
@@ -548,6 +565,11 @@ function claimCity(plate) {
         else if (!players.p1.cities.includes(plate) && !players.p2.cities.includes(plate)) {
             players[playerKey].cities.push(plate);
             players[playerKey].score += 50;
+            
+            // --- YENİ: Şehri korumaya al ---
+            turnProtectedCities.push(plate);
+            // ------------------------------
+
             msg = `${players[playerKey].name} fethetti!`;
             actionSuccess = true;
         }
