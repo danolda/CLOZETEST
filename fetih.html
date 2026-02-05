@@ -216,7 +216,7 @@
 
 <script>
     /* ================= AYARLAR ================= */
-    const ICON_SIZE = 30; // Asker ve kale boyutu (px)
+    const ICON_SIZE = 60; // Asker ve kale boyutu (px)
     const SVG_URL = './tr.svg'; 
     const ICONS = {
         CASTLE: './castle.svg',
@@ -333,7 +333,13 @@
         if(data.type === 'INIT') { players.p1.name = data.p1Name; document.getElementById('lobby-status').innerText = "Bağlandı!"; }
         else if(data.type === 'JOIN') { players.p2.name = data.p2Name; goToSetup(); }
         else if(data.type === 'START_GAME') { players = data.players; startGameUI(); if(isHost) setTimeout(startNewTurn, 1000); }
-        else if(data.type === 'UPDATE_MAP') { players = data.players; renderMapState(); if(data.msg) showStatus(data.msg); }
+        else if(data.type === 'UPDATE_MAP') { 
+    players = data.players; 
+    renderMapState(); 
+    if(data.msg) showStatus(data.msg);
+    // EKLEME BURADA: Eğer Host isek ve harita güncellendiyse (yani rakip kalesini seçtiyse) oyun başlasın mı diye kontrol et.
+    if(isHost) checkGameStart(); 
+}
         else if(data.type === 'NEW_TURN') { currentTurn = data.turnIndex; showQuestion(data.question); }
         else if(data.type === 'OPPONENT_ANSWER') { if(isHost) resolveTurn(data.ans, 'p2'); }
         else if(data.type === 'TURN_RESULT') { handleTurnResult(data); }
