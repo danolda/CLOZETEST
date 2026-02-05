@@ -1676,7 +1676,7 @@
         p2: { name: "", base: null, cities: [], score: 0, hp: 3, id: 'p2', time: 0 }
     };
 
-    /* ================= 1. SORU PARSER (TEMİZLEYİCİ) ================= */
+   /* ================= 1. SORU PARSER (TEMİZLEYİCİ) ================= */
     async function loadQuestionsFromTextFile() {
         try {
             const response = await fetch('./sorular.txt');
@@ -1684,56 +1684,43 @@
             let text = await response.text();
 
             // --- 1. GÜRÜLTÜ TEMİZLİĞİ ---
-            // 'const x = `', '`', 'TIP: ...', 'Section: ...' gibi şeyleri sil
+            // 'const x = `', '`', 'TIP: ...', 'Section: ...' ve '// Yorumlar' silinir
             text = text.replace(/^const\s+\w+\s*=\s*`/gm, ''); // const raw = ` sil
             text = text.replace(/`\s*;?/g, ''); // Kapanış backticklerini sil
             text = text.replace(/^TIP:.*$/gm, ''); // TIP satırlarını sil
             text = text.replace(/^Section:.*$/gm, ''); // Section satırlarını sil
-            text = text.replace(/\(20\d\d.*?\)/g, ''); // (2025 YDT) gibi etiketleri sil (isteğe bağlı)
+            text = text.replace(/^\/\/.*$/gm, ''); // // ile başlayan yorum satırlarını sil
+            text = text.replace(/\(20\d\d.*?\)/g, ''); // (2025 YDT) gibi etiketleri sil
 
             // --- 2. CEVAPLARI TOPLA ---
-            // Formatlar: "1-A", "1:A", "1. E"
             const answersList = [];
             const ansRegex = /(\d+)[\-\:\.]\s*([A-E])/g;
             let ansMatch;
-            // Metin içindeki TÜM cevap anahtarlarını sırayla diziye atıyoruz
             while ((ansMatch = ansRegex.exec(text)) !== null) {
                 answersList.push(ansMatch[2]);
             }
 
             // --- 3. SORULARI AYIKLA ---
-            // Soru bloklarını bul: "1)", "1.", "1 " ile başlayan satırlar
-            // Regex: Satır başı, sayı, parantez veya nokta.
             const rawBlocks = text.split(/(?=\n\s*\d+[\)\.])/g);
-            
             const parsedQuestions = [];
             let ansIndex = 0;
 
             rawBlocks.forEach(block => {
-                // Bu bir soru bloğu mu? (İçinde şıklar var mı?)
-                // A) B) C) D) var mı kontrol et
                 const hasOptions = /[A-E][\)\.]/.test(block);
-                if (!hasOptions) return; // Sadece metin veya boşluksa atla
+                if (!hasOptions) return; 
 
                 const lines = block.trim().split('\n');
-                // Soru numarasını ve metnini al
                 const qTextLine = lines[0].replace(/^\d+[\)\.]\s*/, '').trim(); 
                 
-                // Şıkları bul (A), A., A )
-                const options = {};
                 const parts = block.split(/[A-E][\)\.]/);
-                // parts[0] soru metni, parts[1]=A, parts[2]=B...
-                
-                if (parts.length < 5) return; // En az A,B,C,D olmalı
+                if (parts.length < 5) return;
 
-                // Şık metinlerini temizle
                 const optA = parts[1].trim();
                 const optB = parts[2].trim();
                 const optC = parts[3].trim();
                 const optD = parts[4].trim();
-                const optE = (parts[5] || '').trim(); // E varsa al
+                const optE = (parts[5] || '').trim();
 
-                // Sıradaki cevabı al
                 if (ansIndex >= answersList.length) return;
                 let originalAns = answersList[ansIndex];
                 ansIndex++;
@@ -1743,24 +1730,14 @@
                 let finalAns = originalAns;
 
                 if (originalAns === 'E') {
-                    // Cevap E ise: E'nin metnini D'ye koy, Cevabı D yap.
-                    if (optE) {
-                        finalOpts.D = optE;
-                        finalAns = 'D';
-                    } else {
-                        // E metni yoksa bu soruyu pas geç veya D olarak bırak (Riskli)
-                        // Biz pas geçmeyelim, D şıkkına "None of above" koyamayız.
-                        // Mecbur D kalsın (E metni yoksa yapacak bir şey yok)
-                        return; 
-                    }
+                    if (optE) { finalOpts.D = optE; finalAns = 'D'; } 
+                    else { return; }
                 } else if (originalAns === 'D') {
-                    // Cevap D ise, D metni kalır, cevap D kalır.
                     finalAns = 'D';
                 }
-                // A, B, C ise sorun yok, 4 şık içinde varlar.
 
                 parsedQuestions.push({
-                    q: qTextLine.substring(0, 150) + (qTextLine.length > 150 ? '...' : ''), // Çok uzun soruları kırp
+                    q: qTextLine.substring(0, 200) + (qTextLine.length > 200 ? '...' : ''), 
                     opts: finalOpts,
                     ans: finalAns
                 });
@@ -1771,7 +1748,7 @@
 
         } catch (e) {
             console.error(e);
-            return []; // Hata olursa boş dön
+            return []; 
         }
     }
 
@@ -2042,6 +2019,7 @@
         const grp = document.createElementNS("http://www.w3.org/2000/svg", "g"); grp.id = "icon-layer"; svg.appendChild(grp);
         svg.querySelectorAll('path').forEach(p => {
             let id = p.getAttribute('id');
+            // TR01 -> 1 Dönüşümü (SVG'deki ID'lerin TR ile başladığını varsayıyoruz)
             if(id && id.startsWith('TR')) {
                 const pl = parseInt(id.replace('TR',''));
                 p.setAttribute('id', `city-${pl}`); p.removeAttribute('fill'); p.removeAttribute('style');
