@@ -291,25 +291,34 @@
             wrapper.innerHTML = `<h3 class="text-danger text-center mt-5">Harita Yüklenemedi: ${error.message}</h3>`;
         }
     }
-
-    /* ================= PEERJS BAĞLANTI ================= */
+    /* ================= PEERJS BAĞLANTI (GÜNCELLENMİŞ) ================= */
     function createGame() {
         const room = document.getElementById('room-id').value;
         const name = document.getElementById('player-name').value || "Mavi";
         if(!room) return alert("Oda ismi girin!");
 
-        try {
-            peer = new Peer(room);
-            peer.on('open', id => {
-                isHost = true;
-                players.p1.name = name;
-                document.getElementById('lobby-status').innerHTML = `<span class="text-success">Oda Açıldı! Bekleniyor...</span>`;
-            });
-            peer.on('error', err => alert("Hata: " + err.type));
-            peer.on('connection', c => { conn = c; setupConnection(); });
-        } catch(e) {
-            alert("PeerJS başlatılamadı!");
-        }
+        // Eğer önceki bir bağlantı kaldıysa temizle
+        if (peer) peer.destroy();
+
+        peer = new Peer(room, {
+            debug: 2
+        });
+
+        peer.on('open', id => {
+            isHost = true;
+            players.p1.name = name;
+            document.getElementById('lobby-status').innerHTML = `<span class="text-success">Oda Açıldı! Bekleniyor...</span>`;
+        });
+
+        peer.on('error', err => {
+            if (err.type === 'unavailable-id') {
+                alert(`HATA: '${room}' ismi şu an kullanılıyor. Lütfen 'fetih${Math.floor(Math.random()*100)}' gibi farklı bir oda ismi girin.`);
+            } else {
+                alert("Bağlantı Hatası: " + err.type);
+            }
+        });
+
+        peer.on('connection', c => { conn = c; setupConnection(); });
     }
 
     function joinGame() {
@@ -317,18 +326,31 @@
         const name = document.getElementById('player-name').value || "Kırmızı";
         if(!room) return alert("Oda ismi girin!");
 
-        try {
-            peer = new Peer();
-            peer.on('open', id => {
-                conn = peer.connect(room);
+        // Önceki bağlantıyı temizle
+        if (peer) peer.destroy();
+
+        // Misafir için ID'yi boş bırakıyoruz (otomatik rastgele ID alır)
+        peer = new Peer();
+
+        peer.on('open', id => {
+            // Bağlantı açılınca odaya bağlanmayı dene
+            conn = peer.connect(room);
+            
+            conn.on('open', () => {
                 isHost = false;
                 players.p2.name = name;
                 setupConnection();
             });
-            peer.on('error', err => alert("Hata: " + err.type));
-        } catch(e) {
-            alert("PeerJS başlatılamadı!");
-        }
+
+            // Bağlantı hatalarını yakala (örn: oda yoksa)
+            conn.on('error', (err) => {
+                alert("Odaya bağlanılamadı! Oda ismini kontrol edin.");
+            });
+        });
+
+        peer.on('error', err => {
+            alert("Hata: " + err.type);
+        });
     }
 
     function setupConnection() {
