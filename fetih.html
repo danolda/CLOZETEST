@@ -27,12 +27,15 @@
         }
         
         svg { width: 100%; height: 100%; display: block; }
-        path {
-            fill: var(--map-land) !important; stroke: #95a5a6; stroke-width: 1px;   
-            transition: all 0.3s ease; cursor: pointer; vector-effect: non-scaling-stroke;
+               path {
+            fill: var(--map-land); /* !important KALDIRILDI */
+            stroke: #95a5a6; 
+            stroke-width: 1px;   
+            transition: all 0.3s ease; 
+            cursor: pointer; 
+            vector-effect: non-scaling-stroke;
         }
-        path:hover { fill: var(--map-hover) !important; stroke: white; stroke-width: 2px; z-index: 10; }
-        
+        /* Sahiplik sınıflarında !important kalmalı */
         .owned-p1 { fill: #85c1e9 !important; stroke: #fff; }
         .owned-p2 { fill: #ec7063 !important; stroke: #fff; }
         
@@ -2186,7 +2189,7 @@ TIP: Main clause: would have V3 (burada would).
 `;
 
         const rawAnswersText = `
-1:E  2:E  3:C  4:E  5:B  6:E  7:E  8:D  9:B  10:B
+1:E  2:E  3:C  4:E  5:B  6:E  7:E  8:E  9:B  10:B
 11:C  12:C  13:D  14:A  15:C  16:B  17:C  18:A  19:A  20:D
 21:B  22:D  23:E  24:D  25:B  26:B  27:E  28:B  29:C  30:A
 31:B  32:C  33:D  34:C  35:B  36:A  37:C  38:E  39:C  40:B
@@ -6468,99 +6471,104 @@ function claimCity(plate) {
         }
     }
 
-   // GELİŞMİŞ FETİH MANTIĞI (Host)
-function processClaim(plate, playerKey) {
+   // --- GELİŞMİŞ FETİH MANTIĞI (HOST) ---
+function processClaim(plateInput, playerKey) {
+    const plate = parseInt(plateInput); // Kesinlikle sayıya çevir
     const oppKey = playerKey === 'p1' ? 'p2' : 'p1';
     
     // 1. Sıra Kontrolü
     if (turnQueue.length === 0 || turnQueue[0] !== playerKey) return;
 
-    // 2. TUR İÇİ KİLİT KONTROLÜ (YENİ ÖZELLİK)
-    // Eğer bu şehir bu turda başkası tarafından alındıysa/çalındıysa dokunulamaz.
+    // 2. Tur İçi Kilit Kontrolü
     if (turnLockedCities.includes(plate)) {
-        if(playerKey === 'p2') conn.send({ type: 'UPDATE_MAP', players: players, msg: "Bu şehir bu tur düştü! Başka yer seç." });
-        else showStatus("Bu şehir bu tur işlem gördü! Başka yer seç.");
+        const warning = "Bu şehir bu tur işlem gördü! Başka yer seç.";
+        if(playerKey === 'p2') conn.send({ type: 'UPDATE_MAP', players: players, msg: warning });
+        else showStatus(warning);
         return;
     }
 
     // 3. Komşuluk Kontrolü
     if (!isAdjacent(plate, players[playerKey].cities)) {
-        if(playerKey === 'p2') conn.send({ type: 'UPDATE_MAP', players: players, msg: "Sadece sınır komşusu illeri alabilirsin!" });
-        else showStatus("Sadece sınır komşusu illeri alabilirsin!");
+        const warning = "Sadece sınır komşusu illeri alabilirsin!";
+        if(playerKey === 'p2') conn.send({ type: 'UPDATE_MAP', players: players, msg: warning });
+        else showStatus(warning);
         return;
     }
 
     let msg = "";
     let actionSuccess = false;
-    let rightsConsumed = 1; // Varsayılan harcanan hak
+    let rightsConsumed = 1;
 
-    // A) KALE SALDIRISI (2 HAK GEREKTİRİR)
-    if (players[oppKey].base === plate) {
-        // Oyuncunun kuyrukta en az 2 hakkı var mı?
+    // KALE SALDIRISI KONTROLÜ
+    const oppBase = parseInt(players[oppKey].base);
+    
+    // A) KALE SALDIRISI
+    if (oppBase === plate) {
         const playerRights = turnQueue.filter(p => p === playerKey).length;
-        
         if (playerRights < 2) {
-            const warnMsg = "Kale saldırısı için 2 HAK (Soruyu tek bilen olmalısın) gerekli!";
+            const warnMsg = "Kale saldırısı için 2 HAK gerekli!";
             if(playerKey === 'p2') conn.send({ type: 'UPDATE_MAP', players: players, msg: warnMsg });
             else showStatus(warnMsg);
             return;
         }
-
         players[oppKey].hp -= 1;
-        rightsConsumed = 2; // 2 Hak düşülecek
-        msg = `⚔️ KALE SALDIRISI! ${players[oppKey].name} hasar aldı! (-2 Hak)`;
-        
+        rightsConsumed = 2;
+        msg = `⚔️ KALE SALDIRISI! ${players[oppKey].name} hasar aldı!`;
         if (players[oppKey].hp <= 0) {
-            players[playerKey].score += 1000; // Kale yıkma bonusu
-            calculateFinalWinner("Kale Fethi"); // OYUN BİTER (Koşul 1)
+            players[playerKey].score += 1000;
+            calculateFinalWinner("Kale Fethi");
             return;
         }
         actionSuccess = true;
     }
     // B) TOPRAK ÇALMA
-    else if (players[oppKey].cities.includes(plate)) {
-        players[oppKey].cities = players[oppKey].cities.filter(c => c !== plate);
+    // includes kontrolünde map/some kullanarak tip güvenliği sağla
+    else if (players[oppKey].cities.some(c => parseInt(c) === plate)) {
+        players[oppKey].cities = players[oppKey].cities.filter(c => parseInt(c) !== plate);
         players[oppKey].score -= 150;
         players[playerKey].cities.push(plate);
         players[playerKey].score += 150;
         msg = `🔥 ${players[playerKey].name} toprak ÇALDI!`;
         actionSuccess = true;
     }
-    // C) NORMAL FETİH (Boş Toprak)
-    else if (!players.p1.cities.includes(plate) && !players.p2.cities.includes(plate)) {
-        players[playerKey].cities.push(plate);
-        players[playerKey].score += 50;
-        msg = `🚩 ${players[playerKey].name} fethetti!`;
-        actionSuccess = true;
+    // C) NORMAL FETİH
+    else {
+        // Zaten alınmış mı kontrolü (Kendi şehrini tekrar alamasın)
+        const alreadyOwns = players[playerKey].cities.some(c => parseInt(c) === plate);
+        if(!alreadyOwns) {
+            players[playerKey].cities.push(plate);
+            players[playerKey].score += 50;
+            msg = `🚩 ${players[playerKey].name} fethetti!`;
+            actionSuccess = true;
+        }
     }
 
     if (actionSuccess) {
-        // Şehri bu tur için kilitle
         turnLockedCities.push(plate);
-
-        // Hakları düşür
-        turnQueue.shift(); // İlk hakkı sil
+        turnQueue.shift(); 
         if (rightsConsumed === 2) {
-            // Eğer kale saldırısıysa, kuyruktaki diğer hakkını da bul ve sil
             const extraIndex = turnQueue.indexOf(playerKey);
             if (extraIndex > -1) turnQueue.splice(extraIndex, 1);
         }
 
-        // Güncellemeleri gönder
+        // --- DÜZELTME: Veriyi temizleyip gönder ---
+        // Referans hatalarını önlemek için objeyi klonla
+        const cleanPlayers = JSON.parse(JSON.stringify(players));
+        
         renderMapState();
-        conn.send({ type: 'UPDATE_MAP', players: players, msg: msg });
+        conn.send({ type: 'UPDATE_MAP', players: cleanPlayers, msg: msg });
         conn.send({ type: 'QUEUE_UPDATE', queue: turnQueue });
+        
         updateExpansionStatus();
         if(msg) showStatus(msg);
 
-        // OYUN BİTİŞ KONTROLÜ: TÜM İLLER DOLDU MU? (Koşul 2)
+        // Bitiş Kontrolü: 81 İl
         const totalOwned = players.p1.cities.length + players.p2.cities.length;
         if (totalOwned >= 81) {
             calculateFinalWinner("Tüm İller Fethedildi!");
             return;
         }
 
-        // TUR BİTTİ Mİ?
         if (turnQueue.length === 0) {
             gameState = "WAITING";
             showStatus("Tur bitti! Yeni soru geliyor...");
@@ -6620,48 +6628,46 @@ async function loadSvgMap() {
     });
 }
 
-/* ================= HARİTA BOYAMA (ORİJİNAL MANTIK) ================= */
-function renderMapState() {
-    // 1. Önce haritadaki tüm 'sahipli' sınıflarını temizle
-    document.querySelectorAll('path').forEach(p => {
-        p.classList.remove('owned-p1', 'owned-p2');
-    });
-    
-    // 2. İkon katmanını temizle
-    const iconLayer = document.getElementById('icon-layer');
-    if(iconLayer) iconLayer.innerHTML = '';
-
-    // 3. Mavi Takımın Şehirlerini Boya
-    if (players.p1 && players.p1.cities) {
-        players.p1.cities.forEach(c => markCity(c, 'p1'));
-    }
-
-    // 4. Kırmızı Takımın Şehirlerini Boya
-    if (players.p2 && players.p2.cities) {
-        players.p2.cities.forEach(c => markCity(c, 'p2'));
-    }
-
-    updateScoreboard();
-}
-
-/* ================= TEKİL ŞEHİR İŞARETLEME ================= */
-function markCity(c, pid) {
-    // Gelen veriyi sayıya çevir (Veri tipi hatasını önlemek için)
-    const cityId = parseInt(c); 
-    const el = document.getElementById(`city-${cityId}`);
-    
-    if(el) {
-        // Sadece Class ekle (Style ile zorlama yapma)
-        el.classList.add(pid === 'p1' ? 'owned-p1' : 'owned-p2');
+        // --- HARİTA BOYAMA (GÜVENLİ VERSİYON) ---
+        function renderMapState() {
+            // 1. Temizlik
+            document.querySelectorAll('path').forEach(p => {
+                p.classList.remove('owned-p1', 'owned-p2');
+            });
+            
+            const iconLayer = document.getElementById('icon-layer');
+            if(iconLayer) iconLayer.innerHTML = '';
         
-        // İkon İşlemleri
-        const baseId = parseInt(players[pid].base);
-        const isBase = (baseId === cityId);
+            // 2. Boyama (Veri yoksa hata verme)
+            if (players && players.p1 && players.p1.cities) {
+                players.p1.cities.forEach(c => markCity(c, 'p1'));
+            }
+            if (players && players.p2 && players.p2.cities) {
+                players.p2.cities.forEach(c => markCity(c, 'p2'));
+            }
         
-        const icon = isBase ? ICONS.CASTLE : (pid === 'p1' ? ICONS.HOST_SOLDIER : ICONS.GUEST_SOLDIER);
-        drawIcon(cityId, icon);
-    }
-}
+            updateScoreboard();
+        }
+        
+        function markCity(c, pid) {
+            // GELEN VERİYİ ZORLA SAYIYA ÇEVİR
+            const cityId = parseInt(c); 
+            if (isNaN(cityId)) return; // Hatalı veri varsa dur
+        
+            const el = document.getElementById(`city-${cityId}`);
+            
+            if(el) {
+                // Sınıfı Ekle
+                el.classList.add(pid === 'p1' ? 'owned-p1' : 'owned-p2');
+                
+                // İkon Kontrolü (Base ID'yi de sayıya çevirerek kıyasla)
+                const baseId = parseInt(players[pid].base);
+                const isBase = (baseId === cityId);
+                
+                const icon = isBase ? ICONS.CASTLE : (pid === 'p1' ? ICONS.HOST_SOLDIER : ICONS.GUEST_SOLDIER);
+                drawIcon(cityId, icon);
+            }
+        }
 
 
     function drawIcon(c, url) {
