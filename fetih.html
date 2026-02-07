@@ -99,12 +99,9 @@
         <div class="row g-3 mb-4 border-bottom border-secondary pb-3">
             <div class="col-6">
                 <label class="form-label text-white fw-bold">Tur Başı Soru:</label>
-                <select id="vs-q-count-input" class="form-select bg-secondary text-white border-0">
-                    <option value="5">5 Soru</option>
-                    <option value="10" selected>10 Soru</option>
-                    <option value="15">15 Soru</option>
-                    <option value="20">20 Soru</option>
-                </select>
+                               <!-- SELECT yerine INPUT geldi -->
+                <input type="number" id="vs-q-count-input" class="form-control bg-secondary text-white border-0 fw-bold text-center" value="40" min="5" max="100">
+                <small class="text-muted">Min: 10, Max: 100</small>
             </div>
             <div class="col-6">
                 <label class="form-label text-white fw-bold">Süre (Saniye):</label>
@@ -6121,6 +6118,8 @@ function renderCategorySelection() {
     let peer = null, conn = null, isHost = false, gameState = "LOBBY";
     let currentTurn = 0, timerInterval = null;
     let turnQueue = []; // Fetih sırasını tutan kuyruk: ['p1', 'p2'] gibi
+    let turnLockedCities = []; // O turda işlem yapılan şehirleri tutar
+
 
      let questions = []; // Artık boş başlıyor, Setup'tan dolacak
 
@@ -6263,14 +6262,17 @@ function startGameUI(loadedQuestions, loadedTimer) {
     /* ================= TUR VE SORU ================= */
     let myAnswer = null, myTime = 0, p2AnswerTemp = null, p2TimeTemp = 0;
 
-    function startNewTurn() {
-        if(currentTurn >= questions.length) return calculateFinalWinner("Soru Bitti");
-        
-        myAnswer = null; p2AnswerTemp = null; turnQueue = [];
-        const q = questions[currentTurn];
-        conn.send({ type: 'NEW_TURN', question: q, turnIndex: currentTurn });
-        showQuestion(q);
+function startNewTurn() {
+    // OYUN BİTİŞ KONTROLÜ: SORULAR BİTTİ Mİ? (Koşul 3)
+    if(currentTurn >= questions.length) {
+        return calculateFinalWinner("Süre/Soru Bitti");
     }
+    
+    myAnswer = null; p2AnswerTemp = null; turnQueue = [];
+    const q = questions[currentTurn];
+    conn.send({ type: 'NEW_TURN', question: q, turnIndex: currentTurn });
+    showQuestion(q);
+}
 
 function showQuestion(q) {
     const modal = new bootstrap.Modal(document.getElementById('questionModal'));
@@ -6381,6 +6383,8 @@ function handleTurnResult(data) {
     players = data.players;
     turnQueue = data.queue;
     updateScoreboard();
+    
+    turnLockedCities = []; // Yeni fetih turu için kilitleri sıfırla
 
     // 3. 5 SANİYE BEKLE VE SONRA İLERLE
     setTimeout(() => {
@@ -6440,78 +6444,107 @@ function claimCity(plate) {
         }
     }
 
-    // TÜM FETİH MANTIĞI BURADA (Sadece Host çalıştırır)
-    function processClaim(plate, playerKey) {
-        const oppKey = playerKey === 'p1' ? 'p2' : 'p1';
-        
-        // 1. Sıra Kontrolü (Güvenlik)
-        if (turnQueue.length === 0 || turnQueue[0] !== playerKey) return;
+   // GELİŞMİŞ FETİH MANTIĞI (Host)
+function processClaim(plate, playerKey) {
+    const oppKey = playerKey === 'p1' ? 'p2' : 'p1';
+    
+    // 1. Sıra Kontrolü
+    if (turnQueue.length === 0 || turnQueue[0] !== playerKey) return;
 
-        // 2. Komşuluk Kontrolü
-        if (!isAdjacent(plate, players[playerKey].cities)) {
-            // Eğer istek Misafirden geldiyse ona hata mesajı yolla
-            if(playerKey === 'p2') conn.send({ type: 'UPDATE_MAP', players: players, msg: "Sadece sınır komşusu illeri alabilirsin!" });
-            else showStatus("Sadece sınır komşusu illeri alabilirsin!");
+    // 2. TUR İÇİ KİLİT KONTROLÜ (YENİ ÖZELLİK)
+    // Eğer bu şehir bu turda başkası tarafından alındıysa/çalındıysa dokunulamaz.
+    if (turnLockedCities.includes(plate)) {
+        if(playerKey === 'p2') conn.send({ type: 'UPDATE_MAP', players: players, msg: "Bu şehir bu tur düştü! Başka yer seç." });
+        else showStatus("Bu şehir bu tur işlem gördü! Başka yer seç.");
+        return;
+    }
+
+    // 3. Komşuluk Kontrolü
+    if (!isAdjacent(plate, players[playerKey].cities)) {
+        if(playerKey === 'p2') conn.send({ type: 'UPDATE_MAP', players: players, msg: "Sadece sınır komşusu illeri alabilirsin!" });
+        else showStatus("Sadece sınır komşusu illeri alabilirsin!");
+        return;
+    }
+
+    let msg = "";
+    let actionSuccess = false;
+    let rightsConsumed = 1; // Varsayılan harcanan hak
+
+    // A) KALE SALDIRISI (2 HAK GEREKTİRİR)
+    if (players[oppKey].base === plate) {
+        // Oyuncunun kuyrukta en az 2 hakkı var mı?
+        const playerRights = turnQueue.filter(p => p === playerKey).length;
+        
+        if (playerRights < 2) {
+            const warnMsg = "Kale saldırısı için 2 HAK (Soruyu tek bilen olmalısın) gerekli!";
+            if(playerKey === 'p2') conn.send({ type: 'UPDATE_MAP', players: players, msg: warnMsg });
+            else showStatus(warnMsg);
             return;
         }
 
-        let msg = "";
-        let actionSuccess = false;
-
-        // A) KALE SALDIRISI
-        if (players[oppKey].base === plate) {
-            players[oppKey].hp -= 1;
-            msg = `KALE SALDIRISI! ${players[oppKey].name} hasar aldı!`;
-            if (players[oppKey].hp <= 0) {
-                players[playerKey].score += 500;
-                calculateFinalWinner("Kale İşgali"); // Oyun biter
-                return;
-            }
-            actionSuccess = true;
+        players[oppKey].hp -= 1;
+        rightsConsumed = 2; // 2 Hak düşülecek
+        msg = `⚔️ KALE SALDIRISI! ${players[oppKey].name} hasar aldı! (-2 Hak)`;
+        
+        if (players[oppKey].hp <= 0) {
+            players[playerKey].score += 1000; // Kale yıkma bonusu
+            calculateFinalWinner("Kale Fethi"); // OYUN BİTER (Koşul 1)
+            return;
         }
-        // B) TOPRAK ÇALMA
-        else if (players[oppKey].cities.includes(plate)) {
-            players[oppKey].cities = players[oppKey].cities.filter(c => c !== plate);
-            players[oppKey].score -= 150;
-            players[playerKey].cities.push(plate);
-            players[playerKey].score += 150;
-            msg = `${players[playerKey].name} toprak ÇALDI!`;
-            actionSuccess = true;
-        }
-        // C) NORMAL FETİH (Boş Toprak)
-        else if (!players.p1.cities.includes(plate) && !players.p2.cities.includes(plate)) {
-            players[playerKey].cities.push(plate);
-            players[playerKey].score += 50;
-            msg = `${players[playerKey].name} fethetti!`;
-            actionSuccess = true;
-        }
-
-        if (actionSuccess) {
-            // Hakkı düş (Kuyruğun başındakini sil)
-            turnQueue.shift();
-
-            // Herkese güncel durumu bildir
-            renderMapState();
-            conn.send({ type: 'UPDATE_MAP', players: players, msg: msg });
-            
-            // Kuyruk güncellemesi gönder
-            conn.send({ type: 'QUEUE_UPDATE', queue: turnQueue });
-            updateExpansionStatus();
-
-            if(msg) showStatus(msg);
-
-            // TUR BİTTİ Mİ KONTROLÜ
-            if (turnQueue.length === 0) {
-                gameState = "WAITING"; // Tıklamaları kilitle
-                showStatus("Tur bitti! 5 sn sonra yeni soru...");
-                
-                // 5 Saniye sonra yeni soru
-                currentTurn++;
-                setTimeout(startNewTurn, 5000);
-            }
-        }
+        actionSuccess = true;
+    }
+    // B) TOPRAK ÇALMA
+    else if (players[oppKey].cities.includes(plate)) {
+        players[oppKey].cities = players[oppKey].cities.filter(c => c !== plate);
+        players[oppKey].score -= 150;
+        players[playerKey].cities.push(plate);
+        players[playerKey].score += 150;
+        msg = `🔥 ${players[playerKey].name} toprak ÇALDI!`;
+        actionSuccess = true;
+    }
+    // C) NORMAL FETİH (Boş Toprak)
+    else if (!players.p1.cities.includes(plate) && !players.p2.cities.includes(plate)) {
+        players[playerKey].cities.push(plate);
+        players[playerKey].score += 50;
+        msg = `🚩 ${players[playerKey].name} fethetti!`;
+        actionSuccess = true;
     }
 
+    if (actionSuccess) {
+        // Şehri bu tur için kilitle
+        turnLockedCities.push(plate);
+
+        // Hakları düşür
+        turnQueue.shift(); // İlk hakkı sil
+        if (rightsConsumed === 2) {
+            // Eğer kale saldırısıysa, kuyruktaki diğer hakkını da bul ve sil
+            const extraIndex = turnQueue.indexOf(playerKey);
+            if (extraIndex > -1) turnQueue.splice(extraIndex, 1);
+        }
+
+        // Güncellemeleri gönder
+        renderMapState();
+        conn.send({ type: 'UPDATE_MAP', players: players, msg: msg });
+        conn.send({ type: 'QUEUE_UPDATE', queue: turnQueue });
+        updateExpansionStatus();
+        if(msg) showStatus(msg);
+
+        // OYUN BİTİŞ KONTROLÜ: TÜM İLLER DOLDU MU? (Koşul 2)
+        const totalOwned = players.p1.cities.length + players.p2.cities.length;
+        if (totalOwned >= 81) {
+            calculateFinalWinner("Tüm İller Fethedildi!");
+            return;
+        }
+
+        // TUR BİTTİ Mİ?
+        if (turnQueue.length === 0) {
+            gameState = "WAITING";
+            showStatus("Tur bitti! Yeni soru geliyor...");
+            currentTurn++;
+            setTimeout(startNewTurn, 4000);
+        }
+    }
+}
     function isAdjacent(targetPlate, myCities) {
         // Eğer hiç şehrim yoksa (imkansız ama) false
         if (myCities.length === 0) return false;
