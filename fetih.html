@@ -6202,7 +6202,11 @@ function startFetihMatch() {
 
     const qCount = parseInt(document.getElementById('vs-q-count-input').value);
     const timeLimit = parseInt(document.getElementById('vs-time-input').value);
-
+    
+    // --- BU SATIRI EKLEYİN (Host kendi süresini ayarlasın) ---
+    window.GAME_TIMER = timeLimit; 
+    // ---------------------------------------------------------
+    
     // 2. Havuzdan Soru Çek
     let pool = [];
     checkboxes.forEach(chk => {
@@ -6298,15 +6302,25 @@ function formatQuestionText(text) {
     return text ? text.replace(/___/g, "__________") : "";
 }
 
-    function startTimer() {
-        let timeLeft = 30;
+// --- SÜRE SAYACI (DÜZELTİLDİ) ---
+function startTimer() {
+    // Kurulumda belirlenen süreyi al, yoksa 30 yap
+    let timeLeft = window.GAME_TIMER || 30; 
+    
+    document.getElementById('q-timer').innerText = timeLeft;
+    
+    if(timerInterval) clearInterval(timerInterval);
+    
+    timerInterval = setInterval(() => {
+        timeLeft--; 
         document.getElementById('q-timer').innerText = timeLeft;
-        if(timerInterval) clearInterval(timerInterval);
-        timerInterval = setInterval(() => {
-            timeLeft--; document.getElementById('q-timer').innerText = timeLeft;
-            if(timeLeft <= 0) { clearInterval(timerInterval); submitAnswer(null); }
-        }, 1000);
-    }
+        
+        if(timeLeft <= 0) { 
+            clearInterval(timerInterval); 
+            submitAnswer(null); // Süre bitince boş cevap gönder
+        }
+    }, 1000);
+}
 
     function submitAnswer(ans) {
         if(timerInterval) clearInterval(timerInterval);
@@ -6581,23 +6595,45 @@ function processClaim(plate, playerKey) {
         });
     }
 
-    function renderMapState() {
-        document.querySelectorAll('path').forEach(p => p.classList.remove('owned-p1', 'owned-p2'));
-        document.getElementById('icon-layer').innerHTML = '';
+// --- HARİTA GÜNCELLEME (DÜZELTİLDİ - TİP GÜVENLİĞİ EKLENDİ) ---
+function renderMapState() {
+    // 1. Önce haritadaki tüm renkleri ve ikonları temizle
+    document.querySelectorAll('path').forEach(p => {
+        p.classList.remove('owned-p1', 'owned-p2');
+    });
+    document.getElementById('icon-layer').innerHTML = '';
+
+    // 2. Mavi Takımın Şehirlerini Boya
+    if (players.p1 && players.p1.cities) {
         players.p1.cities.forEach(c => markCity(c, 'p1'));
-        players.p2.cities.forEach(c => markCity(c, 'p2'));
-        updateScoreboard();
     }
 
-    function markCity(c, pid) {
-        const el = document.getElementById(`city-${c}`);
-        if(el) {
-            el.classList.add(pid === 'p1' ? 'owned-p1' : 'owned-p2');
-            const isBase = players[pid].base === c;
-            const icon = isBase ? ICONS.CASTLE : (pid === 'p1' ? ICONS.HOST_SOLDIER : ICONS.GUEST_SOLDIER);
-            drawIcon(c, icon);
-        }
+    // 3. Kırmızı Takımın Şehirlerini Boya
+    if (players.p2 && players.p2.cities) {
+        players.p2.cities.forEach(c => markCity(c, 'p2'));
     }
+
+    updateScoreboard();
+}
+
+function markCity(c, pid) {
+    // Gelen şehir ID'sini kesinlikle sayıya çevir (String '06' gelirse 6 olsun diye)
+    const cityId = parseInt(c); 
+    const el = document.getElementById(`city-${cityId}`);
+    
+    if(el) {
+        // Rengi boya
+        el.classList.add(pid === 'p1' ? 'owned-p1' : 'owned-p2');
+        
+        // İkonu koy (Kale mi Asker mi?)
+        // Base kontrolünde de parseInt kullanıyoruz
+        const baseId = parseInt(players[pid].base);
+        const isBase = (baseId === cityId);
+        
+        const icon = isBase ? ICONS.CASTLE : (pid === 'p1' ? ICONS.HOST_SOLDIER : ICONS.GUEST_SOLDIER);
+        drawIcon(cityId, icon);
+    }
+}
 
     function drawIcon(c, url) {
         const p = document.getElementById(`city-${c}`);
