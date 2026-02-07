@@ -6169,26 +6169,29 @@ function renderCategorySelection() {
         else if(data.type === 'JOIN') { players.p2.name = data.p2Name; goToSetup(); }
         else if(data.type === 'START_GAME') { players = data.players; startGameUI(); if(isHost) setTimeout(startNewTurn, 1000); }
         else if(data.type === 'UPDATE_MAP') { 
-            // Veriyi al
-            players = data.players; 
-            
-            // Mesaj varsa göster
-            if(data.msg) showStatus(data.msg);
-        
-            // TELEFON İÇİN DÜZELTME:
-            // Tarayıcıya "Çizim yap" emri veriyoruz.
-            // requestAnimationFrame mobildeki frame atlamalarını engeller.
-            window.requestAnimationFrame(function() {
-                renderMapState();
-                // Bazı telefonlarda DOM hemen güncellenmez, 50ms sonra tekrar tetikle (Garanti olsun)
-                setTimeout(renderMapState, 50);
-            });
-            
-            if(data.gameOver) return endGame(data.winner, data.reason, data.scores);
-        
-            if(isHost) checkTurnProgress(); 
-            if(isHost && gameState === "BASE_SELECT") checkGameStart();
+        // 1. Gelen oyuncu verisini al
+        if(data.players) {
+            players = data.players;
         }
+        
+        // 2. Gelen sıra bilgisini al (Varsa)
+        if(data.queue) {
+            turnQueue = data.queue;
+        }
+
+        // 3. Mesaj varsa göster
+        if(data.msg) showStatus(data.msg);
+    
+        // 4. Haritayı çiz (Hemen ve biraz sonra garanti olsun diye)
+        renderMapState();
+        setTimeout(renderMapState, 100); 
+        
+        // 5. Durum güncellemeleri
+        updateExpansionStatus();
+        if(data.gameOver) return endGame(data.winner, data.reason, data.scores);
+        if(isHost) checkTurnProgress(); 
+        if(isHost && gameState === "BASE_SELECT") checkGameStart();
+    }
                    
         else if(data.type === 'NEW_TURN') { currentTurn = data.turnIndex; showQuestion(data.question); }
         else if(data.type === 'OPPONENT_ANSWER') { if(isHost) resolveTurn(data.ans, data.time); }
@@ -6471,27 +6474,23 @@ function claimCity(plate) {
         }
     }
 
-   // --- GELİŞMİŞ FETİH MANTIĞI (HOST) ---
+// --- FETİH İŞLEMİ (DÜZELTİLMİŞ) ---
 function processClaim(plateInput, playerKey) {
-    const plate = parseInt(plateInput); // Kesinlikle sayıya çevir
+    const plate = parseInt(plateInput);
     const oppKey = playerKey === 'p1' ? 'p2' : 'p1';
     
-    // 1. Sıra Kontrolü
-    if (turnQueue.length === 0 || turnQueue[0] !== playerKey) return;
-
-    // 2. Tur İçi Kilit Kontrolü
+    // 1. Temel Kontroller
+    if (turnQueue.length === 0 || turnQueue[0] !== playerKey) return; // Sıra kontrolü
+    
+    // Bu şehir bu tur işlem gördü mü?
     if (turnLockedCities.includes(plate)) {
-        const warning = "Bu şehir bu tur işlem gördü! Başka yer seç.";
-        if(playerKey === 'p2') conn.send({ type: 'UPDATE_MAP', players: players, msg: warning });
-        else showStatus(warning);
+        sendWarning(playerKey, "Bu şehir bu tur işlem gördü!");
         return;
     }
 
-    // 3. Komşuluk Kontrolü
+    // Komşuluk Kontrolü
     if (!isAdjacent(plate, players[playerKey].cities)) {
-        const warning = "Sadece sınır komşusu illeri alabilirsin!";
-        if(playerKey === 'p2') conn.send({ type: 'UPDATE_MAP', players: players, msg: warning });
-        else showStatus(warning);
+        sendWarning(playerKey, "Sadece sınır komşusu illeri alabilirsin!");
         return;
     }
 
@@ -6499,21 +6498,21 @@ function processClaim(plateInput, playerKey) {
     let actionSuccess = false;
     let rightsConsumed = 1;
 
-    // KALE SALDIRISI KONTROLÜ
     const oppBase = parseInt(players[oppKey].base);
+    
+    // --- SENARYOLAR ---
     
     // A) KALE SALDIRISI
     if (oppBase === plate) {
         const playerRights = turnQueue.filter(p => p === playerKey).length;
         if (playerRights < 2) {
-            const warnMsg = "Kale saldırısı için 2 HAK gerekli!";
-            if(playerKey === 'p2') conn.send({ type: 'UPDATE_MAP', players: players, msg: warnMsg });
-            else showStatus(warnMsg);
+            sendWarning(playerKey, "Kale saldırısı için 2 HAK gerekli!");
             return;
         }
         players[oppKey].hp -= 1;
         rightsConsumed = 2;
         msg = `⚔️ KALE SALDIRISI! ${players[oppKey].name} hasar aldı!`;
+        
         if (players[oppKey].hp <= 0) {
             players[playerKey].score += 1000;
             calculateFinalWinner("Kale Fethi");
@@ -6521,21 +6520,22 @@ function processClaim(plateInput, playerKey) {
         }
         actionSuccess = true;
     }
-    // B) TOPRAK ÇALMA
-    // includes kontrolünde map/some kullanarak tip güvenliği sağla
+    // B) TOPRAK ÇALMA (Rakibin şehri mi?)
     else if (players[oppKey].cities.some(c => parseInt(c) === plate)) {
+        // Rakibin listesinden çıkar
         players[oppKey].cities = players[oppKey].cities.filter(c => parseInt(c) !== plate);
         players[oppKey].score -= 150;
+        // Kendi listene ekle
         players[playerKey].cities.push(plate);
         players[playerKey].score += 150;
+        
         msg = `🔥 ${players[playerKey].name} toprak ÇALDI!`;
         actionSuccess = true;
     }
-    // C) NORMAL FETİH
+    // C) BOŞ TOPRAK FETİH
     else {
-        // Zaten alınmış mı kontrolü (Kendi şehrini tekrar alamasın)
         const alreadyOwns = players[playerKey].cities.some(c => parseInt(c) === plate);
-        if(!alreadyOwns) {
+        if (!alreadyOwns) {
             players[playerKey].cities.push(plate);
             players[playerKey].score += 50;
             msg = `🚩 ${players[playerKey].name} fethetti!`;
@@ -6543,32 +6543,29 @@ function processClaim(plateInput, playerKey) {
         }
     }
 
+    // --- KRİTİK BÖLÜM: BAŞARILI İSE GÜNCELLEME GÖNDER ---
     if (actionSuccess) {
+        // 1. Kilit Listesine Ekle
         turnLockedCities.push(plate);
+        
+        // 2. Sıradan Düş
         turnQueue.shift(); 
         if (rightsConsumed === 2) {
             const extraIndex = turnQueue.indexOf(playerKey);
             if (extraIndex > -1) turnQueue.splice(extraIndex, 1);
         }
 
-        // --- DÜZELTME: Veriyi temizleyip gönder ---
-        // Referans hatalarını önlemek için objeyi klonla
-        const cleanPlayers = JSON.parse(JSON.stringify(players));
-        
-        renderMapState();
-        conn.send({ type: 'UPDATE_MAP', players: cleanPlayers, msg: msg });
-        conn.send({ type: 'QUEUE_UPDATE', queue: turnQueue });
-        
-        updateExpansionStatus();
-        if(msg) showStatus(msg);
+        // 3. HERKESİ GÜNCELLE (Sorunun Çözümü Burası)
+        sendSyncToGuest(msg);
 
-        // Bitiş Kontrolü: 81 İl
+        // 4. Oyun Bitti mi?
         const totalOwned = players.p1.cities.length + players.p2.cities.length;
         if (totalOwned >= 81) {
             calculateFinalWinner("Tüm İller Fethedildi!");
             return;
         }
 
+        // 5. Tur Bitti mi?
         if (turnQueue.length === 0) {
             gameState = "WAITING";
             showStatus("Tur bitti! Yeni soru geliyor...");
@@ -6774,6 +6771,41 @@ function calculateFinalWinner(reason) {
         document.getElementById('winner-score-info').innerText = scores;
         new bootstrap.Modal(document.getElementById('resultModal')).show();
     }
+    // --- VERİ GÖNDERİM FONKSİYONLARI ---
+
+// 1. Başarılı işlemde çalışır: Herkese güncel haritayı yollar
+function sendSyncToGuest(message) {
+    // Host kendi ekranını günceller
+    renderMapState();
+    updateExpansionStatus();
+    if(message) showStatus(message);
+
+    // Guest'e TERTEMİZ veri gönderir
+    const cleanData = JSON.parse(JSON.stringify(players));
+    
+    conn.send({ 
+        type: 'UPDATE_MAP', 
+        players: cleanData, 
+        queue: turnQueue, // Sırayı da gönderiyoruz
+        msg: message 
+    });
+}
+
+// 2. Hatalı işlemde çalışır: Sadece uyarı yollar (Haritayı bozmaz)
+function sendWarning(targetPlayer, text) {
+    if(targetPlayer === 'p1') {
+        showStatus(text); // Host kendine gösterir
+    } else {
+        // Guest'e sadece uyarı mesajı ve GÜNCEL harita verisi yollarız
+        // Böylece Guest yanlış tıkladığında haritası da düzelir
+        const cleanData = JSON.parse(JSON.stringify(players));
+        conn.send({ 
+            type: 'UPDATE_MAP', 
+            players: cleanData, 
+            msg: text 
+        });
+    }
+}
 </script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
