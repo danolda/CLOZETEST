@@ -6158,52 +6158,78 @@ function renderCategorySelection() {
         if(conn.open) conn.send(isHost ? { type: 'INIT', p1Name: players.p1.name } : { type: 'JOIN', p2Name: players.p2.name });
     }
 
-    /* ================= VERİ İŞLEME ================= */
-    function handleData(data) {
-        if(data.type === 'INIT') { players.p1.name = data.p1Name; document.getElementById('lobby-status').innerText = "Bağlandı!"; }
-        else if(data.type === 'START_GAME_DATA') {
-    players = data.players;
-    // Guest oyunu başlatıyor
-    startGameUI(data.questions, data.timer);
-}    
-        else if(data.type === 'JOIN') { players.p2.name = data.p2Name; goToSetup(); }
-        else if(data.type === 'START_GAME') { players = data.players; startGameUI(); if(isHost) setTimeout(startNewTurn, 1000); }
-        else if(data.type === 'UPDATE_MAP') { 
-            // Veriyi al
-            players = data.players; 
-            
-            // Mesaj varsa göster
-            if(data.msg) showStatus(data.msg);
-        
-            // TELEFON İÇİN DÜZELTME:
-            // Tarayıcıya "Çizim yap" emri veriyoruz.
-            // requestAnimationFrame mobildeki frame atlamalarını engeller.
-            window.requestAnimationFrame(function() {
-                renderMapState();
-                // Bazı telefonlarda DOM hemen güncellenmez, 50ms sonra tekrar tetikle (Garanti olsun)
-                setTimeout(renderMapState, 50);
-            });
-            
-            if(data.gameOver) return endGame(data.winner, data.reason, data.scores);
-        
-            if(isHost) checkTurnProgress(); 
-            if(isHost && gameState === "BASE_SELECT") checkGameStart();
-        }
-                   
-        else if(data.type === 'NEW_TURN') { currentTurn = data.turnIndex; showQuestion(data.question); }
-        else if(data.type === 'OPPONENT_ANSWER') { if(isHost) resolveTurn(data.ans, data.time); }
-        else if(data.type === 'TURN_RESULT') { handleTurnResult(data); }
-        else if(data.type === 'QUEUE_UPDATE') { 
-            turnQueue = data.queue; 
-            updateExpansionStatus(); 
-        }
-            // --- YENİ EKLENECEK KISIM ---
-        else if(data.type === 'CLAIM_REQUEST') {
-            // Sadece Host bu isteği işler
-            if (isHost) processClaim(data.plate, 'p2');
-        }
-        else if(data.type === 'GAME_OVER') { endGame(data.winner, data.reason, data.scores); }
+/* ================= VERİ İŞLEME (GÜNCELLENMİŞ) ================= */
+function handleData(data) {
+    if(data.type === 'INIT') { 
+        players.p1.name = data.p1Name; 
+        document.getElementById('lobby-status').innerText = "Bağlandı!"; 
     }
+    else if(data.type === 'START_GAME_DATA') {
+        players = data.players;
+        startGameUI(data.questions, data.timer);
+    }    
+    else if(data.type === 'JOIN') { 
+        players.p2.name = data.p2Name; 
+        goToSetup(); 
+    }
+    else if(data.type === 'START_GAME') { 
+        players = data.players; 
+        startGameUI(); 
+        if(isHost) setTimeout(startNewTurn, 1000); 
+    }
+    
+    // --- YENİ EKLENEN KISIM: FULL SYNC (Fetihler İçin) ---
+    else if(data.type === 'FULL_SYNC') {
+        players = data.players;
+        turnQueue = data.queue; // Sırayı da güncelle
+        
+        if(data.msg) showStatus(data.msg);
+        
+        // Haritayı zorla çizdir
+        window.requestAnimationFrame(function() {
+            renderMapState();
+        });
+        
+        updateExpansionStatus();
+    }
+    // -----------------------------------------------------
+
+    else if(data.type === 'UPDATE_MAP') { 
+        players = data.players; 
+        if(data.msg) showStatus(data.msg);
+    
+        window.requestAnimationFrame(function() {
+            renderMapState();
+        });
+        
+        if(data.gameOver) return endGame(data.winner, data.reason, data.scores);
+        if(isHost) checkTurnProgress(); 
+        if(isHost && gameState === "BASE_SELECT") checkGameStart();
+    }
+    else if(data.type === 'STATUS_MSG') { // Sadece mesaj göstermek için
+        showStatus(data.msg);
+    }
+    else if(data.type === 'NEW_TURN') { 
+        currentTurn = data.turnIndex; 
+        showQuestion(data.question); 
+    }
+    else if(data.type === 'OPPONENT_ANSWER') { 
+        if(isHost) resolveTurn(data.ans, data.time); 
+    }
+    else if(data.type === 'TURN_RESULT') { 
+        handleTurnResult(data); 
+    }
+    else if(data.type === 'QUEUE_UPDATE') { 
+        turnQueue = data.queue; 
+        updateExpansionStatus(); 
+    }
+    else if(data.type === 'CLAIM_REQUEST') {
+        if (isHost) processClaim(data.plate, 'p2');
+    }
+    else if(data.type === 'GAME_OVER') { 
+        endGame(data.winner, data.reason, data.scores); 
+    }
+}
 
     /* ================= OYUN MANTIĞI ================= */
     function goToSetup() { document.getElementById('screen-lobby').classList.add('d-none'); document.getElementById('screen-setup').classList.remove('d-none'); }
@@ -6471,26 +6497,24 @@ function claimCity(plate) {
         }
     }
 
-   // --- GELİŞMİŞ FETİH MANTIĞI (HOST) ---
+// --- GELİŞMİŞ FETİH MANTIĞI (DÜZELTİLMİŞ) ---
 function processClaim(plateInput, playerKey) {
-    const plate = parseInt(plateInput); // Kesinlikle sayıya çevir
+    const plate = parseInt(plateInput);
     const oppKey = playerKey === 'p1' ? 'p2' : 'p1';
     
-    // 1. Sıra Kontrolü
+    // 1. Sıra ve Kilit Kontrolü
     if (turnQueue.length === 0 || turnQueue[0] !== playerKey) return;
-
-    // 2. Tur İçi Kilit Kontrolü
     if (turnLockedCities.includes(plate)) {
         const warning = "Bu şehir bu tur işlem gördü! Başka yer seç.";
-        if(playerKey === 'p2') conn.send({ type: 'UPDATE_MAP', players: players, msg: warning });
+        if(playerKey === 'p2') conn.send({ type: 'STATUS_MSG', msg: warning });
         else showStatus(warning);
         return;
     }
 
-    // 3. Komşuluk Kontrolü
+    // 2. Komşuluk Kontrolü
     if (!isAdjacent(plate, players[playerKey].cities)) {
         const warning = "Sadece sınır komşusu illeri alabilirsin!";
-        if(playerKey === 'p2') conn.send({ type: 'UPDATE_MAP', players: players, msg: warning });
+        if(playerKey === 'p2') conn.send({ type: 'STATUS_MSG', msg: warning });
         else showStatus(warning);
         return;
     }
@@ -6499,21 +6523,21 @@ function processClaim(plateInput, playerKey) {
     let actionSuccess = false;
     let rightsConsumed = 1;
 
-    // KALE SALDIRISI KONTROLÜ
+    // KALE SALDIRISI ve FETİH MANTIĞI
     const oppBase = parseInt(players[oppKey].base);
     
-    // A) KALE SALDIRISI
-    if (oppBase === plate) {
+    if (oppBase === plate) { // KALE SALDIRISI
         const playerRights = turnQueue.filter(p => p === playerKey).length;
         if (playerRights < 2) {
             const warnMsg = "Kale saldırısı için 2 HAK gerekli!";
-            if(playerKey === 'p2') conn.send({ type: 'UPDATE_MAP', players: players, msg: warnMsg });
+            if(playerKey === 'p2') conn.send({ type: 'STATUS_MSG', msg: warnMsg });
             else showStatus(warnMsg);
             return;
         }
         players[oppKey].hp -= 1;
         rightsConsumed = 2;
         msg = `⚔️ KALE SALDIRISI! ${players[oppKey].name} hasar aldı!`;
+        
         if (players[oppKey].hp <= 0) {
             players[playerKey].score += 1000;
             calculateFinalWinner("Kale Fethi");
@@ -6521,9 +6545,7 @@ function processClaim(plateInput, playerKey) {
         }
         actionSuccess = true;
     }
-    // B) TOPRAK ÇALMA
-    // includes kontrolünde map/some kullanarak tip güvenliği sağla
-    else if (players[oppKey].cities.some(c => parseInt(c) === plate)) {
+    else if (players[oppKey].cities.some(c => parseInt(c) === plate)) { // TOPRAK ÇALMA
         players[oppKey].cities = players[oppKey].cities.filter(c => parseInt(c) !== plate);
         players[oppKey].score -= 150;
         players[playerKey].cities.push(plate);
@@ -6531,9 +6553,7 @@ function processClaim(plateInput, playerKey) {
         msg = `🔥 ${players[playerKey].name} toprak ÇALDI!`;
         actionSuccess = true;
     }
-    // C) NORMAL FETİH
-    else {
-        // Zaten alınmış mı kontrolü (Kendi şehrini tekrar alamasın)
+    else { // NORMAL FETİH
         const alreadyOwns = players[playerKey].cities.some(c => parseInt(c) === plate);
         if(!alreadyOwns) {
             players[playerKey].cities.push(plate);
@@ -6551,18 +6571,23 @@ function processClaim(plateInput, playerKey) {
             if (extraIndex > -1) turnQueue.splice(extraIndex, 1);
         }
 
-        // --- DÜZELTME: Veriyi temizleyip gönder ---
-        // Referans hatalarını önlemek için objeyi klonla
+        // --- DÜZELTME: TEK PAKET GÖNDERİMİ ---
         const cleanPlayers = JSON.parse(JSON.stringify(players));
         
+        // Host Kendi Ekranını Günceller
         renderMapState();
-        conn.send({ type: 'UPDATE_MAP', players: cleanPlayers, msg: msg });
-        conn.send({ type: 'QUEUE_UPDATE', queue: turnQueue });
-        
         updateExpansionStatus();
         if(msg) showStatus(msg);
 
-        // Bitiş Kontrolü: 81 İl
+        // Guest'e TEK SEFERDE Tüm Veriyi Gönder
+        conn.send({ 
+            type: 'FULL_SYNC', 
+            players: cleanPlayers, 
+            queue: turnQueue,
+            msg: msg 
+        });
+
+        // Bitiş Kontrolü
         const totalOwned = players.p1.cities.length + players.p2.cities.length;
         if (totalOwned >= 81) {
             calculateFinalWinner("Tüm İller Fethedildi!");
@@ -6628,21 +6653,23 @@ async function loadSvgMap() {
     });
 }
 
-        // --- HARİTA BOYAMA (GÜVENLİ VERSİYON) ---
+          // --- HARİTA BOYAMA (GÜÇLENDİRİLMİŞ) ---
         function renderMapState() {
-            // 1. Temizlik
-            document.querySelectorAll('path').forEach(p => {
-                p.classList.remove('owned-p1', 'owned-p2');
+            // 1. Temizlik: Tüm sahiplik sınıflarını kaldır
+            const allPaths = document.querySelectorAll('path');
+            allPaths.forEach(p => {
+                p.setAttribute('class', ''); // Tüm class'ları sil (owned-p1, owned-p2 vs.)
             });
             
+            // İkon katmanını temizle
             const iconLayer = document.getElementById('icon-layer');
             if(iconLayer) iconLayer.innerHTML = '';
         
-            // 2. Boyama (Veri yoksa hata verme)
-            if (players && players.p1 && players.p1.cities) {
+            // 2. Boyama (Veri kontrolü ile)
+            if (players && players.p1 && Array.isArray(players.p1.cities)) {
                 players.p1.cities.forEach(c => markCity(c, 'p1'));
             }
-            if (players && players.p2 && players.p2.cities) {
+            if (players && players.p2 && Array.isArray(players.p2.cities)) {
                 players.p2.cities.forEach(c => markCity(c, 'p2'));
             }
         
