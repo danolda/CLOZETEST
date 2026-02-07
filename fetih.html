@@ -5918,53 +5918,98 @@ const sections = [
 let allQuestions = [];
 let gameQuestions = []; // Seçilen ve karıştırılan oyun soruları
 
-// Sayfa Yüklendiğinde Verileri Hazırla
+// Sayfa Yüklendiğinde
 window.onload = function() {
     loadAllData();
-    // Eğer Host ise Setup ekranını doldur
-    renderCategorySelection();
+    renderCategorySelection(); // Kategori listesini doldur
 };
 
+// --- KRİTİK FONKSİYON: VERİLERİ YÜKLEME ---
 function loadAllData() {
     allQuestions = [];
-    // Index.html'deki parseRawData fonksiyonunun aynısı (Kısaltılmış)
-    if(typeof rawQuestionsText !== 'undefined') allQuestions = allQuestions.concat(parseRawData(rawQuestionsText, 0));
-    if(typeof rawExamPrepQ !== 'undefined') allQuestions = allQuestions.concat(parseRawData(rawExamPrepQ, 3000));
-    if(typeof rawExamConjQ !== 'undefined') allQuestions = allQuestions.concat(parseRawData(rawExamConjQ, 3200));
-    // ... Diğerleri de buraya eklenecek
+
+    // 1. ADIM: İLK 250 SORUYU (GRUP A) TEK SEFERDE YÜKLE
+    // Bu fonksiyon 1'den 250'ye kadar tüm soruları "rawQuestionsText" içinden ayıklayacak
+    if(typeof rawQuestionsText !== 'undefined' && typeof rawAnswersText !== 'undefined') {
+        // Offset 0 çünkü sorular 1'den başlıyor
+        const mixedQuestions = parseRawData(rawQuestionsText, rawAnswersText, 0);
+        allQuestions = allQuestions.concat(mixedQuestions);
+    }
+
+    // 2. ADIM: ÇIKMIŞ SORULARI (GRUP B) AYRI AYRI EKLE
+    if(typeof rawExamPrepQ !== 'undefined' && typeof rawExamPrepA !== 'undefined') {
+        allQuestions = allQuestions.concat(parseRawData(rawExamPrepQ, rawExamPrepA, 3000));
+    }
+    if(typeof rawExamConjQ !== 'undefined' && typeof rawExamConjA !== 'undefined') {
+        allQuestions = allQuestions.concat(parseRawData(rawExamConjQ, rawExamConjA, 3200));
+    }
+    if(typeof rawExamTenseQ !== 'undefined' && typeof rawExamTenseA !== 'undefined') {
+        allQuestions = allQuestions.concat(parseRawData(rawExamTenseQ, rawExamTenseA, 3500));
+    }
+    if(typeof rawExamVocabQ !== 'undefined' && typeof rawExamVocabA !== 'undefined') {
+        allQuestions = allQuestions.concat(parseRawData(rawExamVocabQ, rawExamVocabA, 3800));
+    }
 }
 
-function parseRawData(text, offset) {
-    const parsed = [];
-    const lines = text.split('\n');
+// --- PARSE FONKSİYONU (HEPSİ İÇİN ORTAK) ---
+function parseRawData(qText, aText, offset) {
+    const questions = [];
+    const answerMap = {};
+    
+    // 1. Cevapları Haritala (1:A, 2:B gibi)
+    const ansRegex = /(\d+)\s*[:\-\u2013]\s*([A-E])/g; 
+    let match;
+    while ((match = ansRegex.exec(aText)) !== null) {
+        answerMap[match[1]] = match[2];
+    }
+
+    const lines = qText.split('\n');
     let currentQ = null;
     
-    // Basit Parsing Mantığı (Index.html'den uyarlandı)
+    // 2. Satır Satır Oku
     lines.forEach(line => {
         line = line.trim();
-        if(!line) return;
-        
+        if (!line) return;
+
+        // Soru Başlangıcını Yakala (Örn: "1) ...", "350. ...")
         if (/^\d+[\.\)\-]/.test(line)) {
-            if(currentQ && currentQ.correct) parsed.push(currentQ);
-            currentQ = { text: line.replace(/^\d+[\.\)\-]\s*/, ''), opts: {}, correct: null, id: offset++ };
-        } else if (currentQ) {
-            if(line.startsWith('A)')) currentQ.opts.A = line.substring(2).trim();
-            else if(line.startsWith('B)')) currentQ.opts.B = line.substring(2).trim();
-            else if(line.startsWith('C)')) currentQ.opts.C = line.substring(2).trim();
-            else if(line.startsWith('D)')) currentQ.opts.D = line.substring(2).trim();
-            else if(line.startsWith('E)')) currentQ.opts.E = line.substring(2).trim();
-            
-            // Cevap Anahtarını Bulma (Index.html'de cevaplar ayrıydı, burada basitlik için satır sonuna bakabiliriz veya ayrı string parse edebiliriz. 
-            // NOT: Fetih için parse mantığını basitleştirdim, Index.html'deki gibi 'rawAnswersText' varsa onu da kullanabilirsiniz.
-            // Şimdilik örnek olması için cevapları manuel parse ettiğinizi varsayıyorum veya
-            // Index.html'deki 'parseRawData' fonksiyonunun TAMAMINI buraya kopyalayın.)
+            // Önceki soruyu kaydet
+            if (currentQ) { 
+                currentQ.correctAnswer = answerMap[currentQ.localId]; // Cevabı eşleştir
+                if(currentQ.correctAnswer) questions.push(currentQ);
+            }
+
+            const qNum = parseInt(line.match(/^\d+/)[0]);
+            currentQ = { 
+                localId: qNum, 
+                id: offset + qNum, // ID Çakışmasını önlemek için offset ekle
+                text: line.replace(/^\d+[\.\)\-]\s*/, '').trim(), 
+                opts: {}
+            };
+        } 
+        else if (currentQ) {
+            // Şıkları Yakala
+            if (line.startsWith('A)')) currentQ.opts.A = line.substring(2).trim();
+            else if (line.startsWith('B)')) currentQ.opts.B = line.substring(2).trim();
+            else if (line.startsWith('C)')) currentQ.opts.C = line.substring(2).trim();
+            else if (line.startsWith('D)')) currentQ.opts.D = line.substring(2).trim();
+            else if (line.startsWith('E)')) currentQ.opts.E = line.substring(2).trim();
+            // TIP (İpucu) veya Section başlıklarını sorunun içine alma
+            else if (!line.startsWith('TIP:') && !line.startsWith('Section:')) {
+                currentQ.text += " " + line;
+            }
         }
     });
-    // Son soruyu ekle
-    if(currentQ) parsed.push(currentQ);
-    return parsed;
-}
 
+    // Döngü bitince son soruyu da ekle
+    if (currentQ) {
+        currentQ.correctAnswer = answerMap[currentQ.localId];
+        if(currentQ.correctAnswer) questions.push(currentQ);
+    }
+
+    return questions;
+}
+    
 // Kategori Listesini Ekrana Bas (Setup Ekranı İçin)
 function renderCategorySelection() {
     const list = document.getElementById('vs-cat-list');
