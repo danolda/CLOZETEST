@@ -6586,105 +6586,80 @@ function processClaim(plate, playerKey) {
         if(isHost) checkTurnProgress();
     }
 
-    /* ================= HARİTA ================= */
-    async function loadSvgMap() {
-        const wrapper = document.getElementById('map-container');
-        const resp = await fetch(SVG_URL);
-        wrapper.innerHTML = await resp.text();
-        const svg = wrapper.querySelector('svg');
-        svg.removeAttribute('width'); svg.removeAttribute('height'); svg.style.width='100%'; svg.style.height='100%';
-        const grp = document.createElementNS("http://www.w3.org/2000/svg", "g"); grp.id = "icon-layer"; svg.appendChild(grp);
+    /* ================= HARİTA YÜKLEME (ORİJİNAL - TEMİZLİK ODAKLI) ================= */
+async function loadSvgMap() {
+    const wrapper = document.getElementById('map-container');
+    const resp = await fetch(SVG_URL);
+    wrapper.innerHTML = await resp.text();
+    
+    const svg = wrapper.querySelector('svg');
+    svg.removeAttribute('width'); 
+    svg.removeAttribute('height'); 
+    svg.style.width='100%'; 
+    svg.style.height='100%';
+    
+    // İkon katmanı oluştur
+    const grp = document.createElementNS("http://www.w3.org/2000/svg", "g"); 
+    grp.id = "icon-layer"; 
+    svg.appendChild(grp);
 
-        // loadSvgMap içindeki döngü kısmı:
-        svg.querySelectorAll('path').forEach(p => {
-            let id = p.getAttribute('id') || p.parentElement.getAttribute('id');
-            if(id && id.startsWith('TR')) {
-                const pl = parseInt(id.replace('TR',''));
-                p.setAttribute('id', `city-${pl}`); 
-                
-                // --- BU KISIM ÖNEMLİ: TÜM RENKLERİ SİL ---
-                p.removeAttribute('fill'); 
-                p.removeAttribute('style'); 
-                p.setAttribute('fill', '#ecf0f1'); // Varsayılan nötr renk ata
-                // -----------------------------------------
+    svg.querySelectorAll('path').forEach(p => {
+        let id = p.getAttribute('id') || p.parentElement.getAttribute('id');
         
-                p.onclick = (e) => { e.stopPropagation(); onCityClick(pl); };
-            }
-        });
-    }
-/* ================= HARİTA GÜNCELLEME (MOBİL UYUMLU) ================= */
+        if(id && id.startsWith('TR')) {
+            const pl = parseInt(id.replace('TR','')); // TR01 -> 1
+            p.setAttribute('id', `city-${pl}`); 
+            
+            // --- KRİTİK NOKTA: MOBİLDE ÇALIŞMASI İÇİN STİLLERİ SİL ---
+            p.removeAttribute('fill'); 
+            p.removeAttribute('style'); 
+            // ---------------------------------------------------------
+            
+            p.onclick = (e) => { e.stopPropagation(); onCityClick(pl); };
+        }
+    });
+}
 
-/* ================= HARİTA GÜNCELLEME (TELEFON İÇİN ZORLANMIŞ BOYAMA) ================= */
-
+/* ================= HARİTA BOYAMA (ORİJİNAL MANTIK) ================= */
 function renderMapState() {
-    // Harita konteyneri var mı kontrol et
-    const mapContainer = document.getElementById('map-container');
-    if (!mapContainer || mapContainer.innerHTML.trim() === "") return;
-
-    // İkon katmanını temizle
+    // 1. Önce haritadaki tüm 'sahipli' sınıflarını temizle
+    document.querySelectorAll('path').forEach(p => {
+        p.classList.remove('owned-p1', 'owned-p2');
+    });
+    
+    // 2. İkon katmanını temizle
     const iconLayer = document.getElementById('icon-layer');
     if(iconLayer) iconLayer.innerHTML = '';
 
-    // MOBİL İÇİN KRİTİK DÖNGÜ: 1'den 81'e kadar tüm plakaları tek tek kontrol et
-    for (let i = 1; i <= 81; i++) {
-        const el = document.getElementById(`city-${i}`);
-        if (!el) continue;
+    // 3. Mavi Takımın Şehirlerini Boya
+    if (players.p1 && players.p1.cities) {
+        players.p1.cities.forEach(c => markCity(c, 'p1'));
+    }
 
-        // 1. Şehrin sahibini belirle
-        let owner = null;
-        // Gelen veriyi güvenli hale getir (Type-safety)
-        // Hem sayı hem string olarak kontrol ediyoruz (6 veya "6")
-        if (players.p1.cities.some(c => parseInt(c) === i)) owner = 'p1';
-        else if (players.p2.cities.some(c => parseInt(c) === i)) owner = 'p2';
-
-        // 2. Önceki tüm stil ve sınıfları TEMİZLE (Reset)
-        el.classList.remove('owned-p1', 'owned-p2');
-        el.style.fill = ""; 
-        el.style.stroke = "";
-        el.style.strokeWidth = "";
-
-        // 3. Sahibine göre ZORLA boya (Inline Style - En garantisi)
-        if (owner === 'p1') {
-            el.classList.add('owned-p1');
-            el.style.fill = "#3498db"; // Mavi (CSS değişkeni yerine hex kodu)
-            el.style.stroke = "#ffffff";
-        } 
-        else if (owner === 'p2') {
-            el.classList.add('owned-p2');
-            el.style.fill = "#e74c3c"; // Kırmızı (CSS değişkeni yerine hex kodu)
-            el.style.stroke = "#ffffff";
-        } else {
-            // Sahipsiz ise varsayılan renk
-            el.style.fill = "#ecf0f1"; 
-        }
-
-        // 4. İkon var mı? (Kale veya Asker)
-        drawCityIcon(i, owner);
+    // 4. Kırmızı Takımın Şehirlerini Boya
+    if (players.p2 && players.p2.cities) {
+        players.p2.cities.forEach(c => markCity(c, 'p2'));
     }
 
     updateScoreboard();
 }
 
-// İkon Çizme Yardımcısı (markCity yerine bunu kullanacağız)
-function drawCityIcon(cityId, owner) {
-    if (!owner) return; // Sahipsizse ikon yok
-
-    const p1Base = parseInt(players.p1.base);
-    const p2Base = parseInt(players.p2.base);
+/* ================= TEKİL ŞEHİR İŞARETLEME ================= */
+function markCity(c, pid) {
+    // Gelen veriyi sayıya çevir (Veri tipi hatasını önlemek için)
+    const cityId = parseInt(c); 
+    const el = document.getElementById(`city-${cityId}`);
     
-    let iconUrl = null;
-
-    // Kale mi?
-    if (cityId === p1Base || cityId === p2Base) {
-        iconUrl = ICONS.CASTLE;
-    } 
-    // Yoksa Asker mi?
-    else {
-        iconUrl = (owner === 'p1') ? ICONS.HOST_SOLDIER : ICONS.GUEST_SOLDIER;
-    }
-
-    if (iconUrl) {
-        drawIcon(cityId, iconUrl); // Mevcut drawIcon fonksiyonunu çağır
+    if(el) {
+        // Sadece Class ekle (Style ile zorlama yapma)
+        el.classList.add(pid === 'p1' ? 'owned-p1' : 'owned-p2');
+        
+        // İkon İşlemleri
+        const baseId = parseInt(players[pid].base);
+        const isBase = (baseId === cityId);
+        
+        const icon = isBase ? ICONS.CASTLE : (pid === 'p1' ? ICONS.HOST_SOLDIER : ICONS.GUEST_SOLDIER);
+        drawIcon(cityId, icon);
     }
 }
 
