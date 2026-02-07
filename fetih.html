@@ -6628,26 +6628,61 @@ async function loadSvgMap() {
     });
 }
 
-        // --- HARİTA BOYAMA (GÜVENLİ VERSİYON) ---
-        function renderMapState() {
-            // 1. Temizlik
-            document.querySelectorAll('path').forEach(p => {
-                p.classList.remove('owned-p1', 'owned-p2');
-            });
-            
-            const iconLayer = document.getElementById('icon-layer');
-            if(iconLayer) iconLayer.innerHTML = '';
-        
-            // 2. Boyama (Veri yoksa hata verme)
-            if (players && players.p1 && players.p1.cities) {
-                players.p1.cities.forEach(c => markCity(c, 'p1'));
-            }
-            if (players && players.p2 && players.p2.cities) {
-                players.p2.cities.forEach(c => markCity(c, 'p2'));
-            }
-        
-            updateScoreboard();
-        }
+        // --- HARİTA BOYAMA (GARANTİLİ BASİT SÜRÜM) ---
+function renderMapState() {
+    // 1. Önce tüm haritayı temizle (Gri yap)
+    document.querySelectorAll('path').forEach(p => {
+        p.setAttribute('class', ''); // Sınıfları sil
+        p.style.fill = '#ecf0f1';    // Varsayılan gri renk
+        p.style.stroke = '#95a5a6';  // Varsayılan kenarlık
+    });
+
+    const iconLayer = document.getElementById('icon-layer');
+    if(iconLayer) iconLayer.innerHTML = '';
+
+    // 2. Mavi Oyuncunun (P1) Şehirlerini Boya
+    if (players && players.p1 && players.p1.cities) {
+        players.p1.cities.forEach(cityId => {
+            forcePaintCity(cityId, '#3498db'); // MAVİ
+            // İkon koy
+            if(parseInt(cityId) == parseInt(players.p1.base)) drawIcon(cityId, ICONS.CASTLE);
+            else drawIcon(cityId, ICONS.HOST_SOLDIER);
+        });
+    }
+
+    // 3. Kırmızı Oyuncunun (P2) Şehirlerini Boya
+    if (players && players.p2 && players.p2.cities) {
+        players.p2.cities.forEach(cityId => {
+            forcePaintCity(cityId, '#e74c3c'); // KIRMIZI
+            // İkon koy
+            if(parseInt(cityId) == parseInt(players.p2.base)) drawIcon(cityId, ICONS.CASTLE);
+            else drawIcon(cityId, ICONS.GUEST_SOLDIER);
+        });
+    }
+
+    updateScoreboard();
+}
+    // --- ZORLA BOYAMA FONKSİYONU ---
+function forcePaintCity(id, color) {
+    // Gelen ID'yi temizle (Sayıya çevir) -> Örn: "06" ise 6 olur.
+    let cleanId = parseInt(id);
+    
+    // Haritada bu ID'ye sahip elemanı bulmaya çalış
+    // Hem "city-6" hem "TR06" hem de direkt "6" ihtimallerini dene
+    let el = document.getElementById(`city-${cleanId}`) || 
+             document.getElementById(`city-0${cleanId}`) || 
+             document.getElementById(`TR${cleanId}`) ||
+             document.getElementById(`TR0${cleanId}`);
+
+    if (el) {
+        el.style.fill = color;       // Rengi zorla ata
+        el.style.stroke = '#ffffff'; // Kenarlığı beyaz yap
+        // CSS sınıfı da ekle (garanti olsun)
+        el.setAttribute('class', color === '#3498db' ? 'owned-p1' : 'owned-p2');
+    } else {
+        console.log("Şehir bulunamadı, ID:", id); // Hata varsa konsolda görelim
+    }
+}
         
         function markCity(c, pid) {
             // GELEN VERİYİ ZORLA SAYIYA ÇEVİR
