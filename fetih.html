@@ -6166,13 +6166,21 @@ function renderCategorySelection() {
         else if(data.type === 'JOIN') { players.p2.name = data.p2Name; goToSetup(); }
         else if(data.type === 'START_GAME') { players = data.players; startGameUI(); if(isHost) setTimeout(startNewTurn, 1000); }
         else if(data.type === 'UPDATE_MAP') { 
+            // 1. Veriyi Global Değişkene Ata
             players = data.players; 
-            renderMapState(); 
+            
+            // 2. Haritayı Boya (Mobilde çizimi garantiye al)
+            // requestAnimationFrame: Tarayıcının bir sonraki kareyi çizmesini bekler,
+            // bu sayede donma olmadan akıcı güncelleme yapar.
+            requestAnimationFrame(() => {
+                renderMapState();
+            });
+        
             if(data.msg) showStatus(data.msg);
             
-            // Eğer oyun BİTTİYSE (Can 0 olduysa)
+            // Oyun Bitti mi?
             if(data.gameOver) return endGame(data.winner, data.reason, data.scores);
-
+        
             if(isHost) checkTurnProgress(); 
             if(isHost && gameState === "BASE_SELECT") checkGameStart();
         }
@@ -6594,21 +6602,31 @@ function processClaim(plate, playerKey) {
             }
         });
     }
+/* ================= HARİTA GÜNCELLEME (MOBİL UYUMLU) ================= */
 
-// --- HARİTA GÜNCELLEME (DÜZELTİLDİ - TİP GÜVENLİĞİ EKLENDİ) ---
 function renderMapState() {
-    // 1. Önce haritadaki tüm renkleri ve ikonları temizle
-    document.querySelectorAll('path').forEach(p => {
-        p.classList.remove('owned-p1', 'owned-p2');
-    });
-    document.getElementById('icon-layer').innerHTML = '';
+    // Harita yüklenmemişse işlemi durdur (Hata vermesin)
+    const mapContainer = document.getElementById('map-container');
+    if (!mapContainer || mapContainer.innerHTML.trim() === "") return;
 
-    // 2. Mavi Takımın Şehirlerini Boya
+    // 1. Tüm renkleri temizle
+    document.querySelectorAll('path').forEach(p => {
+        // Class'ı sil
+        p.classList.remove('owned-p1', 'owned-p2');
+        // Mobilde bazen style kalıntısı kalır, onu da temizle
+        p.style.fill = ""; 
+    });
+
+    // İkon katmanını temizle
+    const iconLayer = document.getElementById('icon-layer');
+    if(iconLayer) iconLayer.innerHTML = '';
+
+    // 2. Mavi Takımı Boya
     if (players.p1 && players.p1.cities) {
         players.p1.cities.forEach(c => markCity(c, 'p1'));
     }
 
-    // 3. Kırmızı Takımın Şehirlerini Boya
+    // 3. Kırmızı Takımı Boya
     if (players.p2 && players.p2.cities) {
         players.p2.cities.forEach(c => markCity(c, 'p2'));
     }
@@ -6617,20 +6635,26 @@ function renderMapState() {
 }
 
 function markCity(c, pid) {
-    // Gelen şehir ID'sini kesinlikle sayıya çevir (String '06' gelirse 6 olsun diye)
-    const cityId = parseInt(c); 
+    // Şehir ID'sini sayıya çevir (Veri tipi hatasını önler)
+    const cityId = parseInt(c);
     const el = document.getElementById(`city-${cityId}`);
     
     if(el) {
-        // Rengi boya
-        el.classList.add(pid === 'p1' ? 'owned-p1' : 'owned-p2');
+        // Sınıfı ekle
+        const className = (pid === 'p1' ? 'owned-p1' : 'owned-p2');
+        el.classList.add(className);
         
-        // İkonu koy (Kale mi Asker mi?)
-        // Base kontrolünde de parseInt kullanıyoruz
+        // --- MOBİL İÇİN EKSTRA GÜVENCE ---
+        // Class bazen mobilde hemen algılanmaz, inline style ile zorla:
+        // Bu satır CSS'teki renk değişkenleriyle (var(--p1-color)) eşleşmeli
+        el.style.fill = (pid === 'p1' ? '#85c1e9' : '#ec7063'); 
+        // ---------------------------------
+
+        // İkon İşlemleri
         const baseId = parseInt(players[pid].base);
         const isBase = (baseId === cityId);
-        
         const icon = isBase ? ICONS.CASTLE : (pid === 'p1' ? ICONS.HOST_SOLDIER : ICONS.GUEST_SOLDIER);
+        
         drawIcon(cityId, icon);
     }
 }
