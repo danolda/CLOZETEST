@@ -8530,6 +8530,7 @@ function checkSiegeCombat(attUnit, baseLoc) {
         }
     }
 
+    // 2. KALE HASARI
     players[defender].hp -= attPower;
     showGameToast(`🔥 KALE VURULDU! -${attPower} Hasar (Kalan: ${players[defender].hp})`);
 
@@ -8542,12 +8543,9 @@ function checkSiegeCombat(attUnit, baseLoc) {
             players[attUnit.owner].gold += 2000;
             
             // Botu oyundan sil (Şehirlerini boşa çıkar veya saldıran alsın)
-            // Basitçe: Botun kalesi normal bir şehre dönüşür ve saldıran alır
             players.p3.base = null; // Artık kale değil
             conquerCity(baseLoc, attUnit.owner); // Şehri al
             
-            // Botun kalan şehirlerini sahipsiz yapabiliriz veya bot pasif kalabilir
-            // Bu basit versiyonda botun base'i null olunca recruit yapamaz, elendi sayılır.
         } 
         // Eğer yıkılan kale P1 veya P2 ise oyun biter
         else {
@@ -8557,6 +8555,7 @@ function checkSiegeCombat(attUnit, baseLoc) {
             }, 1000);
         }
     }
+} // <-- SENİN KODUNDA BU PARANTEZ EKSİKTİ
 
 // Basit Fetih Yardımcısı
 function conquerCity(cityId, newOwner) {
