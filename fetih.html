@@ -248,6 +248,8 @@
 </div>
 
 <script>
+ let turnQueue = []; // Sıra kuyruğu
+
 /* ================= GRAMER SORULARI (RAW TEXT) ================= */
     const rawQuestionsText = `
 Section: Prepositions & Collocations (1–70)
@@ -7663,6 +7665,9 @@ function handleData(data) {
             
             renderAll(); 
             break;
+       case 'GUEST_TURN_ENDED': 
+            if(isHost) nextTurnStep(); // Misafir bitirdi, Host sıradakine geçiriyor
+            break;     
         case 'NEW_TURN': showQuestion(data.question, data.turnIndex); break;
         case 'OPPONENT_ANSWER': if(isHost) resolveQuestion(data.ans, data.time); break;
         case 'TURN_RESULT': handleTurnResult(data); break;
@@ -7817,18 +7822,39 @@ function handleTurnResult(data) {
 
 function distributeRewards(p1Ok, p2Ok, t1, t2) {
     let msg = "";
+    
+    // 1. Altın Dağıtımı ve Sıra Belirleme
     if(p1Ok && p2Ok) {
-        if(t1 < t2) { players.p1.gold += 250; players.p2.gold += 200; setTurnOrder('p1'); msg="Mavi Hızlı! (+250)"; }
-        else { players.p2.gold += 250; players.p1.gold += 200; setTurnOrder('p2'); msg="Kırmızı Hızlı! (+250)"; }
+        if(t1 < t2) { 
+            players.p1.gold += 250; players.p2.gold += 200; 
+            turnQueue = ['p1', 'p2']; // Mavi Hızlı -> Önce Mavi, Sonra Kırmızı
+            msg="Mavi Hızlı! (+250)"; 
+        } else { 
+            players.p2.gold += 250; players.p1.gold += 200; 
+            turnQueue = ['p2', 'p1']; // Kırmızı Hızlı -> Önce Kırmızı, Sonra Mavi
+            msg="Kırmızı Hızlı! (+250)"; 
+        }
     } else if(p1Ok) {
-        players.p1.gold += 500; setTurnOrder('p1'); msg="Mavi Bildi! (+500)";
+        players.p1.gold += 500; 
+        turnQueue = ['p1', 'p2']; // Sadece Mavi bildi -> Mavi başlar
+        msg="Mavi Bildi! (+500)";
     } else if(p2Ok) {
-        players.p2.gold += 500; setTurnOrder('p2'); msg="Kırmızı Bildi! (+500)";
+        players.p2.gold += 500; 
+        turnQueue = ['p2', 'p1']; // Sadece Kırmızı bildi -> Kırmızı başlar
+        msg="Kırmızı Bildi! (+500)";
     } else {
+        // Kimse bilemedi, rastgele biri başlar
         const rnd = Math.random() > 0.5 ? 'p1' : 'p2';
-        setTurnOrder(rnd); msg="Kimse bilemedi! Sıra: " + (rnd==='p1'?"Mavi":"Kırmızı");
+        turnQueue = (rnd === 'p1') ? ['p1', 'p2'] : ['p2', 'p1'];
+        msg="Kimse bilemedi! Sıra: " + (rnd==='p1'?"Mavi":"Kırmızı");
     }
+
+    // Hareket haklarını sıfırla (Her iki oyuncu için)
+    units.forEach(u => u.moved = false);
+
+    // İlk sıradaki oyuncuyu başlat
     broadcastState(msg);
+    setTimeout(nextTurnStep, 1500); // Mesaj okunsun diye kısa gecikme
 }
 
 function setTurnOrder(first) {
@@ -7837,27 +7863,43 @@ function setTurnOrder(first) {
     players.p1.active = (first === 'p1');
     players.p2.active = (first === 'p2');
 }
+function nextTurnStep() {
+    // Kuyruk bittiyse (İkisi de oynadıysa) -> TURU BİTİR
+    if (turnQueue.length === 0) {
+        endRoundPhase();
+        return;
+    }
 
+    // Kuyruktan sıradaki oyuncuyu al
+    const nextPlayer = turnQueue.shift(); // 'p1' veya 'p2' çıkar
+    
+    // Durumları güncelle
+    gameState = (nextPlayer === 'p1') ? "ACTION_P1" : "ACTION_P2";
+    players.p1.active = (nextPlayer === 'p1');
+    players.p2.active = (nextPlayer === 'p2');
+
+    // Herkese bildir
+    const name = players[nextPlayer].name;
+    broadcastState(`Sıra ${name}'de! Hamleni yap...`);
+}
 function endMyTurn() {
     const me = isHost ? 'p1' : 'p2';
+    
+    // Eğer sıra bende değilse işlem yapma
     if(!players[me].active) return;
     
-    if(gameState === "ACTION_P1") {
-        gameState = "ACTION_P2"; 
-        players.p1.active = false; 
-        players.p2.active = true;
-        // Host ise direkt yayınla, Değilse sunucuya bildir
-        if(isHost) broadcastState("Sıra Kırmızıda");
-        else conn.send({ type: 'UPDATE_MAP', players, units, gameState, msg: "Sıra Kırmızıda" });
-        
-    } else if(gameState === "ACTION_P2") {
-        // Tur bitti
-        if(isHost) {
-            endRoundPhase(); // Host kendi turunu bitirirse direkt bitirir
-        } else {
-            // Misafir turu bitirirse Host'a "RESOLVE" durumu yollar
-            conn.send({ type: 'UPDATE_MAP', players, units, gameState: "RESOLVE" }); 
-        }
+    // Aktifliği kapat (çift tıklamayı önlemek için)
+    players[me].active = false;
+
+    if (isHost) {
+        // Host ise direkt sıradakine geç
+        nextTurnStep();
+    } else {
+        // Misafir ise Host'a "Ben bitirdim" sinyali gönder
+        conn.send({ type: 'GUEST_TURN_ENDED' });
+        // Kendi ekranında butonu gizle (Host'tan update gelene kadar)
+        document.getElementById('turn-controls').style.display = 'none';
+        showGameToast("Hamle sırası devrediliyor...");
     }
 }
 
