@@ -7712,8 +7712,24 @@ function renderCategorySelection() {
 // =========================================================================
 const SVG_URL = './tr.svg';
 const UNIT_TYPES = {
-    inf: { name: "Piyade", cost: 100, power: 1, speed: 1, iconP1: './hostregularsoldier.svg', iconP2: './questregularsoldier.svg' },
-    cav: { name: "Atlı",   cost: 300, power: 2, speed: 2, iconP1: './hostsoldier.svg',        iconP2: './questsoldier.svg' }
+    inf: { 
+        name: "Piyade", 
+        cost: 100, 
+        power: 1, 
+        speed: 1, 
+        iconP1: './hostregularsoldier.svg', 
+        iconP2: './questregularsoldier.svg', 
+        iconP3: './banditsoldier.svg' // <-- YENİ: Bot, Host ile aynı piyade ikonunu kullanır
+    },
+    cav: { 
+        name: "Atlı",   
+        cost: 300, 
+        power: 2, 
+        speed: 2, 
+        iconP1: './hostsoldier.svg',        
+        iconP2: './questsoldier.svg',
+        iconP3: './banditcavalary.svg'        // <-- YENİ: Bot, Host ile aynı atlı ikonunu kullanır
+    }
 };
 
 // Şehir Komşulukları (SVG haritasından çıkarıldı, düzeltildi)
