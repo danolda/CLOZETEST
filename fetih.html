@@ -7958,60 +7958,137 @@ function moveUnitCommand(uid, target, count) {
     if(uIdx === -1) return;
     const unit = units[uIdx];
     
-    if(unit.moved) return alert("Bu birlik oynadı!");
-    const neighbors = NEIGHBORS[unit.loc] || [];
-    if(!neighbors.includes(parseInt(target))) return alert("Sadece komşu!");
+    // Hareket hakkı kontrolü
+    if(unit.moved) return alert("Bu birlik bu tur zaten hareket etti!");
+    
+    // YENİ: Menzil Kontrolü (Piyade 1, Atlı 2)
+    const validTargets = getReachableCities(unit.loc, unit.type);
+    if(!validTargets.includes(parseInt(target))) {
+        const msg = (unit.type === 'cav') ? "Atlılar en fazla 2 şehir uzağa gidebilir!" : "Piyadeler sadece komşu şehre gidebilir!";
+        return alert(msg);
+    }
+    
+    // Hareket İşlemi (Bölme veya Tam Taşıma)
+    let movingUnit = unit;
     
     if(count < unit.count) {
-        units.push({ id: unitIdCounter++, owner: unit.owner, type: unit.type, loc: parseInt(target), count, moved: true });
-        unit.count -= count;
-        checkCombat(units[units.length-1]);
+        // Birliği böl, yenisi hareket eder
+        const newUnit = { 
+            id: unitIdCounter++, 
+            owner: unit.owner, 
+            type: unit.type, 
+            loc: parseInt(target), 
+            count: count, 
+            moved: true 
+        };
+        units.push(newUnit);
+        unit.count -= count; // Eskisi azalır
+        movingUnit = newUnit; // Savaşacak olan yeni birlik
     } else {
+        // Hepsini taşı
         unit.loc = parseInt(target);
         unit.moved = true;
-        checkCombat(unit);
     }
+    
+    // Gittiği yerde savaş var mı kontrol et
+    checkCombat(movingUnit);
+    
+    // Aynı şehirdeki dost birlikleri birleştir
     mergeUnits(parseInt(target), unit.owner);
+    
+    // Güncelleme gönder
     if(isHost) broadcastState();
     else conn.send({ type: 'UPDATE_MAP', players, units, gameState });
 }
 
 function checkCombat(attUnit) {
-    // Basitleştirilmiş Savaş
-    const opp = (attUnit.owner === 'p1') ? 'p2' : 'p1';
+    const attacker = attUnit.owner;
+    const defender = (attacker === 'p1') ? 'p2' : 'p1';
+    const loc = attUnit.loc;
+
+    // Şehirdeki Düşman Askerlerini Bul
+    const enemyUnits = units.filter(u => u.loc === loc && u.owner === defender);
     
-    // Kale Vurma
-    if(parseInt(players[opp].base) === attUnit.loc) {
-        const dmg = attUnit.count * (attUnit.type==='cav'?2:1);
-        players[opp].hp -= dmg;
-        if(players[opp].hp <= 0) alert("OYUN BİTTİ! " + attUnit.owner + " KAZANDI");
-    }
+    // Saldırı Gücünü Hesapla (Atlı:2, Piyade:1)
+    let attPower = attUnit.count * (attUnit.type === 'cav' ? 2 : 1);
     
-    // Asker Savaşı
-    const enemies = units.filter(u => u.loc === attUnit.loc && u.owner === opp);
-    if(enemies.length === 0) {
-        // Fetih
-        if(!players[attUnit.owner].cities.includes(attUnit.loc)) {
-            players[attUnit.owner].cities.push(attUnit.loc);
-            if(players[opp].cities.includes(attUnit.loc) && players[opp].base != attUnit.loc) {
-                players[opp].cities = players[opp].cities.filter(c => c !== attUnit.loc);
+    // Savunma Gücünü Hesapla
+    let defPower = enemyUnits.reduce((sum, u) => sum + (u.count * (u.type === 'cav' ? 2 : 1)), 0);
+
+    // --- 1. AŞAMA: ASKERLER SAVAŞIYOR ---
+    if (defPower > 0) {
+        if (attPower > defPower) {
+            // SALDIRAN KAZANDI (Askerleri yendi)
+            // Düşman askerleri silinir
+            units = units.filter(u => !(u.loc === loc && u.owner === defender));
+            
+            // Saldıranın gücü azalır (Kalan Güç = Saldıran - Savunan)
+            let remainingPower = attPower - defPower;
+            
+            // Kalan gücü asker sayısına çevir (Yukarı yuvarla)
+            const unitPower = (attUnit.type === 'cav' ? 2 : 1);
+            attUnit.count = Math.ceil(remainingPower / unitPower);
+            
+            // Güncel güç ile devam et
+            attPower = remainingPower; 
+            
+        } else {
+            // SAVUNAN KAZANDI VEYA BERABERE
+            // Saldıran birlik tamamen yok olur
+            units = units.filter(u => u.id !== attUnit.id);
+            
+            // Savunanın kaybını hesapla
+            let remainingDefPower = defPower - attPower;
+            
+            if (remainingDefPower <= 0) {
+                // Berabere: Savunan askerleri de ölür
+                units = units.filter(u => !(u.loc === loc && u.owner === defender));
+                // AMA ŞEHİR SAVUNANDA KALIR (Fetih yok)
+            } else {
+                // Savunanın askerlerini azalt (Basitleştirilmiş: İlk birlikten düş)
+                // Birden fazla birlik varsa dağıtmak karmaşık olur, şimdilik ilkini azaltalım
+                if(enemyUnits.length > 0) {
+                    const survivor = enemyUnits[0]; // İlk savunma birliği
+                    const sPower = (survivor.type === 'cav' ? 2 : 1);
+                    // Toplam kalan gücü, sadece bu birliğe yansıtmak biraz hata payı yaratır ama oyun akışı için yeterli
+                    // Daha hassas olması için tüm savunma stackini yeniden hesaplamak gerekir ama bu yeterli:
+                    survivor.count = Math.max(1, Math.ceil((survivor.count * sPower - attPower) / sPower));
+                }
             }
+            return; // Saldıran öldüğü için kale savaşına geçemez veya şehri alamaz
         }
-        return;
     }
-    
-    let myP = attUnit.count * (attUnit.type==='cav'?2:1);
-    let enP = enemies.reduce((s,u) => s + u.count*(u.type==='cav'?2:1), 0);
-    
-    if(myP > enP) {
-        units = units.filter(u => !(u.loc === attUnit.loc && u.owner === opp)); // Düşman yok
-        attUnit.count = Math.ceil((myP - enP) / (attUnit.type==='cav'?2:1));
-        // Fetih
-        if(!players[attUnit.owner].cities.includes(attUnit.loc)) players[attUnit.owner].cities.push(attUnit.loc);
-    } else {
-        units = units.filter(u => u.id !== attUnit.id); // Ben öldüm
-        // Düşman azalır (basitçe ilk birlikten düşüyoruz)
-        enemies[0].count = Math.max(1, Math.ceil((enP - myP) / (enemies[0].type==='cav'?2:1)));
+
+    // --- 2. AŞAMA: KALE SAVAŞI VEYA FETİH ---
+    // Eğer buraya geldiysek saldıranın hala askeri var demektir.
+
+    // Eğer burası Düşman Kalesi ise
+    if (parseInt(players[defender].base) === loc) {
+        // Kalan saldırı gücü kadar kaleye vur
+        players[defender].hp -= attPower;
+        showGameToast(`⚔️ KALE VURULDU! -${attPower} Hasar`);
+        
+        if (players[defender].hp <= 0) {
+            players[defender].hp = 0;
+            // Oyun Bitişi
+            setTimeout(() => {
+                alert(`OYUN BİTTİ! 👑 ${players[attacker].name} KAZANDI!`);
+                location.reload();
+            }, 500);
+        }
+    } 
+    // Eğer normal bir şehir ise ve savunanda değilse (veya savunanda ama askeri bittiyse)
+    else {
+        // Şehir zaten bizde değilse alalım
+        if (!players[attacker].cities.includes(loc)) {
+            // Rakipteyse ondan sil
+            if (players[defender].cities.includes(loc)) {
+                players[defender].cities = players[defender].cities.filter(c => c !== loc);
+            }
+            // Bize ekle
+            players[attacker].cities.push(loc);
+            // showGameToast(`🏳️ ${CITY_NAMES[loc]} Fethedildi!`);
+        }
     }
 }
 
@@ -8252,6 +8329,29 @@ function generateVocabQuestions() {
         });
     });
     return qList;
+}
+    // YENİ: Menzil Hesaplama Fonksiyonu (Piyade:1, Atlı:2)
+function getReachableCities(startLoc, unitType) {
+    const range = (unitType === 'cav') ? 2 : 1;
+    let accessible = new Set();
+    let queue = [{ id: parseInt(startLoc), dist: 0 }];
+    let visited = new Set([parseInt(startLoc)]);
+
+    while (queue.length > 0) {
+        let curr = queue.shift();
+        if (curr.dist > 0) accessible.add(curr.id); // Başlangıç noktası hariç ekle
+
+        if (curr.dist < range) {
+            let neighbors = NEIGHBORS[curr.id] || [];
+            neighbors.forEach(n => {
+                if (!visited.has(n)) {
+                    visited.add(n);
+                    queue.push({ id: n, dist: curr.dist + 1 });
+                }
+            });
+        }
+    }
+    return Array.from(accessible);
 }
 </script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
