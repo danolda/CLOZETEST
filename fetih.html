@@ -7652,21 +7652,30 @@ function handleData(data) {
             startGameUI(); 
             break;
         case 'UPDATE_MAP': 
-            players = data.players; 
-            units = data.units; 
-            gameState = data.gameState;
-            
-            if(data.msg) showGameToast(data.msg);
-            
-            // YENİ EKLENEN KISIM: Host, eğer oyun durumu 'RESOLVE' olduysa turu bitirir.
-            if(isHost && gameState === 'RESOLVE') {
-                endRoundPhase();
+            // Sadece HOST'tan gelen UPDATE_MAP kabul edilir (guest olarak dinle)
+            if(!isHost) {
+                players = data.players; 
+                units = data.units; 
+                unitIdCounter = data.unitIdCounter || unitIdCounter; // ID sayacını senkronla
+                gameState = data.gameState;
+                if(data.msg) showGameToast(data.msg);
+                renderAll(); 
             }
-            
-            renderAll(); 
+            break;
+        case 'GUEST_MOVE':
+            // Misafirin hareket komutu - sadece host işler
+            if(isHost) {
+                moveUnitCommand(data.uid, data.target, data.count, 'p2');
+            }
+            break;
+        case 'GUEST_BUY':
+            // Misafirin asker satın alma komutu - sadece host işler
+            if(isHost) {
+                executeBuyUnit('p2', data.unitType);
+            }
             break;
        case 'GUEST_TURN_ENDED': 
-            if(isHost) nextTurnStep(); // Misafir bitirdi, Host sıradakine geçiriyor
+            if(isHost) nextTurnStep();
             break;     
         case 'NEW_TURN': showQuestion(data.question, data.turnIndex); break;
         case 'OPPONENT_ANSWER': if(isHost) resolveQuestion(data.ans, data.time); break;
@@ -7928,16 +7937,21 @@ function onMapClick(plate) {
         const opp = isHost ? 'p2' : 'p1';
         if(parseInt(players[opp].base) === plate) return alert("Dolu!");
         
-        players[me].base = plate;
-        players[me].cities.push(plate);
-        createUnit(me, 'inf', plate, 10);
-        
-        if(isHost) { checkGameStart(); broadcastState("Mavi Kale Kurdu!"); }
-        else { conn.send({ type: 'GUEST_BASE_SELECT', plate }); showGameToast("Rakip Bekleniyor..."); }
+        if(isHost) {
+            players[me].base = plate;
+            players[me].cities.push(plate);
+            createUnit(me, 'inf', plate, 10);
+            checkGameStart(); 
+            broadcastState("Mavi Kale Kurdu!");
+        } else {
+            // Misafir sadece seçimini gönderir, birlik oluşturmaz
+            conn.send({ type: 'GUEST_BASE_SELECT', plate }); 
+            showGameToast("Rakip Bekleniyor...");
+        }
         return;
     }
     
-    // Hedef Seçimi
+    // Hedef Seçimi (Hareket Modu)
     if((gameState === "ACTION_P1_MOVE" && me === 'p1') || (gameState === "ACTION_P2_MOVE" && me === 'p2')) {
         const count = parseInt(document.getElementById('move-slider').value);
         moveUnitCommand(selectedUnitId, plate, count);
@@ -7953,25 +7967,35 @@ function onMapClick(plate) {
     }
 }
 
-function moveUnitCommand(uid, target, count) {
+function moveUnitCommand(uid, target, count, actor) {
+    // Misafir ise komutu host'a gönder, yerel state'i değiştirme
+    if(!isHost) {
+        conn.send({ type: 'GUEST_MOVE', uid, target: parseInt(target), count });
+        return;
+    }
+    
     const uIdx = units.findIndex(u => u.id === uid);
     if(uIdx === -1) return;
     const unit = units[uIdx];
     
+    // Sahiplik kontrolü - sadece kendi askerini hareket ettirebilir
+    if(!actor) actor = 'p1'; // Host'un kendi hamlesi
+    if(unit.owner !== actor) { console.warn("Sahiplik hatası: Başkasının askerini hareket ettiremezsin!"); return; }
+    
     // Hareket hakkı kontrolü
-    if(unit.moved) return alert("Bu birlik bu tur zaten hareket etti!");
+    if(unit.moved) { if(actor === 'p1') alert("Bu birlik bu tur zaten hareket etti!"); return; }
     
     // Menzil Kontrolü
     const range = (unit.type === 'cav') ? 2 : 1;
-    const validTargets = getReachableCities(unit.loc, unit.type); // Bu fonksiyon önceki kodda vardı, yoksa ekle
+    const validTargets = getReachableCities(unit.loc, unit.type);
     if(!validTargets.includes(parseInt(target))) {
-        return alert((unit.type === 'cav') ? "Atlılar en fazla 2, Piyadeler 1 şehir gidebilir!" : "Piyadeler sadece komşu şehre gidebilir!");
+        if(actor === 'p1') alert((unit.type === 'cav') ? "Atlılar en fazla 2, Piyadeler 1 şehir gidebilir!" : "Piyadeler sadece komşu şehre gidebilir!");
+        return;
     }
     
     // --- Hareket Öncesi Bölme İşlemi (Split) ---
-    let activeUnit = unit; // İşlem yapacak birlik
+    let activeUnit = unit;
     if(count < unit.count) {
-        // Yeni birlik oluştur
         const newUnit = { 
             id: unitIdCounter++, 
             owner: unit.owner, 
@@ -7981,10 +8005,10 @@ function moveUnitCommand(uid, target, count) {
             moved: true 
         };
         units.push(newUnit);
-        unit.count -= count; // Eskisi azalır
-        activeUnit = newUnit; // Yeni birlik hareket eder
+        unit.count -= count;
+        activeUnit = newUnit;
     } else {
-        unit.moved = true; // Hepsini taşıyorsak bu işaretlenir
+        unit.moved = true;
     }
 
     // --- Atlı Birlik Yol Fethetme Mantığı ---
@@ -7992,10 +8016,7 @@ function moveUnitCommand(uid, target, count) {
     if(activeUnit.type === 'cav' && dist === 2) {
         const midCity = getCommonNeighbor(activeUnit.loc, target);
         if(midCity) {
-            // Aradaki şehri fethet (Eğer düşmansa)
             conquerCity(midCity, activeUnit.owner); 
-            // Görsel olarak birliğin oraya uğradığını hissettirmek için:
-            // Aslında loc güncellemesine gerek yok, direkt hedef veya kuşatmaya bakacağız.
         }
     }
 
@@ -8004,36 +8025,20 @@ function moveUnitCommand(uid, target, count) {
     const isTargetBase = (parseInt(players[opponent].base) === parseInt(target));
 
     if (isTargetBase) {
-        // == KUŞATMA SALDIRISI ==
-        // Birlik kalenin içine GİRMEZ. 
-        // Eğer 2 kare uzaktan atlı ile saldırdıysa, önce komşu kareye gelir, orada durur, oradan vurur.
-        
         if (dist === 2) {
-            // Aradaki şehre gel ve oradan vur
             const stepCity = getCommonNeighbor(activeUnit.loc, target);
             activeUnit.loc = stepCity; 
-            // Aradaki şehir artık bizim (yukarıda fethedildi), orada durup kaleye vuruyoruz.
         }
-        // Eğer mesafe 1 ise zaten olduğu yerden vurur, kımıldamaz.
-        
-        // Savaşa gönder (Hedef koordinatı veriyoruz ama birlik orada değil)
         checkSiegeCombat(activeUnit, parseInt(target));
-
     } else {
-        // == NORMAL HAREKET / MEYDAN SAVAŞI ==
-        // Birlik hedef şehre girer
         activeUnit.loc = parseInt(target);
-        
-        // Girdiği yerde düşman var mı?
         checkFieldCombat(activeUnit);
     }
     
-    // Aynı şehirdeki dost birlikleri birleştir
     mergeUnits(activeUnit.loc, activeUnit.owner);
     
-    // Güncelleme gönder
-    if(isHost) broadcastState();
-    else conn.send({ type: 'UPDATE_MAP', players, units, gameState });
+    // Sadece host state yayınlar
+    broadcastState();
 }
 
 // Yardımcı Mesafe Fonksiyonu (Basitçe komşu mu değil mi bakar)
@@ -8171,13 +8176,24 @@ function conquerCity(cityId, newOwner) {
 
 function buyUnit(type) {
     const me = isHost ? 'p1' : 'p2';
+    
+    // Misafir ise komutu host'a gönder
+    if(!isHost) {
+        conn.send({ type: 'GUEST_BUY', unitType: type });
+        return;
+    }
+    
+    // Host ise direkt işle (kendi birliği veya GUEST_BUY komutu ile)
+    executeBuyUnit(me, type);
+}
+
+function executeBuyUnit(buyer, type) {
     const cost = UNIT_TYPES[type].cost;
-    if(players[me].gold < cost) return alert("Para yok!");
-    players[me].gold -= cost;
-    createUnit(me, type, players[me].base, 1);
-    renderCityModal(players[me].base);
-    if(isHost) broadcastState();
-    else conn.send({ type: 'UPDATE_MAP', players, units, gameState });
+    if(players[buyer].gold < cost) { if(buyer === (isHost?'p1':'p2')) alert("Para yok!"); return; }
+    players[buyer].gold -= cost;
+    createUnit(buyer, type, players[buyer].base, 1);
+    broadcastState();
+    if(buyer === (isHost?'p1':'p2')) renderCityModal(players[buyer].base);
 }
 
 function mergeUnits(loc, owner) {
@@ -8356,7 +8372,7 @@ function enableMoveMode() {
 }
 
 function broadcastState(msg) {
-    if(isHost) conn.send({ type: 'UPDATE_MAP', players, units, gameState, msg });
+    if(isHost) conn.send({ type: 'UPDATE_MAP', players, units, gameState, unitIdCounter, msg });
     if(msg) showGameToast(msg);
     renderAll();
 }
