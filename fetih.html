@@ -87,6 +87,14 @@
 
         /* Soru Cevap Renkleri */
         .btn-correct { border: 3px solid #2ecc71 !important; box-shadow: 0 0 10px #2ecc71; }
+        /* --- CEVAP RENKLENDİRME --- */
+.btn-p1 { background-color: var(--p1-color) !important; color: white !important; }
+.btn-p2 { background-color: var(--p2-color) !important; color: white !important; }
+/* İkisi aynı şıkkı seçerse */
+.btn-both { 
+    background: linear-gradient(90deg, var(--p1-color) 50%, var(--p2-color) 50%) !important; 
+    color: white !important; text-shadow: 1px 1px 2px black;
+}
     </style>
 </head>
 <body>
@@ -7469,11 +7477,20 @@ window.onload = function() {
 
 function loadAllData() {
     allQuestions = [];
-    if(typeof rawQuestionsText !== 'undefined') allQuestions = allQuestions.concat(parseRawData(rawQuestionsText, rawAnswersText, 0));
-    // Diğer raw değişkenlerin kontrolü burada yapılacak (senin dosyanla aynı mantık)
     
-    // Kelime üretici (demo için basitleştirildi)
-    // if(typeof ydsVocabDB !== 'undefined') ...
+    // Eski metin bazlı soruları yükle
+    if(typeof rawQuestionsText !== 'undefined') allQuestions = allQuestions.concat(parseRawData(rawQuestionsText, rawAnswersText, 0));
+    if(typeof rawExamPrepQ !== 'undefined') allQuestions = allQuestions.concat(parseRawData(rawExamPrepQ, rawExamPrepA, 3000));
+    if(typeof rawExamConjQ !== 'undefined') allQuestions = allQuestions.concat(parseRawData(rawExamConjQ, rawExamConjA, 3200));
+    if(typeof rawExamTenseQ !== 'undefined') allQuestions = allQuestions.concat(parseRawData(rawExamTenseQ, rawExamTenseA, 3500));
+    if(typeof rawExamVocabQ !== 'undefined') allQuestions = allQuestions.concat(parseRawData(rawExamVocabQ, rawExamVocabA, 3800));
+
+    // YENİ: Kelime sorularını üret ve ekle
+    if(typeof ydsVocabDB !== 'undefined') {
+        allQuestions = allQuestions.concat(generateVocabQuestions());
+    }
+    
+    console.log("Toplam Soru:", allQuestions.length);
 }
 
 function parseRawData(qText, aText, offset) {
@@ -7633,8 +7650,17 @@ function handleData(data) {
             startGameUI(); 
             break;
         case 'UPDATE_MAP': 
-            players = data.players; units = data.units; gameState = data.gameState;
+            players = data.players; 
+            units = data.units; 
+            gameState = data.gameState;
+            
             if(data.msg) showGameToast(data.msg);
+            
+            // YENİ EKLENEN KISIM: Host, eğer oyun durumu 'RESOLVE' olduysa turu bitirir.
+            if(isHost && gameState === 'RESOLVE') {
+                endRoundPhase();
+            }
+            
             renderAll(); 
             break;
         case 'NEW_TURN': showQuestion(data.question, data.turnIndex); break;
@@ -7749,7 +7775,16 @@ function checkAllAnswers() {
     const p1Ok = (myAnswer === correct);
     const p2Ok = (p2AnswerTemp === correct);
     
-    const resData = { type: 'TURN_RESULT', p1Ok, p2Ok, p1Time: myTime, p2Time: p2TimeTemp, correct };
+    // YENİ: p1Ans ve p2Ans parametrelerini ekledik
+    const resData = { 
+        type: 'TURN_RESULT', 
+        p1Ok, p2Ok, 
+        p1Time: myTime, p2Time: p2TimeTemp, 
+        correct,
+        p1Ans: myAnswer, // Mavi ne seçti?
+        p2Ans: p2AnswerTemp // Kırmızı ne seçti?
+    };
+    
     conn.send(resData);
     handleTurnResult(resData);
 }
@@ -7757,13 +7792,27 @@ function checkAllAnswers() {
 function handleTurnResult(data) {
     // Şıkları boya
     document.querySelectorAll('.option-btn').forEach(btn => {
-        if(btn.innerText.startsWith(data.correct)) btn.classList.add('btn-correct');
+        const key = btn.innerText.substring(0, 1); // "A", "B" harfini al
+        
+        btn.classList.remove('selected'); // Sarı seçimi kaldır
+        
+        // Doğru cevap yeşil çerçeve
+        if(key === data.correct) btn.classList.add('btn-correct');
+        
+        // Oyuncu seçimleri
+        const p1Chose = (key === data.p1Ans);
+        const p2Chose = (key === data.p2Ans);
+        
+        if(p1Chose && p2Chose) btn.classList.add('btn-both');
+        else if(p1Chose) btn.classList.add('btn-p1');
+        else if(p2Chose) btn.classList.add('btn-p2');
     });
     
+    // Modalı kapat ve ödülleri dağıt
     setTimeout(() => {
         bootstrap.Modal.getInstance(document.getElementById('questionModal')).hide();
         if(isHost) distributeRewards(data.p1Ok, data.p2Ok, data.p1Time, data.p2Time);
-    }, 3000);
+    }, 4000); // Süreyi biraz uzattım ki renkler görünsün
 }
 
 function distributeRewards(p1Ok, p2Ok, t1, t2) {
@@ -7794,13 +7843,21 @@ function endMyTurn() {
     if(!players[me].active) return;
     
     if(gameState === "ACTION_P1") {
-        gameState = "ACTION_P2"; players.p1.active = false; players.p2.active = true;
+        gameState = "ACTION_P2"; 
+        players.p1.active = false; 
+        players.p2.active = true;
+        // Host ise direkt yayınla, Değilse sunucuya bildir
         if(isHost) broadcastState("Sıra Kırmızıda");
         else conn.send({ type: 'UPDATE_MAP', players, units, gameState, msg: "Sıra Kırmızıda" });
+        
     } else if(gameState === "ACTION_P2") {
         // Tur bitti
-        if(isHost) endRoundPhase();
-        else conn.send({ type: 'UPDATE_MAP', players, units, gameState: "RESOLVE" }); // Host'a sinyal
+        if(isHost) {
+            endRoundPhase(); // Host kendi turunu bitirirse direkt bitirir
+        } else {
+            // Misafir turu bitirirse Host'a "RESOLVE" durumu yollar
+            conn.send({ type: 'UPDATE_MAP', players, units, gameState: "RESOLVE" }); 
+        }
     }
 }
 
@@ -8112,7 +8169,48 @@ function showGameToast(msg) {
     const t = document.createElement('div'); t.className='game-toast'; t.innerText=msg;
     document.body.appendChild(t); setTimeout(()=>t.remove(), 2500);
 }
+// Bu fonksiyonu script taginin en altına, diğer fonksiyonların yanına ekle:
+function generateVocabQuestions() {
+    const qList = [];
+    const total = ydsVocabDB.length;
+    
+    ydsVocabDB.forEach((item, index) => {
+        const isEnToTr = index < (total / 2); // Yarısı EN->TR, yarısı TR->EN
+        const questionText = isEnToTr 
+            ? `"${item.en}" kelimesinin Türkçe karşılığı nedir?`
+            : `"${item.tr}" ifadesinin İngilizce karşılığı nedir?`;
+        const correctAns = isEnToTr ? item.tr : item.en;
 
+        // Çeldirici (Şık) Üretimi
+        let distractors = [];
+        let seed = index + 42; // Sabit rastgelelik için
+        let tempPool = ydsVocabDB.filter(w => w.en !== item.en);
+        
+        while(distractors.length < 4 && tempPool.length > 0) {
+            seed = (seed * 9301 + 49297) % 233280;
+            const rIdx = Math.floor((seed / 233280) * tempPool.length);
+            const pick = isEnToTr ? tempPool[rIdx].tr : tempPool[rIdx].en;
+            if(!distractors.includes(pick) && pick !== correctAns) {
+                distractors.push(pick);
+            }
+            tempPool.splice(rIdx, 1);
+        }
+
+        // Şıkları Karıştır
+        let optionsArr = [...distractors, correctAns];
+        optionsArr.sort(() => Math.random() - 0.5);
+
+        const opts = { A: optionsArr[0], B: optionsArr[1], C: optionsArr[2], D: optionsArr[3], E: optionsArr[4] };
+        
+        qList.push({
+            id: 5000 + index,
+            text: questionText,
+            opts: opts,
+            correctAnswer: Object.keys(opts).find(k => opts[k] === correctAns) || 'A'
+        });
+    });
+    return qList;
+}
 </script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
