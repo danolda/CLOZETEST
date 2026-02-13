@@ -55,12 +55,20 @@
     }
         
         .map-icon { pointer-events: none; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.5)); transition: all 0.3s; }
-        .army-badge { transition: transform 0.15s, fill 0.15s; filter: drop-shadow(0 1px 3px rgba(0,0,0,0.5)); }
-        .army-badge:hover { transform: scale(1.2); fill: #f39c12 !important; }
+        .army-badge { transition: fill 0.15s; filter: drop-shadow(0 1px 3px rgba(0,0,0,0.5)); }
+        .army-badge:hover { fill: #f39c12 !important; }
         .unit-badge {
             font-size: 10px; font-weight: bold; fill: white; text-anchor: middle;
             paint-order: stroke; stroke: black; stroke-width: 3px;
         }
+        /* Soru blur efekti */
+        .q-blurred { filter: blur(8px); user-select: none; pointer-events: none; transition: filter 0.3s; }
+        .q-ready-overlay {
+            position: absolute; top:0; left:0; right:0; bottom:0;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.4); z-index: 10; border-radius: 8px;
+        }
+        .q-ready-overlay .spinner-border { width: 2rem; height: 2rem; }
 
         .modal-content { background: #2c3e50; color: white; border: 1px solid #555; }
         .option-btn { width: 100%; text-align: left; padding: 15px; margin-bottom: 8px; background: #34495e; color: white; border: 1px solid #7f8c8d; }
@@ -350,16 +358,23 @@
 <!-- 5. SORU MODALI -->
 <div class="modal fade" id="questionModal" data-bs-backdrop="static" data-bs-keyboard="false">
     <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content">
+        <div class="modal-content" style="position:relative;">
             <div class="modal-header border-0 pb-0">
                 <span class="badge bg-warning text-dark fs-6" id="q-counter">Soru 1</span>
                 <span class="badge bg-danger fs-5 ms-auto" id="q-timer">30</span>
             </div>
-            <div class="modal-body p-4">
+            <div class="modal-body p-4" id="q-body-wrapper">
                 <h4 class="text-center mb-4 lh-base" id="q-text">Soru metni...</h4>
                 <div id="q-options"></div>
                 <div id="wait-msg" class="text-center mt-3 text-info d-none">
                     <div class="spinner-border spinner-border-sm"></div> Rakip bekleniyor...
+                </div>
+            </div>
+            <!-- Hazır bekleme overlay -->
+            <div id="q-ready-overlay" class="q-ready-overlay d-none">
+                <div class="text-center text-white">
+                    <div class="spinner-border text-warning mb-2"></div>
+                    <div class="fw-bold" id="q-ready-text">Rakip yükleniyor...</div>
                 </div>
             </div>
         </div>
@@ -7909,7 +7924,18 @@ function handleData(data) {
        case 'GUEST_TURN_ENDED': 
             if(isHost) nextTurnStep();
             break;     
-        case 'NEW_TURN': showQuestion(data.question, data.turnIndex); break;
+        case 'NEW_TURN': showQuestionBlurred(data.question, data.turnIndex); break;
+        case 'QUESTION_READY': 
+            // Guest hazır sinyali → Host'a geldi → Herkese BAŞLA gönder
+            if(isHost) { 
+                conn.send({ type: 'QUESTION_GO' }); 
+                unblurAndStart(); 
+            } 
+            break;
+        case 'QUESTION_GO': 
+            // Host'tan "BAŞLA" sinyali → Guest'te blur kaldır, süre başlat
+            if(!isHost) unblurAndStart(); 
+            break;
         case 'OPPONENT_ANSWER': if(isHost) resolveQuestion(data.ans, data.time); break;
         case 'TURN_RESULT': handleTurnResult(data); break;
         case 'GUEST_BASE_SELECT': if(isHost) { players.p2.base = data.plate; players.p2.cities.push(data.plate); createUnit('p2','inf',data.plate,10); checkGameStart(); } break;
@@ -7967,17 +7993,21 @@ function startGameUI() {
 // =========================================================================
 let myAnswer = null, myTime = 0, p2AnswerTemp = null, p2TimeTemp = 0;
 let questionShownTime = 0; // Sorunun gösterildiği an (elapsed hesabı için)
+let questionReady = false; // Soru hazır mı?
 
 function startNewTurn() {
     if(currentTurn >= gameQuestions.length) return alert("Oyun Bitti!");
     myAnswer = null; p2AnswerTemp = null;
+    questionReady = false;
     const q = gameQuestions[currentTurn];
     conn.send({ type: 'NEW_TURN', question: q, turnIndex: currentTurn });
-    showQuestion(q, currentTurn);
+    // Host kendi sorusunu blurlu gösterir
+    showQuestionBlurred(q, currentTurn);
 }
 
-function showQuestion(q, idx) {
-    questionShownTime = Date.now(); // Soru gösterildiği an
+// Soru blurlu gösterilir, rakip bekle
+function showQuestionBlurred(q, idx) {
+    questionReady = false;
     const modal = new bootstrap.Modal(document.getElementById('questionModal'));
     document.getElementById('q-text').innerText = q.text;
     document.getElementById('q-counter').innerText = `Soru ${idx+1}`;
@@ -7988,7 +8018,38 @@ function showQuestion(q, idx) {
     });
     document.getElementById('q-options').innerHTML = html;
     document.getElementById('wait-msg').classList.add('d-none');
+    
+    // Blur uygula - soru görünür ama okunamaz
+    document.getElementById('q-body-wrapper').classList.add('q-blurred');
+    document.getElementById('q-ready-overlay').classList.remove('d-none');
+    document.getElementById('q-timer').innerText = '-';
+    
+    if(isHost) {
+        document.getElementById('q-ready-text').innerText = 'Rakip yükleniyor...';
+    } else {
+        document.getElementById('q-ready-text').innerText = 'Hazırlanıyor...';
+    }
+    
     modal.show();
+    
+    // Hazır sinyali gönder
+    if(!isHost) {
+        // Guest → Host'a "ben hazırım" gönder
+        conn.send({ type: 'QUESTION_READY' });
+    }
+    // Host zaten hazır, guest'in QUESTION_READY göndermesini bekleyecek
+}
+
+// Blur kaldır ve süreyi başlat (iki tarafta da aynı anda çağrılır)
+function unblurAndStart() {
+    questionReady = true;
+    questionShownTime = Date.now();
+    
+    // Blur kaldır
+    document.getElementById('q-body-wrapper').classList.remove('q-blurred');
+    document.getElementById('q-ready-overlay').classList.add('d-none');
+    
+    // Süreyi başlat
     startTimer();
 }
 
@@ -8006,6 +8067,7 @@ function startTimer() {
 }
 
 function submitAnswer(ans) {
+    if(!questionReady) return; // Henüz blur kalkmadıysa cevap verme
     if(timerInterval) clearInterval(timerInterval);
     const elapsed = Date.now() - questionShownTime; // Geçen süre (ms)
     document.querySelectorAll('.option-btn').forEach(b => {
@@ -8166,8 +8228,6 @@ function createUnit(owner, type, loc, count) {
     units.push({ id: unitIdCounter++, owner, type, loc: parseInt(loc), count, moved: true });
 }
 
-let quickMoveSource = null; // Hızlı tıklama-hareket için kaynak şehir
-
 function onMapClick(plate) {
     const me = isHost ? 'p1' : 'p2';
     
@@ -8184,88 +8244,26 @@ function onMapClick(plate) {
             checkGameStart(); 
             broadcastState("Mavi Kale Kurdu!");
         } else {
-            // Misafir sadece seçimini gönderir, birlik oluşturmaz
             conn.send({ type: 'GUEST_BASE_SELECT', plate }); 
             showGameToast("Rakip Bekleniyor...");
         }
         return;
     }
     
-    // Hedef Seçimi (Eski Hareket Modu - modaldan gelen)
+    // Hedef Seçimi (Modal'dan Hareket Modu)
     if((gameState === "ACTION_P1_MOVE" && me === 'p1') || (gameState === "ACTION_P2_MOVE" && me === 'p2')) {
         const count = parseInt(document.getElementById('move-slider').value);
         moveUnitCommand(selectedUnitId, plate, count);
         gameState = (me === 'p1') ? "ACTION_P1" : "ACTION_P2";
-        quickMoveSource = null;
         renderAll();
         return;
     }
     
-    // Hızlı Tıklama-Hareket Sistemi (Aktifken)
-    if(players[me].active) {
-        const myUnitsHere = units.filter(u => u.loc === plate && u.owner === me && !u.moved);
-        
-        // Eğer kaynak seçiliyse ve farklı bir şehre tıklandıysa → taşı
-        if(quickMoveSource !== null && quickMoveSource !== plate) {
-            const sourceUnits = units.filter(u => u.loc === quickMoveSource && u.owner === me && !u.moved);
-            if(sourceUnits.length > 0) {
-                const unit = sourceUnits.reduce((a,b) => a.count > b.count ? a : b);
-                const reachable = getReachableCities(quickMoveSource, unit.type);
-                if(reachable.includes(plate)) {
-                    quickMoveArmy(quickMoveSource, plate, me, unit.count);
-                    quickMoveSource = null;
-                    clearQuickMoveHighlight();
-                    return;
-                }
-            }
-            // Menzil dışıysa kaynak sıfırla
-            quickMoveSource = null;
-            clearQuickMoveHighlight();
-        }
-        
-        // Kendi şehrime tıkladım ve burada hareket edebilecek birlik var → kaynak olarak seç
-        if(myUnitsHere.length > 0) {
-            quickMoveSource = plate;
-            clearQuickMoveHighlight();
-            // Kaynağı vurgula
-            const srcPath = document.getElementById(`city-${plate}`);
-            if(srcPath) {
-                srcPath.style.strokeWidth = '3px';
-                srcPath.style.stroke = '#f1c40f';
-                srcPath.setAttribute('data-quick-src', '1');
-            }
-            // Ulaşılabilir şehirleri göster
-            const unit = myUnitsHere.reduce((a,b) => a.count > b.count ? a : b);
-            const reachable = getReachableCities(plate, unit.type);
-            reachable.forEach(cid => {
-                const p = document.getElementById(`city-${cid}`);
-                if(p) { p.style.strokeWidth = '2px'; p.style.stroke = '#2ecc71'; p.setAttribute('data-quick-target', '1'); }
-            });
-            showGameToast(`${CITY_NAMES[plate]} seçildi → Hedef şehre tıkla!`);
-            return;
-        }
-        
-        // Kaynak seçiliyken aynı şehre tekrar tıkla → modal aç
-        if(quickMoveSource === plate) {
-            quickMoveSource = null;
-            clearQuickMoveHighlight();
-        }
-    }
-    
-    // Detay Görüntüleme (Modal)
+    // Şehre tıklama → Her zaman modal aç (asker olsa da olmasa da)
     if(players[me].cities.includes(plate) || units.some(u => u.loc === plate && u.owner === me)) {
         renderCityModal(plate);
         new bootstrap.Modal(document.getElementById('unitModal')).show();
     }
-}
-
-function clearQuickMoveHighlight() {
-    document.querySelectorAll('[data-quick-src],[data-quick-target]').forEach(p => {
-        p.style.strokeWidth = '1px';
-        p.style.stroke = '#95a5a6';
-        p.removeAttribute('data-quick-src');
-        p.removeAttribute('data-quick-target');
-    });
 }
 
 function moveUnitCommand(uid, target, count, actor) {
@@ -8570,8 +8568,6 @@ function renderAll() {
     document.getElementById('turn-controls').style.display = players[me].active ? 'block' : 'none';
 
     // 2. Harita Renkleri
-    clearQuickMoveHighlight();
-    quickMoveSource = null;
     document.querySelectorAll('path[id^="city-"]').forEach(p => {
         p.style.fill = "#ecf0f1";
         const pid = parseInt(p.id.split('-')[1]);
@@ -8622,21 +8618,60 @@ function drawIconGroup(loc, list, owner) {
     const cy = b.y+b.height/2+14;
     
     const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-    g.innerHTML = `
-        <image href="${icon}" x="${b.x+b.width/2-20+off}" y="${b.y+b.height/2-20}" width="50" height="50" class="map-icon"/>
-        <circle cx="${cx}" cy="${cy}" r="13" fill="${isMyUnit ? '#e67e22' : 'red'}" stroke="white" stroke-width="2" class="army-badge" style="cursor:${isMyUnit ? 'grab' : 'default'}"/>
-        <text x="${cx}" y="${cy+4}" class="unit-badge" text-anchor="middle" font-size="13" fill="white" style="pointer-events:none">${total}</text>
-    `;
     
-    // Drag & Click sistemi (sadece kendi birliğin için)
+    // Asker ikonu (pointer-events: none)
+    const img = document.createElementNS("http://www.w3.org/2000/svg", "image");
+    img.setAttribute("href", icon);
+    img.setAttribute("x", b.x+b.width/2-20+off);
+    img.setAttribute("y", b.y+b.height/2-20);
+    img.setAttribute("width", 50);
+    img.setAttribute("height", 50);
+    img.classList.add("map-icon");
+    g.appendChild(img);
+    
+    // Görünmez büyük hit area (tutmayı kolaylaştırır)
     if(isMyUnit && players[me].active) {
-        const circle = g.querySelector('.army-badge');
+        const hitArea = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        hitArea.setAttribute("cx", cx);
+        hitArea.setAttribute("cy", cy);
+        hitArea.setAttribute("r", "20");
+        hitArea.setAttribute("fill", "transparent");
+        hitArea.style.cursor = "grab";
+        hitArea.classList.add("army-hitarea");
+        g.appendChild(hitArea);
+    }
+    
+    // Görünür yuvarlak badge
+    const badge = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    badge.setAttribute("cx", cx);
+    badge.setAttribute("cy", cy);
+    badge.setAttribute("r", "13");
+    badge.setAttribute("fill", isMyUnit ? '#e67e22' : 'red');
+    badge.setAttribute("stroke", "white");
+    badge.setAttribute("stroke-width", "2");
+    badge.classList.add("army-badge");
+    badge.style.pointerEvents = "none"; // Tıklama hitArea'dan gelecek
+    g.appendChild(badge);
+    
+    // Sayı metni
+    const txt = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    txt.setAttribute("x", cx);
+    txt.setAttribute("y", cy + 4);
+    txt.classList.add("unit-badge");
+    txt.setAttribute("text-anchor", "middle");
+    txt.setAttribute("font-size", "13");
+    txt.setAttribute("fill", "white");
+    txt.style.pointerEvents = "none";
+    txt.textContent = total;
+    g.appendChild(txt);
+    
+    // Drag sistemi (sadece kendi birliğin için, aktifken)
+    if(isMyUnit && players[me].active) {
+        const hitArea = g.querySelector('.army-hitarea');
         let isDragging = false;
         let dragStarted = false;
         let startX, startY;
         const svg = document.querySelector('#map-container svg');
-        
-        // Drag ghost circle
         let ghost = null;
         let dragLine = null;
         
@@ -8656,7 +8691,7 @@ function drawIconGroup(loc, list, owner) {
             const svgP = getSVGPoint(evt);
             startX = svgP.x;
             startY = svgP.y;
-            circle.style.cursor = 'grabbing';
+            hitArea.style.cursor = 'grabbing';
         }
         
         function onDragMove(evt) {
@@ -8665,9 +8700,8 @@ function drawIconGroup(loc, list, owner) {
             const svgP = getSVGPoint(evt);
             const dx = svgP.x - startX;
             const dy = svgP.y - startY;
-            if(!dragStarted && Math.sqrt(dx*dx + dy*dy) > 5) {
+            if(!dragStarted && Math.sqrt(dx*dx + dy*dy) > 8) {
                 dragStarted = true;
-                // Ghost circle oluştur
                 ghost = document.createElementNS("http://www.w3.org/2000/svg", "circle");
                 ghost.setAttribute("r", "13");
                 ghost.setAttribute("fill", "rgba(230,126,34,0.6)");
@@ -8676,7 +8710,6 @@ function drawIconGroup(loc, list, owner) {
                 ghost.setAttribute("stroke-dasharray", "4");
                 ghost.style.pointerEvents = "none";
                 svg.appendChild(ghost);
-                // Çizgi
                 dragLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
                 dragLine.setAttribute("x1", cx); dragLine.setAttribute("y1", cy);
                 dragLine.setAttribute("stroke", "#f1c40f"); dragLine.setAttribute("stroke-width", "2");
@@ -8688,8 +8721,6 @@ function drawIconGroup(loc, list, owner) {
                 ghost.setAttribute("cy", svgP.y);
                 dragLine.setAttribute("x2", svgP.x);
                 dragLine.setAttribute("y2", svgP.y);
-                
-                // Highlight reachable cities
                 highlightDragTarget(svgP, parseInt(loc), list[0].type);
             }
         }
@@ -8697,10 +8728,9 @@ function drawIconGroup(loc, list, owner) {
         function onDragEnd(evt) {
             if(!isDragging) return;
             isDragging = false;
-            circle.style.cursor = 'grab';
+            hitArea.style.cursor = 'grab';
             
             if(dragStarted) {
-                // Bırakılan yerdeki şehri bul
                 const svgP = getSVGPoint(evt.changedTouches ? evt.changedTouches[0] : evt);
                 const targetCity = findCityAtPoint(svgP.x, svgP.y);
                 clearDragHighlights();
@@ -8708,11 +8738,10 @@ function drawIconGroup(loc, list, owner) {
                 if(dragLine) { dragLine.remove(); dragLine = null; }
                 
                 if(targetCity && targetCity !== parseInt(loc)) {
-                    // Tüm birliği taşı (hızlı hareket)
                     quickMoveArmy(parseInt(loc), targetCity, owner, total);
                 }
             } else {
-                // Kısa tıklama - modal aç
+                // Kısa tıklama → modal aç
                 if(ghost) { ghost.remove(); ghost = null; }
                 if(dragLine) { dragLine.remove(); dragLine = null; }
                 renderCityModal(parseInt(loc));
@@ -8720,14 +8749,13 @@ function drawIconGroup(loc, list, owner) {
             }
         }
         
-        circle.addEventListener('mousedown', onDragStart);
-        circle.addEventListener('touchstart', onDragStart, {passive: false});
+        hitArea.addEventListener('mousedown', onDragStart);
+        hitArea.addEventListener('touchstart', onDragStart, {passive: false});
         window.addEventListener('mousemove', onDragMove);
         window.addEventListener('touchmove', onDragMove, {passive: false});
         window.addEventListener('mouseup', onDragEnd);
         window.addEventListener('touchend', onDragEnd);
         
-        // Cleanup: store handlers for removal on re-render
         if(!window._dragCleanups) window._dragCleanups = [];
         window._dragCleanups.push(() => {
             window.removeEventListener('mousemove', onDragMove);
