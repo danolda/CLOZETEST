@@ -7961,134 +7961,211 @@ function moveUnitCommand(uid, target, count) {
     // Hareket hakkı kontrolü
     if(unit.moved) return alert("Bu birlik bu tur zaten hareket etti!");
     
-    // YENİ: Menzil Kontrolü (Piyade 1, Atlı 2)
-    const validTargets = getReachableCities(unit.loc, unit.type);
+    // Menzil Kontrolü
+    const range = (unit.type === 'cav') ? 2 : 1;
+    const validTargets = getReachableCities(unit.loc, unit.type); // Bu fonksiyon önceki kodda vardı, yoksa ekle
     if(!validTargets.includes(parseInt(target))) {
-        const msg = (unit.type === 'cav') ? "Atlılar en fazla 2 şehir uzağa gidebilir!" : "Piyadeler sadece komşu şehre gidebilir!";
-        return alert(msg);
+        return alert((unit.type === 'cav') ? "Atlılar en fazla 2, Piyadeler 1 şehir gidebilir!" : "Piyadeler sadece komşu şehre gidebilir!");
     }
     
-    // Hareket İşlemi (Bölme veya Tam Taşıma)
-    let movingUnit = unit;
-    
+    // --- Hareket Öncesi Bölme İşlemi (Split) ---
+    let activeUnit = unit; // İşlem yapacak birlik
     if(count < unit.count) {
-        // Birliği böl, yenisi hareket eder
+        // Yeni birlik oluştur
         const newUnit = { 
             id: unitIdCounter++, 
             owner: unit.owner, 
             type: unit.type, 
-            loc: parseInt(target), 
+            loc: unit.loc, 
             count: count, 
             moved: true 
         };
         units.push(newUnit);
         unit.count -= count; // Eskisi azalır
-        movingUnit = newUnit; // Savaşacak olan yeni birlik
+        activeUnit = newUnit; // Yeni birlik hareket eder
     } else {
-        // Hepsini taşı
-        unit.loc = parseInt(target);
-        unit.moved = true;
+        unit.moved = true; // Hepsini taşıyorsak bu işaretlenir
+    }
+
+    // --- Atlı Birlik Yol Fethetme Mantığı ---
+    const dist = getDistance(activeUnit.loc, parseInt(target));
+    if(activeUnit.type === 'cav' && dist === 2) {
+        const midCity = getCommonNeighbor(activeUnit.loc, target);
+        if(midCity) {
+            // Aradaki şehri fethet (Eğer düşmansa)
+            conquerCity(midCity, activeUnit.owner); 
+            // Görsel olarak birliğin oraya uğradığını hissettirmek için:
+            // Aslında loc güncellemesine gerek yok, direkt hedef veya kuşatmaya bakacağız.
+        }
+    }
+
+    // --- Hedef Analizi: KALE mi ŞEHİR mi? ---
+    const opponent = (activeUnit.owner === 'p1') ? 'p2' : 'p1';
+    const isTargetBase = (parseInt(players[opponent].base) === parseInt(target));
+
+    if (isTargetBase) {
+        // == KUŞATMA SALDIRISI ==
+        // Birlik kalenin içine GİRMEZ. 
+        // Eğer 2 kare uzaktan atlı ile saldırdıysa, önce komşu kareye gelir, orada durur, oradan vurur.
+        
+        if (dist === 2) {
+            // Aradaki şehre gel ve oradan vur
+            const stepCity = getCommonNeighbor(activeUnit.loc, target);
+            activeUnit.loc = stepCity; 
+            // Aradaki şehir artık bizim (yukarıda fethedildi), orada durup kaleye vuruyoruz.
+        }
+        // Eğer mesafe 1 ise zaten olduğu yerden vurur, kımıldamaz.
+        
+        // Savaşa gönder (Hedef koordinatı veriyoruz ama birlik orada değil)
+        checkSiegeCombat(activeUnit, parseInt(target));
+
+    } else {
+        // == NORMAL HAREKET / MEYDAN SAVAŞI ==
+        // Birlik hedef şehre girer
+        activeUnit.loc = parseInt(target);
+        
+        // Girdiği yerde düşman var mı?
+        checkFieldCombat(activeUnit);
     }
     
-    // Gittiği yerde savaş var mı kontrol et
-    checkCombat(movingUnit);
-    
     // Aynı şehirdeki dost birlikleri birleştir
-    mergeUnits(parseInt(target), unit.owner);
+    mergeUnits(activeUnit.loc, activeUnit.owner);
     
     // Güncelleme gönder
     if(isHost) broadcastState();
     else conn.send({ type: 'UPDATE_MAP', players, units, gameState });
 }
 
-function checkCombat(attUnit) {
+// Yardımcı Mesafe Fonksiyonu (Basitçe komşu mu değil mi bakar)
+function getDistance(start, end) {
+    const neighbors = NEIGHBORS[parseInt(start)] || [];
+    if (neighbors.includes(parseInt(end))) return 1;
+    return 2; // Menzil kontrolünden geçtiği için ya 1 ya 2'dir.
+}
+
+// --- MEYDAN SAVAŞI (Şehre Girdiğinde) ---
+function checkFieldCombat(attUnit) {
+    const loc = attUnit.loc;
     const attacker = attUnit.owner;
     const defender = (attacker === 'p1') ? 'p2' : 'p1';
-    const loc = attUnit.loc;
 
-    // Şehirdeki Düşman Askerlerini Bul
-    const enemyUnits = units.filter(u => u.loc === loc && u.owner === defender);
+    // O şehirdeki düşmanları bul
+    const enemies = units.filter(u => u.loc === loc && u.owner === defender);
     
-    // Saldırı Gücünü Hesapla (Atlı:2, Piyade:1)
+    if(enemies.length === 0) {
+        // Düşman yok, direkt fethet
+        conquerCity(loc, attacker);
+        return;
+    }
+
+    // Güç Hesapla
     let attPower = attUnit.count * (attUnit.type === 'cav' ? 2 : 1);
-    
-    // Savunma Gücünü Hesapla
-    let defPower = enemyUnits.reduce((sum, u) => sum + (u.count * (u.type === 'cav' ? 2 : 1)), 0);
+    let defPower = enemies.reduce((sum, u) => sum + (u.count * (u.type === 'cav' ? 2 : 1)), 0);
 
-    // --- 1. AŞAMA: ASKERLER SAVAŞIYOR ---
+    showGameToast(`⚔️ ÇATIŞMA! ${attPower} vs ${defPower}`);
+
+    if (attPower > defPower) {
+        // SALDIRAN KAZANDI
+        // Düşmanlar silinir
+        units = units.filter(u => !(u.loc === loc && u.owner === defender));
+        
+        // Saldıranın kaybını düş
+        let remainingPower = attPower - defPower;
+        attUnit.count = Math.ceil(remainingPower / (attUnit.type === 'cav' ? 2 : 1));
+        
+        // Şehri ele geçir
+        conquerCity(loc, attacker);
+        
+    } else if (defPower > attPower) {
+        // SAVUNAN KAZANDI
+        // Saldıran silinir
+        units = units.filter(u => u.id !== attUnit.id);
+        
+        // Savunanın kaybını düş (İlk birliğe yansıt basitçe)
+        let remainingPower = defPower - attPower;
+        const survivor = enemies[0];
+        survivor.count = Math.max(1, Math.ceil(remainingPower / (survivor.type === 'cav' ? 2 : 1))); // En az 1 kalır
+        
+    } else {
+        // BERABERE (İkisi de ölür)
+        units = units.filter(u => !(u.loc === loc && u.owner === defender)); // Düşman ölür
+        units = units.filter(u => u.id !== attUnit.id); // Saldıran ölür
+        
+        // Şehir SAVUNANDA KALIR (Fetih fonksiyonu çağrılmaz)
+        showGameToast("⚔️ BERABERE! Herkes öldü, şehir düşmedi.");
+    }
+}
+
+// --- KUŞATMA SAVAŞI (Kaleye Dışarıdan Saldırı) ---
+function checkSiegeCombat(attUnit, baseLoc) {
+    const defender = (attUnit.owner === 'p1') ? 'p2' : 'p1';
+    
+    // Kaledeki düşman askerleri
+    const defendersInBase = units.filter(u => u.loc === baseLoc && u.owner === defender);
+    
+    // Güçler
+    let attPower = attUnit.count * (attUnit.type === 'cav' ? 2 : 1);
+    let defPower = defendersInBase.reduce((sum, u) => sum + (u.count * (u.type === 'cav' ? 2 : 1)), 0);
+
+    // 1. ÖNCE ASKERLER SAVAŞIR
     if (defPower > 0) {
         if (attPower > defPower) {
-            // SALDIRAN KAZANDI (Askerleri yendi)
-            // Düşman askerleri silinir
-            units = units.filter(u => !(u.loc === loc && u.owner === defender));
+            // Saldıran askeri yendi
+            units = units.filter(u => !(u.loc === baseLoc && u.owner === defender)); // Kaledekiler ölür
             
-            // Saldıranın gücü azalır (Kalan Güç = Saldıran - Savunan)
+            // Saldıranın gücü azalır
             let remainingPower = attPower - defPower;
+            attUnit.count = Math.ceil(remainingPower / (attUnit.type === 'cav' ? 2 : 1));
             
-            // Kalan gücü asker sayısına çevir (Yukarı yuvarla)
-            const unitPower = (attUnit.type === 'cav' ? 2 : 1);
-            attUnit.count = Math.ceil(remainingPower / unitPower);
-            
-            // Güncel güç ile devam et
-            attPower = remainingPower; 
+            // Kalan güçle kaleye vurmak için güncelle
+            attPower = remainingPower;
+            showGameToast("⚔️ Savunma yarıldı! Kaleye saldırılıyor...");
             
         } else {
-            // SAVUNAN KAZANDI VEYA BERABERE
-            // Saldıran birlik tamamen yok olur
-            units = units.filter(u => u.id !== attUnit.id);
+            // Savunan askeri yendi veya berabere
+            units = units.filter(u => u.id !== attUnit.id); // Saldıran ölür
             
-            // Savunanın kaybını hesapla
-            let remainingDefPower = defPower - attPower;
-            
-            if (remainingDefPower <= 0) {
-                // Berabere: Savunan askerleri de ölür
-                units = units.filter(u => !(u.loc === loc && u.owner === defender));
-                // AMA ŞEHİR SAVUNANDA KALIR (Fetih yok)
-            } else {
-                // Savunanın askerlerini azalt (Basitleştirilmiş: İlk birlikten düş)
-                // Birden fazla birlik varsa dağıtmak karmaşık olur, şimdilik ilkini azaltalım
-                if(enemyUnits.length > 0) {
-                    const survivor = enemyUnits[0]; // İlk savunma birliği
-                    const sPower = (survivor.type === 'cav' ? 2 : 1);
-                    // Toplam kalan gücü, sadece bu birliğe yansıtmak biraz hata payı yaratır ama oyun akışı için yeterli
-                    // Daha hassas olması için tüm savunma stackini yeniden hesaplamak gerekir ama bu yeterli:
-                    survivor.count = Math.max(1, Math.ceil((survivor.count * sPower - attPower) / sPower));
-                }
+            // Kaledekilerin kaybı
+            let remainingDef = defPower - attPower;
+            if(remainingDef <= 0) {
+                // Berabere: Kaledekiler de ölür
+                units = units.filter(u => !(u.loc === baseLoc && u.owner === defender));
+            } else if (defendersInBase.length > 0) {
+                // Savunan hayatta
+                const s = defendersInBase[0];
+                s.count = Math.max(1, Math.ceil(remainingDef / (s.type==='cav'?2:1)));
             }
-            return; // Saldıran öldüğü için kale savaşına geçemez veya şehri alamaz
+            showGameToast("🛡️ Saldırı püskürtüldü!");
+            return; // Kale hasar almaz
         }
     }
 
-    // --- 2. AŞAMA: KALE SAVAŞI VEYA FETİH ---
-    // Eğer buraya geldiysek saldıranın hala askeri var demektir.
+    // 2. KALE HASARI (Asker kalmadıysa veya yenildiyse)
+    players[defender].hp -= attPower;
+    showGameToast(`🔥 KALE VURULDU! -${attPower} Hasar (Kalan: ${players[defender].hp})`);
 
-    // Eğer burası Düşman Kalesi ise
-    if (parseInt(players[defender].base) === loc) {
-        // Kalan saldırı gücü kadar kaleye vur
-        players[defender].hp -= attPower;
-        showGameToast(`⚔️ KALE VURULDU! -${attPower} Hasar`);
-        
-        if (players[defender].hp <= 0) {
-            players[defender].hp = 0;
-            // Oyun Bitişi
-            setTimeout(() => {
-                alert(`OYUN BİTTİ! 👑 ${players[attacker].name} KAZANDI!`);
-                location.reload();
-            }, 500);
-        }
-    } 
-    // Eğer normal bir şehir ise ve savunanda değilse (veya savunanda ama askeri bittiyse)
-    else {
-        // Şehir zaten bizde değilse alalım
-        if (!players[attacker].cities.includes(loc)) {
-            // Rakipteyse ondan sil
-            if (players[defender].cities.includes(loc)) {
-                players[defender].cities = players[defender].cities.filter(c => c !== loc);
-            }
-            // Bize ekle
-            players[attacker].cities.push(loc);
-            // showGameToast(`🏳️ ${CITY_NAMES[loc]} Fethedildi!`);
-        }
+    if (players[defender].hp <= 0) {
+        players[defender].hp = 0;
+        setTimeout(() => {
+            alert(`🏆 OYUN BİTTİ! ${players[attUnit.owner].name} KAZANDI!`);
+            location.reload();
+        }, 1000);
+    }
+}
+
+// Basit Fetih Yardımcısı
+function conquerCity(cityId, newOwner) {
+    const oldOwner = (newOwner === 'p1') ? 'p2' : 'p1';
+    
+    // Rakipteyse sil
+    if (players[oldOwner].cities.includes(cityId)) {
+        players[oldOwner].cities = players[oldOwner].cities.filter(c => c !== cityId);
+    }
+    
+    // Bizde değilse ekle
+    if (!players[newOwner].cities.includes(cityId)) {
+        players[newOwner].cities.push(cityId);
+        // showGameToast(`${CITY_NAMES[cityId]} ele geçirildi!`);
     }
 }
 
@@ -8352,6 +8429,14 @@ function getReachableCities(startLoc, unitType) {
         }
     }
     return Array.from(accessible);
+}
+    // İki şehir arasındaki ortak komşuyu bulur (Atlıların geçtiği yol)
+function getCommonNeighbor(start, end) {
+    const startNeighbors = NEIGHBORS[parseInt(start)] || [];
+    const endNeighbors = NEIGHBORS[parseInt(end)] || [];
+    // İkisinin kesişimini bul
+    const common = startNeighbors.filter(x => endNeighbors.includes(x));
+    return common.length > 0 ? common[0] : null; // İlk bulunanı döndür
 }
 </script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
