@@ -7956,18 +7956,31 @@ function startFetihMatch() {
     const qCount = parseInt(document.getElementById('vs-q-count-input').value) || 40;
 
     let pool = [];
+    let categoryPools = [];
     checkboxes.forEach(chk => {
         const sec = sections.find(s => s.key === chk.value);
         if(!sec) return;
         const timerVal = parseInt(document.getElementById(`timer-${sec.key}`).value) || 30;
         const secQuestions = allQuestions.filter(q => q.id >= sec.start && q.id <= sec.end);
-        // Her soruya kendi kategorisinin süresini ekle
         secQuestions.forEach(q => q.timer = timerVal);
-        pool = pool.concat(secQuestions);
+        // Kategori içinde karıştır
+        secQuestions.sort(() => 0.5 - Math.random());
+        categoryPools.push(secQuestions);
+    });
+    
+    // Her kategoriden eşit sayıda soru al
+    const perCat = Math.floor(qCount / categoryPools.length);
+    let remainder = qCount % categoryPools.length;
+    
+    categoryPools.forEach(catQ => {
+        const take = Math.min(perCat + (remainder > 0 ? 1 : 0), catQ.length);
+        if(remainder > 0) remainder--;
+        pool = pool.concat(catQ.slice(0, take));
     });
     
     if(pool.length < qCount) return alert("Yetersiz soru!");
-    const shuffled = pool.sort(() => 0.5 - Math.random()).slice(0, qCount);
+    // Son karıştırma (kategoriler arası sıra rastgele olsun)
+    const shuffled = pool.sort(() => 0.5 - Math.random());
 
     const data = { type: 'START_GAME_DATA', questions: shuffled };
     conn.send(data);
