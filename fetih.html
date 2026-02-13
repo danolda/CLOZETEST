@@ -7936,7 +7936,7 @@ function handleData(data) {
             // Host'tan "BAŞLA" sinyali → Guest'te blur kaldır, süre başlat
             if(!isHost) unblurAndStart(); 
             break;
-        case 'OPPONENT_ANSWER': if(isHost) resolveQuestion(data.ans, data.time); break;
+        case 'OPPONENT_ANSWER': if(isHost) resolveQuestion(data.ans); break;
         case 'TURN_RESULT': handleTurnResult(data); break;
         case 'GUEST_BASE_SELECT': if(isHost) { players.p2.base = data.plate; players.p2.cities.push(data.plate); createUnit('p2','inf',data.plate,10); checkGameStart(); } break;
     }
@@ -7992,12 +7992,14 @@ function startGameUI() {
 // 5. OYUN DÖNGÜSÜ
 // =========================================================================
 let myAnswer = null, myTime = 0, p2AnswerTemp = null, p2TimeTemp = 0;
-let questionShownTime = 0; // Sorunun gösterildiği an (elapsed hesabı için)
 let questionReady = false; // Soru hazır mı?
+let answerArrivalOrder = 0; // Kim önce cevapladı (host tarafında sayaç)
 
 function startNewTurn() {
     if(currentTurn >= gameQuestions.length) return alert("Oyun Bitti!");
     myAnswer = null; p2AnswerTemp = null;
+    myTime = 0; p2TimeTemp = 0;
+    answerArrivalOrder = 0;
     questionReady = false;
     const q = gameQuestions[currentTurn];
     conn.send({ type: 'NEW_TURN', question: q, turnIndex: currentTurn });
@@ -8037,13 +8039,11 @@ function showQuestionBlurred(q, idx) {
         // Guest → Host'a "ben hazırım" gönder
         conn.send({ type: 'QUESTION_READY' });
     }
-    // Host zaten hazır, guest'in QUESTION_READY göndermesini bekleyecek
 }
 
 // Blur kaldır ve süreyi başlat (iki tarafta da aynı anda çağrılır)
 function unblurAndStart() {
     questionReady = true;
-    questionShownTime = Date.now();
     
     // Blur kaldır
     document.getElementById('q-body-wrapper').classList.remove('q-blurred');
@@ -8069,18 +8069,29 @@ function startTimer() {
 function submitAnswer(ans) {
     if(!questionReady) return; // Henüz blur kalkmadıysa cevap verme
     if(timerInterval) clearInterval(timerInterval);
-    const elapsed = Date.now() - questionShownTime; // Geçen süre (ms)
     document.querySelectorAll('.option-btn').forEach(b => {
         b.classList.add('locked');
         if(b.innerText.startsWith(ans)) b.classList.add('selected');
     });
     document.getElementById('wait-msg').classList.remove('d-none');
     
-    if(isHost) { myAnswer = ans; myTime = elapsed; checkAllAnswers(); }
-    else conn.send({ type: 'OPPONENT_ANSWER', ans: ans, time: elapsed });
+    if(isHost) { 
+        // Host cevapladı → sıra numarası ver
+        answerArrivalOrder++;
+        myAnswer = ans; 
+        myTime = answerArrivalOrder; // 1=ilk, 2=ikinci
+        checkAllAnswers(); 
+    }
+    else conn.send({ type: 'OPPONENT_ANSWER', ans: ans });
 }
 
-function resolveQuestion(ans, time) { p2AnswerTemp = ans; p2TimeTemp = time; checkAllAnswers(); }
+// Guest'in cevabı host'a ulaştığında
+function resolveQuestion(ans) { 
+    answerArrivalOrder++;
+    p2AnswerTemp = ans; 
+    p2TimeTemp = answerArrivalOrder; // 1=ilk, 2=ikinci
+    checkAllAnswers(); 
+}
 
 function checkAllAnswers() {
     if(!myAnswer || !p2AnswerTemp) return;
