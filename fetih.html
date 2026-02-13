@@ -8720,6 +8720,20 @@ function renderAll() {
     // 1. Skorlar (Mevcut kodlar aynen kalsın...)
     document.getElementById('p1-name').innerText = players.p1.name;
     document.getElementById('p2-name').innerText = players.p2.name;
+    // --- BURAYI EKLE (BAŞLANGIÇ) ---
+    // Eğer Botun kalesi varsa kartı göster ve güncelle
+    if (players.p3 && players.p3.base) {
+        document.getElementById('p3-card-display').style.display = 'block';
+        document.getElementById('p3-hp-display').innerText = players.p3.hp;
+        document.getElementById('p3-gold-display').innerText = players.p3.gold;
+        
+        // Bot öldüyse kartı biraz soluklaştır
+        if(players.p3.hp <= 0) {
+            document.getElementById('p3-card-display').style.opacity = '0.5';
+            document.getElementById('p3-hp-display').innerText = "YIKILDI";
+        }
+    }
+    // --- BURAYI EKLE (BİTİŞ) ---
     document.getElementById('p1-gold').innerText = players.p1.gold;
     document.getElementById('p2-gold').innerText = players.p2.gold;
     document.getElementById('p1-cities').innerText = players.p1.cities.length;
