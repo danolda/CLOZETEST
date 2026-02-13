@@ -8009,6 +8009,7 @@ function startNewTurn() {
 
 // Soru blurlu gösterilir, rakip bekle
 function showQuestionBlurred(q, idx) {
+    currentTurn = idx; // Guest tarafında da soru indexini güncelle (timer için kritik!)
     questionReady = false;
     const modal = new bootstrap.Modal(document.getElementById('questionModal'));
     document.getElementById('q-text').innerText = q.text;
