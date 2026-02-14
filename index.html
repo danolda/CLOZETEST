@@ -7,263 +7,548 @@
     <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- İkonlar -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" crossorigin="anonymous">
+    <script>
+    // Fallback: CDN yüklenemezse alternatif CDN dene
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(function() {
+            var testEl = document.createElement('span');
+            testEl.className = 'bi bi-check';
+            testEl.style.cssText = 'position:absolute;left:-9999px;font-size:16px;';
+            document.body.appendChild(testEl);
+            var w = testEl.offsetWidth;
+            document.body.removeChild(testEl);
+            if(w === 0) {
+                var link = document.createElement('link');
+                link.rel = 'stylesheet';
+                link.href = 'https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css';
+                document.head.appendChild(link);
+            }
+        }, 2000);
+    });
+    </script>
+    <!-- Bu satırı <head> içine, diğer linklerin altına ekle -->
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
     
     <!-- PeerJS (Sunucusuz Bağlantı İçin) -->
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     
     <style>
+    /* --- MODERN & MASCULINE THEME (PRO UI) --- */
     :root {
-        --bg-body: #f4f6f9;
-        --bg-card: #ffffff;
-        --text-color: #212529;
-        --border-color: #dee2e6;
-        --active-color: #0d6efd;
-        --wrong-color: #dc3545;
-        --correct-color: #198754;
-        --hover-bg: #f8f9fa;
-        --ai-color: #4285F4;
-        --vocab-color: #fd7e14;
-        --muted-color: #6c757d;
+        --primary-dark: #0f172a;    /* Koyu Lacivert */
+        --primary-light: #1e293b;   /* Slate Gri */
+        --accent-blue: #2563eb;     /* Profesyonel Mavi */
+        --accent-gold: #d97706;     /* Bronz/Altın */
+        --text-main: #334155;
+        --bg-body: #f1f5f9;
+        --card-bg: #ffffff;
+        --border-radius: 6px;       /* Keskin Köşeler */
+        --shadow-sharp: 4px 4px 0px rgba(0,0,0,0.15); /* Sert Gölge */
     }
 
     [data-theme="dark"] {
-        --bg-body: #121212;
-        --bg-card: #1e1e1e;
-        --text-color: #e0e0e0;
-        --border-color: #444;
-        --active-color: #bb86fc;
-        --hover-bg: #2c2c2c;
-        --ai-color: #8ab4f8;
-        --vocab-color: #ff922b;
-        --muted-color: #adb5bd;
+        --bg-body: #0b0f19;
+        --card-bg: #151b2b;
+        --text-main: #e2e8f0;
+        --primary-light: #1e293b;
+        --shadow-sharp: 4px 4px 0px #000;
     }
 
-    body { background-color: var(--bg-body); color: var(--text-color); font-family: 'Segoe UI', sans-serif; transition: 0.3s; }
-    
-    /* Kartların arka planı ve yazı rengi zorla değiştiriliyor */
-    .card { 
-        background-color: var(--bg-card) !important; 
-        color: var(--text-color) !important; 
-        border: 1px solid var(--border-color); 
-        border-radius: 12px; 
-        margin-bottom: 20px; 
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
-    }
-
-    /* Modal (Ayarlar penceresi) için */
-    .modal-content {
-        background-color: var(--bg-card) !important;
-        color: var(--text-color) !important;
-        border: 1px solid var(--border-color);
-    }
-
-    .form-control {
+    body {
         background-color: var(--bg-body);
-        color: var(--text-color);
-        border-color: var(--border-color);
-    }
-    .form-control:focus {
-        background-color: var(--bg-body);
-        color: var(--text-color);
+        color: var(--text-main);
+        font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        font-weight: 500;
     }
 
-    .text-muted { color: var(--muted-color) !important; }
+    /* --- KART YAPISI --- */
+    .card {
+        background-color: var(--card-bg) !important;
+        border: 2px solid var(--primary-light);
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow-sharp);
+        transition: transform 0.1s;
+    }
 
-    /* Menü Öğeleri */
+    /* --- MENÜ (SIDEBAR) --- */
     .sidebar-item {
-        padding: 12px 15px; cursor: pointer; border-radius: 8px; margin-bottom: 8px;
-        transition: all 0.2s; border: 1px solid transparent; display: flex; justify-content: space-between; align-items: center;
-        color: var(--text-color);
+        padding: 14px 18px;
+        margin-bottom: 8px;
+        border: 2px solid #cbd5e1;
+        border-radius: var(--border-radius);
+        background: var(--card-bg);
+        color: var(--text-main);
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.1s;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-size: 0.9rem;
     }
-    .sidebar-item:hover { background-color: rgba(128,128,128,0.1); }
-    .sidebar-item.active { background-color: var(--active-color); color: #fff; font-weight: bold; }
+    .sidebar-item:hover {
+        background-color: #e2e8f0;
+        transform: translateX(3px);
+    }
+    .sidebar-item.active {
+        background-color: var(--primary-dark);
+        color: #fff;
+        border-color: var(--primary-dark);
+        box-shadow: 2px 2px 0px rgba(0,0,0,0.3);
+    }
     
-    .sidebar-mistakes { border: 1px solid var(--wrong-color); color: var(--wrong-color); background: rgba(220, 53, 69, 0.05); font-weight: bold; }
-    .sidebar-mistakes.active { background: var(--wrong-color); color: white; }
+    /* Yanlışlar ve AI Menüsü Özel Renkler */
+    .sidebar-mistakes { border-color: #ef4444; color: #ef4444; }
+    .sidebar-mistakes.active { background: #ef4444; color: white; }
+    .sidebar-ai { border-color: #8b5cf6; color: #8b5cf6; }
+    .sidebar-ai.active { background: #8b5cf6; color: white; }
 
-    .sidebar-ai { border: 1px solid var(--ai-color); color: var(--ai-color); background: rgba(66, 133, 244, 0.1); font-weight: bold; }
-    .sidebar-ai.active { background: var(--ai-color); color: white; }
-
-    .sidebar-vocab { border: 1px solid var(--vocab-color); color: var(--vocab-color); background: rgba(253, 126, 20, 0.1); font-weight: bold; }
-    .sidebar-vocab.active { background: var(--vocab-color); color: white; }
-
-    /* Şık Tasarımı */
+    /* --- ŞIKLAR (OPTIONS) --- */
     .option-row {
-        display: flex; align-items: center; padding: 10px; margin-bottom: 8px;
-        border: 1px solid var(--border-color); border-radius: 8px; cursor: pointer; transition: all 0.2s;
+        background-color: var(--card-bg);
+        border: 2px solid #cbd5e1;
+        border-radius: var(--border-radius);
+        padding: 16px;
+        margin-bottom: 12px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        transition: all 0.1s;
+        font-weight: 600;
     }
-    .option-row:hover { background-color: var(--hover-bg); transform: translateX(5px); }
-    
+    .option-row:hover:not(.disabled-opts) {
+        border-color: var(--accent-blue);
+        background-color: #f8fafc;
+    }
+    .option-row:active:not(.disabled-opts) {
+        background-color: #e0f2fe;
+    }
+
     .btn-circle {
-        width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-        font-weight: bold; margin-right: 15px; flex-shrink: 0;
-        border: 2px solid #6c757d; color: #6c757d; background: transparent;
-    }
-    .option-text { font-size: 1rem; color: var(--text-color); }
-
-    .opt-correct { border-color: var(--correct-color) !important; background-color: rgba(25, 135, 84, 0.1) !important; }
-    .opt-correct .btn-circle { background-color: var(--correct-color); color: white; border-color: var(--correct-color); }
-    
-    .opt-wrong { border-color: var(--wrong-color) !important; background-color: rgba(220, 53, 69, 0.1) !important; }
-    .opt-wrong .btn-circle { background-color: var(--wrong-color); color: white; border-color: var(--wrong-color); }
-
-    .tip-box { 
-        background-color: rgba(255, 193, 7, 0.15); border-left: 5px solid #ffc107; padding: 15px; 
-        border-radius: 4px; margin-top: 15px; display: none; color: var(--text-color);
-    }
-    
-    .question-text { font-size: 1.15rem; font-weight: 500; margin-bottom: 1.5rem; line-height: 1.6; }
-    .disabled-opts { pointer-events: none; opacity: 0.8; }
-    
-    .btn-ai-gen { color: var(--ai-color); border-color: var(--ai-color); }
-    .btn-ai-gen:hover { background-color: var(--ai-color); color: white; }
-    
-    .spinner-overlay {
-        position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.8); 
-        z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white;
-    }
-        /* Tüyo Butonu İçin Akıllı Renk Ayarı */
-    .btn-ai-tip {
-        border-color: #ffc107 !important; /* Sarı çerçeve */
-        color: #212529; /* Light modda KOYU yazı */
-    }
-    .btn-ai-tip:hover {
-        background-color: #ffc107;
-        color: #000;
+        width: 36px; height: 36px;
+        background: #f1f5f9;
+        border: 2px solid #94a3b8;
+        color: #475569;
+        border-radius: 4px; /* Karemsi */
+        display: flex; align-items: center; justify-content: center;
+        margin-right: 15px;
+        font-weight: 800;
     }
 
-    /* Koyu Tema Aktifken */
-    [data-theme="dark"] .btn-ai-tip {
-        color: #ffc107; /* Dark modda SARI yazı (Okunabilir) */
+    /* DOĞRU/YANLIŞ STİLLERİ */
+    .opt-correct {
+        border-color: #10b981 !important;
+        background-color: rgba(16, 185, 129, 0.1) !important;
+        color: #065f46;
     }
-    [data-theme="dark"] .btn-ai-tip:hover {
-        background-color: #ffc107;
-        color: #000; /* Üzerine gelince siyah */
-    }
-        
-/* SABİT YUVARLAK HEDEF BUTONU (MOBİL İÇİN) */
-    .floating-btn {
-        position: fixed;
-        bottom: 25px;
-        right: 25px;
-        width: 60px;
-        height: 60px;
-        border-radius: 50%;
-        background-color: #198754; /* Yeşil */
+    .opt-correct .btn-circle {
+        background-color: #10b981;
         color: white;
-        border: none;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-        z-index: 1050; /* Her şeyin üstünde */
+        border-color: #10b981;
+    }
+
+    .opt-wrong {
+        border-color: #ef4444 !important;
+        background-color: rgba(239, 68, 68, 0.1) !important;
+        color: #7f1d1d;
+    }
+    .opt-wrong .btn-circle {
+        background-color: #ef4444;
+        color: white;
+        border-color: #ef4444;
+    }
+
+    /* --- BUTONLAR (SHARP & BOLD) --- */
+    .btn {
+        border-radius: 4px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        box-shadow: 0 2px 0 rgba(0,0,0,0.1);
+    }
+    .btn:active { box-shadow: none; transform: translateY(2px); }
+    
+    .btn-primary { background-color: var(--accent-blue); border: none; }
+    .btn-danger { background-color: #ef4444; border: none; }
+    .btn-outline-secondary { border: 2px solid #94a3b8; color: #64748b; }
+    
+    /* NAVBAR */
+    .navbar {
+        background-color: var(--primary-dark) !important;
+        box-shadow: 0 4px 0 rgba(0,0,0,0.1);
+        padding: 1rem;
+    }
+    .navbar-brand { color: #fff !important; font-weight: 900; letter-spacing: 1px; }
+
+    /* --- FLOATING BUTTONS (SABİTLENMİŞ BUTONLAR) --- */
+    .floating-btn, .scroll-top-btn {
+        position: fixed;
+        width: 55px; height: 55px;
+        border-radius: 8px; /* Keskin */
+        border: 2px solid rgba(0,0,0,0.2);
+        box-shadow: 4px 4px 0 rgba(0,0,0,0.3);
+        z-index: 1080 !important; /* En üstte */
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.5rem;
+        transition: transform 0.1s;
+        cursor: pointer;
+    }
+    .floating-btn { bottom: 30px; right: 30px; background-color: #10b981; color: white; }
+    .scroll-top-btn { bottom: 30px; left: 30px; background-color: var(--primary-dark); color: white; opacity: 0.9; }
+    
+    .floating-btn:hover, .scroll-top-btn:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 rgba(0,0,0,0.3); }
+    .floating-btn:active, .scroll-top-btn:active { transform: translate(0, 0); box-shadow: 0 0 0; }
+
+    /* --- MOBİL UYUMLULUK --- */
+    @media (max-width: 768px) {
+        .floating-btn { bottom: 20px; right: 20px; width: 50px; height: 50px; }
+        .scroll-top-btn { bottom: 20px; left: 20px; width: 50px; height: 50px; }
+        .sidebar-item { padding: 10px; font-size: 0.8rem; }
+    }
+         /* DARK MODE TEXT FIX (KESİN ÇÖZÜM) */
+    [data-theme="dark"] body,
+    [data-theme="dark"] .card,
+    [data-theme="dark"] .modal-content,
+    [data-theme="dark"] .form-control,
+    [data-theme="dark"] h1, [data-theme="dark"] h2, [data-theme="dark"] h3, 
+    [data-theme="dark"] h4, [data-theme="dark"] h5, [data-theme="dark"] h6,
+    [data-theme="dark"] p, [data-theme="dark"] span, [data-theme="dark"] div {
+        color: #e2e8f0 !important; /* Hafif kırık beyaz, gözü yormaz */
+    }
+
+    [data-theme="dark"] .card,
+    [data-theme="dark"] .modal-content {
+        background-color: #151b2b !important; /* Koyu Lacivert Arkaplan */
+        border-color: #334155 !important;
+    }
+
+    /* Input alanları koyu modda */
+    [data-theme="dark"] .form-control {
+        background-color: #0f172a !important;
+        border-color: #334155 !important;
+        color: #fff !important;
+    }
+
+    /* List group (Leaderboard) */
+    [data-theme="dark"] .list-group-item {
+        background-color: #1e293b !important;
+        color: #fff !important;
+        border-color: #334155 !important;
+    }
+
+    /* Puan bildirimi için Toast stili */
+    .score-toast {
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: #f59e0b; /* Altın Sarısı */
+        color: #000;
+        padding: 10px 20px;
+        border-radius: 50px;
+        font-weight: bold;
+        z-index: 9999;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        animation: slideDown 0.5s ease-out, fadeOut 0.5s ease-in 2s forwards;
+    }
+
+    @keyframes slideDown { from {top: -50px;} to {top: 20px;} }
+    @keyframes fadeOut { from {opacity: 1;} to {opacity: 0;} }
+
+        /* --- ŞIKLAR İÇİN DARK MODE DÜZELTMESİ (EN ALTA EKLE) --- */
+
+    /* 1. Şık Kutusu ve Metin Rengi */
+    [data-theme="dark"] .option-row {
+        background-color: #1e293b !important; /* Koyu Gri Arkaplan */
+        border-color: #475569 !important;      /* Gri Çerçeve */
+    }
+
+    /* 2. Şıkkın İçindeki Yazı (Kesin Beyaz) */
+    [data-theme="dark"] .option-row .option-text,
+    [data-theme="dark"] .option-row div {
+        color: #ffffff !important;
+        font-weight: 500;
+    }
+
+    /* 3. Şıkkın Üzerine Gelince (Hover) */
+    [data-theme="dark"] .option-row:hover:not(.disabled-opts) {
+        background-color: #334155 !important; /* Biraz daha açık gri */
+        border-color: #94a3b8 !important;
+    }
+
+    /* 4. Harf Yuvarlağı (A, B, C...) */
+    [data-theme="dark"] .btn-circle {
+        background-color: #0f172a !important; /* Çok koyu lacivert */
+        border-color: #64748b !important;
+        color: #e2e8f0 !important; /* Harf rengi beyazımsı */
+    }
+
+    /* 5. Doğru Cevap (Koyu Modda Yeşil) */
+    [data-theme="dark"] .opt-correct {
+        background-color: rgba(6, 95, 70, 0.6) !important; /* Koyu Yeşil Transparan */
+        border-color: #10b981 !important;
+    }
+    [data-theme="dark"] .opt-correct .option-text {
+        color: #6ee7b7 !important; /* Açık Yeşil Yazı */
+    }
+
+    /* 6. Yanlış Cevap (Koyu Modda Kırmızı) */
+    [data-theme="dark"] .opt-wrong {
+        background-color: rgba(127, 29, 29, 0.6) !important; /* Koyu Kırmızı Transparan */
+        border-color: #ef4444 !important;
+    }
+    [data-theme="dark"] .opt-wrong .option-text {
+        color: #fca5a5 !important; /* Açık Kırmızı Yazı */
+    }
+
+        /* --- K.O. EFEKTİ (HARDCORE STYLE) --- */
+    #ko-overlay {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.85);
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 24px;
-        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        z-index: 10000;
+        pointer-events: none;
+        opacity: 0;
+    }
+    #ko-overlay img {
+        max-width: 70vw;
+        max-height: 70vh;
+        transform: scale(0);
+    }
+    .ko-anim {
+        animation: ko-bg-in 0.15s ease-out forwards;
+    }
+    .ko-anim img {
+        animation: 
+            ko-slam 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.5) forwards,
+            ko-img-shake 0.3s ease-in-out 0.25s,
+            ko-img-fade 0.6s ease-in 3s forwards;
+    }
+    @keyframes ko-bg-in { 0%{opacity:0} 100%{opacity:1} }
+    @keyframes ko-slam {
+        0% { transform: scale(6); opacity: 0; }
+        60% { transform: scale(0.9); opacity: 1; }
+        100% { transform: scale(1); opacity: 1; }
+    }
+    @keyframes ko-img-shake {
+        0%,100% { transform: scale(1) rotate(0deg); }
+        25% { transform: scale(1.02) rotate(-4deg); }
+        75% { transform: scale(1.02) rotate(4deg); }
+    }
+    @keyframes ko-img-fade { to { opacity: 0; transform: scale(1.3); } }
+
+    /* --- VS MODE HEALTH BAR SYSTEM --- */
+    .vs-healthbar-container {
+        background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+        padding: 10px 16px 6px;
+        border-bottom: 3px solid #0f3460;
+        position: relative;
+    }
+    .vs-player-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 6px;
+    }
+    .vs-player-row.right { flex-direction: row-reverse; }
+    .vs-player-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid #3498db;
+        flex-shrink: 0;
+    }
+    .vs-player-row.right .vs-player-avatar { border-color: #e74c3c; }
+    .vs-player-info { flex: 1; min-width: 0; }
+    .vs-player-row.right .vs-player-info { text-align: right; }
+    .vs-player-name {
+        font-weight: 800;
+        font-size: 0.85rem;
+        color: #fff;
+        margin-bottom: 2px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    .vs-hp-bar-wrap {
+        width: 100%;
+        height: 18px;
+        background: #2c2c3a;
+        border-radius: 9px;
+        overflow: hidden;
+        position: relative;
+        border: 1px solid #444;
+    }
+    .vs-hp-bar {
+        height: 100%;
+        border-radius: 9px;
+        transition: width 0.6s ease;
+        position: relative;
+        background: linear-gradient(90deg, #2ecc71, #27ae60);
+        box-shadow: inset 0 2px 4px rgba(255,255,255,0.2);
+    }
+    .vs-hp-bar.danger { background: linear-gradient(90deg, #e74c3c, #c0392b); }
+    .vs-hp-bar.warning { background: linear-gradient(90deg, #f39c12, #e67e22); }
+    .vs-hp-text {
+        position: absolute;
+        right: 8px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 0.7rem;
+        font-weight: 800;
+        color: #fff;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+    }
+    .vs-divider {
+        text-align: center;
+        color: #f1c40f;
+        font-weight: 900;
+        font-size: 1.2rem;
+        margin: 2px 0;
+        text-shadow: 0 0 10px rgba(241,196,15,0.5);
+    }
+
+    /* VS Ready overlay */
+    .vs-ready-overlay {
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.7);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 50;
+        border-radius: 6px;
+    }
+    .vs-ready-btn {
+        padding: 14px 40px;
+        font-size: 1.1rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        border: 3px solid #2ecc71;
+        background: #27ae60;
+        color: #fff;
+        border-radius: 8px;
         cursor: pointer;
+        transition: all 0.2s;
     }
-    .floating-btn:hover {
-        transform: scale(1.1);
-        background-color: #157347;
-    }
-    .floating-btn:active {
-        transform: scale(0.95);
-    }
-
-    /* TEBRİK BİLDİRİMİ (TOAST) */
-    .toast-container {
-        z-index: 1100;
-    }
-    .celebration-toast {
-        background-color: #d1e7dd;
-        border-left: 5px solid #198754;
-        color: #0f5132;
-    }
-        
-      /* --- VS MODU STİLLERİ --- */
-        .vs-container { display: none; } /* Varsayılan gizli */
-        .vs-card { border: 2px solid #6f42c1; background-color: #f8f9fa; }
-        .vs-header { background: linear-gradient(90deg, #6610f2, #d63384); color: white; padding: 15px; border-radius: 10px 10px 0 0; }
-        .vs-score-board { display: flex; justify-content: space-between; font-size: 1.2rem; font-weight: bold; padding: 10px; background: #fff; border-bottom: 1px solid #ddd; }
-        .vs-timer { height: 10px; background: #e9ecef; width: 100%; margin-top: 0; }
-        .vs-timer-bar { height: 100%; background: #dc3545; width: 100%; transition: width 1s linear; }
-        .player-badge { padding: 5px 15px; border-radius: 20px; }
-        .p1-badge { background-color: #0d6efd; color: white; }
-        .p2-badge { background-color: #dc3545; color: white; }
-        .locked-answer { pointer-events: none; opacity: 0.7; }
-        .waiting-pulse { animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
-
-   /* --- MOBİL MENÜ DÜZENLEMESİ (SON DÜZELTME) --- */
-    @media (max-width: 768px) {
-        /* Yapışkan özelliği kaldır */
-        .sticky-top {
-            position: static !important;
-            z-index: 0;
-            
-            /* İÇERİĞE GÖRE UZASIN (Kendi içinde kaydırma yapmasın) */
-            max-height: none !important; 
-            overflow-y: visible !important;
-            
-            /* Alt kısımla mesafe bırak */
-            margin-bottom: 25px !important;
-        }
-        
-        /* Menü kartının kenarlarını mobilde biraz daha yumuşat */
-        .card {
-            border-radius: 8px !important;
-        }
+    .vs-ready-btn:hover { background: #2ecc71; transform: scale(1.05); }
+    .vs-ready-btn.done {
+        background: #555;
+        border-color: #777;
+        cursor: default;
+        pointer-events: none;
     }
 
-    /* --- VS MODU RENK DÜZELTMESİ --- */
-    /* Soru metni rengini CSS değişkeninden al (Tema uyumlu) */
-    #vs-q-text {
-        color: var(--text-color) !important;
+    /* Damage flash */
+    @keyframes dmg-flash {
+        0%,100% { background-color: transparent; }
+        50% { background-color: rgba(231,76,60,0.3); }
     }
-    
-    /* VS Şık Butonları */
-    .vs-opt-btn {
-        color: var(--text-color);
-        border-color: var(--border-color);
+    .dmg-flash { animation: dmg-flash 0.3s ease 2; }
+
+    /* VS Setup matching fetih.html */
+    .vs-setup-card {
+        background: linear-gradient(145deg, rgba(15,15,15,0.95), rgba(30,20,10,0.95)) !important;
+        border: 2px solid #b8860b !important;
+        box-shadow: 0 0 40px rgba(184,134,11,0.3), inset 0 1px 0 rgba(255,215,0,0.1);
     }
-    .vs-opt-btn:hover {
-        background-color: var(--active-color);
+    .vs-cat-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: rgba(0,0,0,0.4);
+        border-radius: 6px;
+        padding: 8px 12px;
+        margin-bottom: 6px;
+    }
+    .vs-cat-timer-input {
+        width: 65px;
+        background: #34495e;
+        border: none;
+        color: #f1c40f;
+        text-align: center;
+        font-weight: 700;
+        border-radius: 4px;
+        padding: 3px;
+    }
+    .vs-cat-qcount-input {
+        width: 55px;
+        background: #34495e;
+        border: none;
+        color: #3498db;
+        text-align: center;
+        font-weight: 700;
+        border-radius: 4px;
+        padding: 3px;
+    }
+
+    /* AI Hint button in VS */
+    .vs-hint-btn {
+        background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+        border: none;
         color: white;
+        padding: 8px 20px;
+        border-radius: 6px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+    .vs-hint-btn:hover { transform: scale(1.05); box-shadow: 0 0 15px rgba(139,92,246,0.5); }
+    .vs-hint-btn:disabled { opacity: 0.5; pointer-events: none; }
+      /* --- MOBİL NAVBAR DÜZENLEMESİ (TAŞMA SORUNU İÇİN) --- */
+    @media (max-width: 768px) {
+        /* Navbar içeriğini sığdır */
+        .navbar .container-fluid {
+            flex-direction: column; /* Alt alta diz */
+            align-items: center;
+            padding: 5px;
+        }
+        
+        .navbar-brand {
+            margin-bottom: 10px;
+            font-size: 1.3rem;
+        }
+
+        /* Buton grubunu düzenle */
+        .navbar .d-flex {
+            flex-wrap: wrap;       /* Sığmazsa aşağı kaydır */
+            justify-content: center;
+            gap: 5px !important;
+            width: 100%;
+        }
+
+        /* Butonları küçült */
+        .navbar .btn {
+            font-size: 0.75rem;
+            padding: 6px 10px;
+            margin: 2px 0; /* Aralarına mesafe koy */
+        }
+        
+        /* Gereksiz ikonları mobilde gizle, sadece yazı kalsın veya tam tersi */
+        /* Burada her şeyi sığdırmak için paddingi kıstık */
     }
 
-    /* SABİT YUKARI ÇIK BUTONU (SOL ALT) */
-.scroll-top-btn {
-    position: fixed;
-    bottom: 25px;
-    left: 25px; /* Sol tarafa yasla */
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    background-color: #0d6efd; /* Mavi renk (Diğeriyle karışmasın) */
-    color: white;
-    border: none;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-    z-index: 1050;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 24px;
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    cursor: pointer;
-    opacity: 0.8; /* Biraz şeffaf başlasın, dikkat dağıtmasın */
-}
+    /* --- MODAL VE GÖLGE SORUNU (SCROLL KİLİDİ FIX) --- */
+    /* Modalları en üste taşı (Bizim butonların z-index'i 99999 olduğu için modal altta kalıyordu) */
+    .modal-backdrop {
+        z-index: 100000 !important; /* Butonların üstüne çık */
+    }
+    .modal {
+        z-index: 100001 !important; /* Backdrop'un üstüne çık */
+    }
 
-.scroll-top-btn:hover {
-    transform: scale(1.1);
-    background-color: #0b5ed7;
-    opacity: 1;
-}
-
-.scroll-top-btn:active {
-    transform: scale(0.95);
-}    
-        
+    /* Eğer modal kapanırken takılırsa body'i zorla aç */
+    body.modal-open-fix {
+        overflow: auto !important;
+        padding-right: 0 !important;
+    }  
 </style>
+
 </head>
 <body>
 
@@ -334,6 +619,9 @@
 
             
         <div class="d-flex gap-2">
+            <button class="btn btn-warning btn-sm fw-bold" onclick="openLeaderboard()">
+                <i class="bi bi-trophy-fill"></i> Liderlik Tablosu
+            </button>
             <!-- YENİ EKLENEN HEDEFLER BUTONU -->
             <button class="btn btn-outline-success btn-sm" onclick="openDailyGoals()">
                 <i class="bi bi-graph-up-arrow"></i> Hedefler
@@ -343,15 +631,17 @@
         <a href="hatirlatici.html" class="btn btn-outline-warning btn-sm" target="_blank">
             <i class="bi bi-alarm-fill"></i> Hatırlatıcı
         </a>
-            
+            <a href="fetih.html" class="btn btn-outline-danger btn-sm" target="_blank">
+            <i class="bi bi-shield-shaded"></i> Fetih
+        </a>
             <!-- MEVCUT BUTONLAR -->
-            <button class="btn btn-outline-primary btn-sm" onclick="openSettings()">
+            <button class="btn btn-primary btn-sm mx-1" onclick="openSettings()">
                 <i class="bi bi-gear-fill"></i> API
             </button>
-            <button class="btn btn-outline-danger btn-sm" onclick="fullReset()">
+            <button class="btn btn-danger btn-sm mx-1" onclick="fullReset()">
                 <i class="bi bi-trash"></i> Sıfırla
             </button>
-            <button class="btn btn-outline-secondary btn-sm" onclick="toggleTheme()">
+            <button class="btn btn-secondary btn-sm mx-1" onclick="toggleTheme()">
                 <i class="bi bi-moon-stars-fill" id="themeIcon"></i>
             </button>
         </div>
@@ -397,7 +687,7 @@
         <h3 class="text-primary fw-bold mb-4"><i class="bi bi-lightning-charge-fill"></i> YDS MEYDAN OKUMA</h3>
         
         <div class="row g-4">
-            <!-- HOST KISMI (GÜNCELLENDİ) -->
+            <!-- HOST KISMI -->
             <div class="col-md-6 border-end">
                 <h5>Oda Kur (Host)</h5>
                 <p class="text-muted small">Odanıza bir isim verin (Örn: yds123)</p>
@@ -417,7 +707,7 @@
                 </div>
             </div>
             
-            <!-- GUEST KISMI (AYNI KALDI) -->
+            <!-- GUEST KISMI -->
             <div class="col-md-6">
                 <h5>Odaya Katıl (Guest)</h5>
                 <p class="text-muted small">Arkadaşının belirlediği oda ismini gir.</p>
@@ -429,57 +719,90 @@
         </div>
     </div>
 
-<!-- KATEGORİ VE AYAR SEÇİMİ (HOST) -->
-    <div id="vs-setup" class="card p-4 d-none">
-        <h4 class="mb-3 fw-bold text-primary">Yarışma Ayarları</h4>
+<!-- KATEGORİ VE AYAR SEÇİMİ (HOST - FETİH STYLE) -->
+    <div id="vs-setup" class="card vs-setup-card p-4 d-none" style="color:#fff;">
+        <h3 class="text-warning text-center mb-4"><i class="bi bi-sliders"></i> Savaş Ayarları</h3>
         
-        <!-- YENİ EKLENEN AYARLAR -->
-        <div class="row g-3 mb-4 border-bottom pb-3">
-            <div class="col-6">
-                <label class="form-label fw-bold">Bölüm Başı Soru:</label>
-                <select id="vs-q-count-input" class="form-select">
-                    <option value="1">1 Soru</option>
-                    <option value="2">2 Soru</option>
-                    <option value="3" selected>3 Soru</option>
-                    <option value="4">4 Soru</option>
-                    <option value="5">5 Soru</option>
-                </select>
-            </div>
-            <div class="col-6">
-                <label class="form-label fw-bold">Süre (Saniye):</label>
-                <input type="number" id="vs-time-input" class="form-control" value="90" min="10" max="300">
-            </div>
-        </div>
-
-        <h5 class="mb-3">Bölümleri Seçiniz (En az 1 tane)</h5>
-        <div class="row text-start" id="vs-cat-list">
+        <h5 class="text-white mb-3">Soru Bölümleri</h5>
+        <div id="vs-cat-list">
             <!-- JS ile doldurulacak -->
         </div>
         
-        <button class="btn btn-primary w-100 mt-3 btn-lg" onclick="startVsMatch()">
-            <i class="bi bi-play-circle-fill"></i> YARIŞMAYI BAŞLAT
+        <hr style="border-color: #b8860b;">
+
+        <div class="mb-3">
+            <label class="form-label text-warning fw-bold">Kim Önce Cevaplar?</label>
+            <select id="vs-first-answer" class="form-select bg-dark text-white border-secondary">
+                <option value="whoever" selected>Kim biliyorsa o (önce basan)</option>
+            </select>
+        </div>
+        
+        <button class="btn btn-lg w-100 mt-2 fw-bold" style="background:linear-gradient(180deg,#b8860b,#8B6914);color:#fff;border:2px solid #d4a017;text-transform:uppercase;letter-spacing:2px;" onclick="startVsMatch()">
+            <i class="bi bi-swords"></i> SAVAŞI BAŞLAT
         </button>
     </div>
 
     <!-- OYUN EKRANI -->
-    <div id="vs-gameplay" class="card d-none" style="overflow: hidden;">
-        <div class="vs-header">
-            <div class="d-flex justify-content-between">
-                <span id="vs-q-count">Soru 1/15</span>
-                <span id="vs-timer-text">90sn</span>
+    <div id="vs-gameplay" class="card d-none" style="overflow: hidden; position: relative;">
+        <!-- HEALTH BAR TOP -->
+        <div class="vs-healthbar-container">
+            <!-- Player 1 (Host) -->
+            <div class="vs-player-row">
+                <img src="Hostimg.jpeg" alt="Host" class="vs-player-avatar" id="vs-p1-avatar">
+                <div class="vs-player-info">
+                    <div class="vs-player-name" id="vs-p1-name">HOST</div>
+                    <div class="vs-hp-bar-wrap">
+                        <div class="vs-hp-bar" id="vs-p1-hp-bar" style="width:100%"></div>
+                        <span class="vs-hp-text" id="vs-p1-hp-text">100</span>
+                    </div>
+                </div>
+            </div>
+            <div class="vs-divider">âš" VS âš"</div>
+            <!-- Player 2 (Guest) -->
+            <div class="vs-player-row right">
+                <img src="Questimg.jpeg" alt="Quest" class="vs-player-avatar" id="vs-p2-avatar">
+                <div class="vs-player-info">
+                    <div class="vs-player-name" id="vs-p2-name">RAKİP</div>
+                    <div class="vs-hp-bar-wrap">
+                        <div class="vs-hp-bar" id="vs-p2-hp-bar" style="width:100%"></div>
+                        <span class="vs-hp-text" id="vs-p2-hp-text">100</span>
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="vs-timer"><div id="vs-timer-bar" class="vs-timer-bar"></div></div>
-        
-        <div class="vs-score-board">
-            <span class="player-badge p1-badge">SEN: <span id="score-me">0</span></span>
-            <span class="player-badge p2-badge">RAKİP: <span id="score-opp">0</span></span>
+
+        <!-- Question Header -->
+        <div style="padding:8px 16px;background:#1e293b;display:flex;justify-content:space-between;align-items:center;">
+            <span id="vs-q-count" style="color:#f1c40f;font-weight:800;">Soru 1/15</span>
+            <span id="vs-timer-text" style="color:#e74c3c;font-weight:800;font-size:1.2rem;">30sn</span>
+        </div>
+        <div style="height:4px;background:#2c2c3a;"><div id="vs-timer-bar" style="height:100%;width:100%;background:#3498db;transition:width 1s linear;"></div></div>
+
+        <div class="card-body text-center mt-2" id="vs-question-body">
+            <h5 id="vs-q-text" class="mb-4 fw-bold" style="min-height:60px;">Soru Yükleniyor...</h5>
+            <div id="vs-options" class="d-grid gap-2"></div>
+            <div id="vs-status-msg" class="mt-3 fw-bold fst-italic"></div>
+            
+            <!-- AI Hint area -->
+            <div id="vs-hint-area" class="d-none mt-3">
+                <button class="vs-hint-btn" id="vs-hint-btn" onclick="requestAiHint()">
+                    <i class="bi bi-stars"></i> AI İpucu Al
+                </button>
+                <div id="vs-hint-content" class="mt-2 text-start p-3 d-none" style="background:rgba(139,92,246,0.1);border:1px solid #7c3aed;border-radius:8px;font-size:0.9rem;"></div>
+            </div>
         </div>
 
-        <div class="card-body text-center mt-3">
-            <h5 id="vs-q-text" class="mb-4 text-dark font-weight-bold">Soru Yükleniyor...</h5>
-            <div id="vs-options" class="d-grid gap-2"></div>
-            <div id="vs-status-msg" class="mt-3 text-muted fw-bold fst-italic"></div>
+        <!-- Ready overlay (hidden by default) -->
+        <div id="vs-ready-screen" class="vs-ready-overlay d-none">
+            <div class="text-center text-white mb-3">
+                <div id="vs-round-result-text" style="font-size:1.1rem;font-weight:700;"></div>
+            </div>
+            <button class="vs-ready-btn" id="vs-ready-btn" onclick="pressReady()">
+                <i class="bi bi-check-circle-fill"></i> HAZIRIM
+            </button>
+            <div id="vs-ready-wait" class="d-none text-white mt-3">
+                <div class="spinner-border spinner-border-sm text-warning"></div> Rakip bekleniyor...
+            </div>
         </div>
     </div>
 
@@ -488,12 +811,14 @@
         <h1 class="display-4 fw-bold mb-3" id="vs-winner-text"></h1>
         <div class="row justify-content-center mb-4">
             <div class="col-4 bg-light p-3 rounded border me-2">
-                <h3>SEN</h3>
-                <h2 class="text-primary" id="final-score-me">0</h2>
+                <h3 id="vs-final-p1-label">HOST</h3>
+                <h2 class="text-primary" id="final-hp-p1">100</h2>
+                <small class="text-muted">HP</small>
             </div>
             <div class="col-4 bg-light p-3 rounded border">
-                <h3>RAKİP</h3>
-                <h2 class="text-danger" id="final-score-opp">0</h2>
+                <h3 id="vs-final-p2-label">RAKİP</h3>
+                <h2 class="text-danger" id="final-hp-p2">100</h2>
+                <small class="text-muted">HP</small>
             </div>
         </div>
         <button class="btn btn-outline-secondary" onclick="location.reload()">Ana Menüye Dön</button>
@@ -504,7 +829,289 @@
     </div>
 </div>
 
+    <!-- LEADERBOARD MODAL -->
+<div class="modal fade" id="leaderboardModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-dark text-white border-bottom-0">
+                <h5 class="modal-title fw-bold"><i class="bi bi-trophy text-warning"></i> GÜNLÜK SKOR TABLOSU</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body bg-light">
+                <!-- Kullanıcı İsmi Girişi -->
+                <div class="input-group mb-3">
+                    <span class="input-group-text bg-secondary text-white fw-bold">Komutan Adı:</span>
+                    <input type="text" id="leaderboard-name" class="form-control fw-bold" placeholder="Adını Gir" onchange="saveUserName()">
+                </div>
+
+                <div class="card bg-white border-0 shadow-sm mb-3">
+                    <div class="card-body text-center">
+                        <h6 class="text-muted text-uppercase small fw-bold">Bugünkü Puanın</h6>
+                        <h1 class="display-4 fw-bold text-primary mb-0" id="my-daily-score">0</h1>
+                        <small class="text-muted">Sıfırlanma: 00:00</small>
+                    </div>
+                </div>
+
+                <h6 class="fw-bold border-bottom pb-2">🏆 En İyiler (Global Simülasyon)</h6>
+                <ul class="list-group list-group-flush" id="leaderboard-list">
+                    <!-- JS ile dolacak -->
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+    
+<!-- Konfeti Efekti İçin Kütüphane -->
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
 <script>
+    
+/* ================= ONLINE LEADERBOARD & PUAN SİSTEMİ (FIXED ID) ================= */
+
+// --- SENİN ID'N BURAYA GÖMÜLDÜ ---
+const PANTRY_ID = "41e0725c-beab-4cea-9de2-ed320c7b115a"; 
+const BUCKET_NAME = "YdsLiderlikTablosu"; // Sepet ismi
+
+// Yerel Değişkenler
+let currentUser = localStorage.getItem('yds_username') || "İsimsiz Komutan";
+let myLocalScore = 0; // Anlık takip
+
+// 1. GÜNLÜK SKORU YERELDEN YÜKLE (Sayfa Yenilenince Puan Gitmesin)
+let dailyScoreData = JSON.parse(localStorage.getItem('yds_daily_score_v2')) || { date: new Date().toLocaleDateString(), score: 0 };
+
+// Gün değiştiyse yerel skoru sıfırla
+if (dailyScoreData.date !== new Date().toLocaleDateString()) {
+    dailyScoreData = { date: new Date().toLocaleDateString(), score: 0 };
+    localStorage.setItem('yds_daily_score_v2', JSON.stringify(dailyScoreData));
+}
+myLocalScore = dailyScoreData.score; // Yerel değişkeni güncelle
+
+// 2. KULLANICI ADINI KAYDETME
+function saveUserName() {
+    const inputName = document.getElementById('leaderboard-name').value.trim();
+    if(inputName && inputName.length > 2) {
+        currentUser = inputName;
+        localStorage.setItem('yds_username', currentUser);
+        syncScoreToCloud(0); // İsmi sunucuya kaydet
+        alert("Komutan adı kaydedildi: " + currentUser);
+    } else {
+        alert("Lütfen en az 3 harfli bir isim gir.");
+    }
+}
+
+// 3. PUAN EKLEME (YEREL + ONLINE)
+function addScorePoints(amount) {
+    // A) Yerel Depolama (Hız için)
+    if (dailyScoreData.date !== new Date().toLocaleDateString()) {
+        dailyScoreData = { date: new Date().toLocaleDateString(), score: 0 };
+    }
+    dailyScoreData.score += amount;
+    myLocalScore = dailyScoreData.score;
+    localStorage.setItem('yds_daily_score_v2', JSON.stringify(dailyScoreData));
+
+    // B) Ekrana Bildirim
+    showScoreToast(`+${amount} PUAN! (Kaydediliyor...)`);
+    
+    // C) Buluta Gönder
+    syncScoreToCloud(amount);
+}
+
+// 4. BULUT İLE SENKRONİZE ET (GÜNCELLENMİŞ)
+async function syncScoreToCloud(pointsToAdd) {
+    const url = `https://getpantry.cloud/apiv1/pantry/${PANTRY_ID}/basket/${BUCKET_NAME}`;
+    const todayStr = new Date().toLocaleDateString("tr-TR");
+
+    try {
+        // 1. Mevcut listeyi çekmeye çalış
+        let data = { date: todayStr, players: [] };
+        
+        try {
+            let response = await fetch(url, { 
+                method: "GET", 
+                headers: { "Content-Type": "application/json" }
+            });
+            if (response.ok) {
+                let json = await response.json();
+                // Eğer veri boş değilse ve tarih bugüne aitse kullan
+                if(json.date === todayStr) {
+                    data = json;
+                }
+            }
+        } catch(e) {
+            console.log("Sepet henüz yok veya okuma hatası, yeni oluşturulacak.");
+        }
+
+        // 2. Listeyi Güncelle
+        // Mevcut oyuncular dizisinde bizi bul
+        if (!data.players) data.players = [];
+        
+        let playerIndex = data.players.findIndex(p => p.name === currentUser);
+        
+        if (playerIndex > -1) {
+            // Oyuncu varsa: Yerel skor ile sunucu skorunu karşılaştır, büyük olanı al
+            // (Senkron hatasını önlemek için yerel skoru baz alıyoruz çünkü en güncel bizde)
+            data.players[playerIndex].score = myLocalScore; 
+        } else {
+            // Oyuncu yoksa ekle
+            data.players.push({ name: currentUser, score: myLocalScore });
+        }
+
+        // 3. Güncellenmiş listeyi sunucuya gönder (POST = Create/Update)
+        await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data)
+        });
+
+        console.log("Skor başarıyla buluta işlendi: " + myLocalScore);
+
+    } catch (error) {
+        console.error("Online skor hatası:", error);
+    }
+}
+
+// 5. LEADERBOARD AÇMA (GÜNCELLENMİŞ)
+async function openLeaderboard() {
+    const modal = new bootstrap.Modal(document.getElementById('leaderboardModal'));
+    modal.show();
+    
+    document.getElementById('leaderboard-name').value = currentUser;
+    document.getElementById('my-daily-score').innerText = myLocalScore;
+    const list = document.getElementById('leaderboard-list');
+    
+    list.innerHTML = `<div class="text-center p-4"><div class="spinner-border text-warning"></div><p class="mt-2">Sıralama Yükleniyor...</p></div>`;
+
+    const url = `https://getpantry.cloud/apiv1/pantry/${PANTRY_ID}/basket/${BUCKET_NAME}`;
+    const todayStr = new Date().toLocaleDateString("tr-TR");
+
+    try {
+        let response = await fetch(url);
+        
+        if (!response.ok) {
+            list.innerHTML = `<li class="list-group-item text-center">Henüz kayıtlı skor yok. İlk sen ol!</li>`;
+            // İlk açılışta sepet yoksa senkronize et ki oluşsun
+            syncScoreToCloud(0);
+            return;
+        }
+        
+        let data = await response.json();
+
+        // Tarih kontrolü
+        if (!data.date || data.date !== todayStr) {
+            list.innerHTML = `<li class="list-group-item text-center">Bugün henüz kimse puan almadı.</li>`;
+            return;
+        }
+
+        // Puanı yüksekten düşüğe sırala
+        data.players.sort((a, b) => b.score - a.score);
+
+        list.innerHTML = "";
+        data.players.forEach((p, index) => {
+            const isMe = p.name === currentUser;
+            // Sıralama ikonları
+            let rankIcon = `#${index+1}`;
+            if(index === 0) rankIcon = "👑";
+            if(index === 1) rankIcon = "🥈";
+            if(index === 2) rankIcon = "🥉";
+
+            // Tasarım
+            const bgClass = isMe ? "bg-warning bg-opacity-25 border-warning" : "";
+            const textClass = document.body.getAttribute('data-theme') === 'dark' ? "text-white" : "text-dark";
+            
+            list.innerHTML += `
+            <li class="list-group-item d-flex justify-content-between align-items-center mb-1 rounded ${bgClass} ${textClass}" style="background-color: ${isMe ? '' : 'transparent'}; border-bottom: 1px solid #ccc;">
+                <div>
+                    <span class="fw-bold me-2 fs-5">${rankIcon}</span> 
+                    <span class="fw-bold text-uppercase">${p.name}</span>
+                    ${isMe ? '<span class="badge bg-danger ms-2" style="font-size:0.6rem">SEN</span>' : ''}
+                </div>
+                <span class="badge bg-primary rounded-pill p-2 fs-6" style="min-width: 60px;">${p.score} P</span>
+            </li>`;
+        });
+
+    } catch (error) {
+        list.innerHTML = `<div class="text-center text-danger">Veri alınamadı.<br><small>${error.message}</small></div>`;
+    }
+}
+
+// 6. TOAST BİLDİRİMİ
+function showScoreToast(msg) {
+    const existing = document.querySelector('.score-toast');
+    if(existing) existing.remove();
+
+    const div = document.createElement('div');
+    div.className = 'score-toast';
+    div.innerHTML = `<i class="bi bi-lightning-fill"></i> ${msg}`;
+    document.body.appendChild(div);
+    setTimeout(() => div.remove(), 2500);
+}
+
+// 7. CEVAP KONTROL (PUANLAMA İÇERİR)
+window.checkAnswer = function(qId, selectedOpt) {
+    // Soruyu bul
+    let q = allQuestions.find(i => i.id === qId) || generatedQuestions.find(i => i.id === qId);
+    if(!q) return;
+
+    const container = document.getElementById(`opts-${qId}`);
+    const feedbackDiv = document.getElementById(`feedback-${qId}`);
+    const tipDiv = document.getElementById(`tip-${qId}`);
+    
+    // Şıkları kilitle
+    const rows = container.querySelectorAll('.option-row');
+    rows.forEach(row => {
+        row.classList.add('disabled-opts'); 
+        const btnText = row.querySelector('.btn-circle').innerText;
+        if (btnText === q.correctAnswer) row.classList.add('opt-correct');
+        else if (btnText === selectedOpt && selectedOpt !== q.correctAnswer) row.classList.add('opt-wrong');
+    });
+
+    const isCorrect = (selectedOpt === q.correctAnswer);
+
+    if (isCorrect) {
+        feedbackDiv.innerHTML = `<div class="mt-2 text-success fw-bold"><i class="bi bi-check-circle"></i> Doğru!</div>`;
+        if(!q.aiExplanation && tipDiv) tipDiv.style.display = 'none';
+        
+        // --- PUANLAMA ---
+        if (!q.isAi) { 
+            let points = 0;
+            // Eğer daha önce doğru yapılmadıysa
+            if (progressData[qId] !== 'correct') {
+                if (currentSectionKey === 'mistakes') points = 50; 
+                else points = 100;
+                
+                addScorePoints(points); // Puan ver ve kaydet
+            }
+        }
+        // -----------------
+
+        if (wrongBank.includes(qId)) {
+            wrongBank = wrongBank.filter(id => id !== qId);
+            localStorage.setItem('yds_mistakes', JSON.stringify(wrongBank));
+            const badge = document.querySelector('#menu-mistakes .badge');
+            if(badge) badge.innerText = wrongBank.length;
+        }
+        progressData[qId] = 'correct';
+
+        if(typeof confetti === "function") confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+
+    } else {
+        feedbackDiv.innerHTML = `<div class="mt-2 text-danger fw-bold"><i class="bi bi-x-circle"></i> Yanlış. Cevap: ${q.correctAnswer}</div>`;
+        if(tipDiv && (!q.isExam || (q.isExam && q.aiExplanation))) tipDiv.style.display = 'block';
+
+        if (!wrongBank.includes(qId)) {
+            wrongBank.push(qId);
+            localStorage.setItem('yds_mistakes', JSON.stringify(wrongBank));
+            const badge = document.querySelector('#menu-mistakes .badge');
+            if(badge) badge.innerText = wrongBank.length;
+        }
+        progressData[qId] = 'wrong';
+        progressData[qId + '_selected'] = selectedOpt;
+    }
+
+    localStorage.setItem('yds_progress', JSON.stringify(progressData));
+    if(typeof trackDailyProgress === "function") trackDailyProgress(qId);
+};
+    
 /* ================= YDS MEGA KELİME HAVUZU (GÜNCELLENMİŞ - 1200+ KELİME) ================= */
     const ydsVocabDB = [
         // --- A GRUBU ---
@@ -4196,7 +4803,7 @@ TIP: Main clause: would have V3 (burada would).
     C) from / at
     D) on / to
     E) with / on
-    30. Anorexia nervosa is a severe eating disorder, usually involving excessive weight loss ---- self‐starvation, most often found ---- teenage girls. (2021 NİSAN YDS)
+    30. Anorexia nervosa is a severe eating disorder, usually involving excessive weight loss ---- self-starvation, most often found ---- teenage girls. (2021 NİSAN YDS)
     A) at / with
     B) from / of
     C) for / between
@@ -7742,6 +8349,16 @@ const rawExamVocabA = `1-C 2-D 3-A 4-A 5-E 6-B 7-E 8-E 9-B 10-A 11-C 12-D 13-C 1
 
 // 2. Kelime Sorusu Üretici
 function generateVocabQuestions() {
+    function seededShuffle(arr, seed) {
+    let m = arr.length, t, i;
+    let s = seed;
+    while (m) {
+        s = (s * 9301 + 49297) % 233280;
+        i = Math.floor((s / 233280) * m--);
+        t = arr[m]; arr[m] = arr[i]; arr[i] = t;
+    }
+    return arr;
+}
     let qList = [];
     const totalWords = ydsVocabDB.length;
     
@@ -7756,18 +8373,15 @@ function generateVocabQuestions() {
             questionText = `<strong>"${item.tr}"</strong> kelimesinin İngilizce karşılığı nedir?`;
             correctAns = item.en;
         }
-
+               // Sabit seed ile çeldirici seç (index bazlı)
+        let tempPool = ydsVocabDB.filter(w => w.en !== item.en);
+        let shuffled = seededShuffle([...tempPool], index + 42);
         let distractors = [];
-        while(distractors.length < 4) {
-            let randomIdx = Math.floor(Math.random() * totalWords);
-            let randomItem = ydsVocabDB[randomIdx];
-            if (randomItem.en !== item.en && !distractors.includes(randomItem)) {
-                let distOption = isEnToTr ? randomItem.tr : randomItem.en;
-                if(!distractors.includes(distOption)) distractors.push(distOption);
-            }
+        for (let j = 0; j < shuffled.length && distractors.length < 4; j++) {
+            let distOption = isEnToTr ? shuffled[j].tr : shuffled[j].en;
+            if (!distractors.includes(distOption)) distractors.push(distOption);
         }
-
-        let optionsArr = [...distractors, correctAns].sort(() => Math.random() - 0.5);
+        let optionsArr = seededShuffle([...distractors, correctAns], index + 99);
         let optionsObj = { A: optionsArr[0], B: optionsArr[1], C: optionsArr[2], D: optionsArr[3], E: optionsArr[4] };
 
         qList.push({
@@ -7978,6 +8592,11 @@ function showMistakes() {
         renderQuestions(combined);
         document.getElementById('progress-badge').innerText = combined.length;
     }
+}
+    
+    function updateProgressBadge(qList) {
+    const solved = qList.filter(q => progressData[q.id]).length;
+    document.getElementById('progress-badge').innerText = `${solved}/${qList.length}`;
 }
 
 function showAiGenerated() {
@@ -8306,33 +8925,39 @@ function renderQuestions(qList) {
         }
     }
 
-    // TEBRİK MESAJINI GÖSTEREN FONKSİYON
-    function showGoalCelebration(categoryTitle) {
-        const toastEl = document.getElementById('goalToast');
-        const toastBody = document.getElementById('goalToastBody');
-        
-        toastBody.innerText = `Harika! Bugünkü "${categoryTitle}" hedefini tamamladın. Başka bir bölüme geçebilirsin! 🚀`;
-        
-        const toast = new bootstrap.Toast(toastEl, { delay: 5000 }); // 5 saniye durur
+// --- 1. GÜNCELLENMİŞ HEDEF KUTLAMASI ---
+function showGoalCelebration(categoryTitle) {
+    // Toast Bildirimi
+    const toastEl = document.getElementById('goalToast');
+    const toastBody = document.getElementById('goalToastBody');
+    if(toastEl && toastBody) {
+        toastBody.innerText = `GÖREV TAMAMLANDI: ${categoryTitle} ✅`;
+        const toast = new bootstrap.Toast(toastEl, { delay: 4000 });
         toast.show();
-        
-        // Kutlama sesi efekti (Opsiyonel - browser izin verirse)
-        // const audio = new Audio('https://actions.google.com/sounds/v1/cartoon/clank_car_crash.ogg');
-        // audio.play().catch(e => {}); 
     }
-    
-function checkAnswer(qId, selectedOpt) {
-    let q = allQuestions.find(i => i.id === qId);
-    if(!q) q = generatedQuestions.find(i => i.id === qId);
+}
+
+/* ================= CEVAP KONTROLÜ (TEKRAR TIKLAMA ENGELLİ) ================= */
+window.checkAnswer = function(qId, selectedOpt) {
+    // YANLIŞLARIM bölümünde tekrar cevaplanabilir olmalı
+    if (progressData[qId] && currentSectionKey !== 'mistakes') {
+        console.log("Bu soru zaten çözüldü.");
+        return; 
+    }
+    // -----------------------------------------------------------------------
+
+    // Soruyu bul
+    let q = allQuestions.find(i => i.id === qId) || generatedQuestions.find(i => i.id === qId);
     if(!q) return;
 
     const container = document.getElementById(`opts-${qId}`);
     const feedbackDiv = document.getElementById(`feedback-${qId}`);
     const tipDiv = document.getElementById(`tip-${qId}`);
     
+    // Şıkları kilitle ve boya
     const rows = container.querySelectorAll('.option-row');
     rows.forEach(row => {
-        row.classList.add('disabled-opts');
+        row.classList.add('disabled-opts'); // Görsel olarak da tıkla namaz yap
         const btnText = row.querySelector('.btn-circle').innerText;
         if (btnText === q.correctAnswer) row.classList.add('opt-correct');
         else if (btnText === selectedOpt && selectedOpt !== q.correctAnswer) row.classList.add('opt-wrong');
@@ -8344,42 +8969,50 @@ function checkAnswer(qId, selectedOpt) {
         feedbackDiv.innerHTML = `<div class="mt-2 text-success fw-bold"><i class="bi bi-check-circle"></i> Doğru!</div>`;
         if(!q.aiExplanation && tipDiv) tipDiv.style.display = 'none';
         
+        // Puanlama
+        if (!q.isAi) {
+            let points = 0;
+            if (currentSectionKey === 'mistakes') points = 50;
+            else points = 100;
+            addScorePoints(points);
+        }
+
         if (wrongBank.includes(qId)) {
             wrongBank = wrongBank.filter(id => id !== qId);
             localStorage.setItem('yds_mistakes', JSON.stringify(wrongBank));
-            renderMenu(); 
+            const badge = document.querySelector('#menu-mistakes .badge');
+            if(badge) badge.innerText = wrongBank.length;
         }
-        progressData[qId] = 'correct';
+        progressData[qId] = 'correct'; // Kaydet
+
     } else {
         feedbackDiv.innerHTML = `<div class="mt-2 text-danger fw-bold"><i class="bi bi-x-circle"></i> Yanlış. Cevap: ${q.correctAnswer}</div>`;
-        
-        if(tipDiv) {
-            if (!q.isExam || (q.isExam && q.aiExplanation)) tipDiv.style.display = 'block';
-        }
+        if(tipDiv && (!q.isExam || (q.isExam && q.aiExplanation))) tipDiv.style.display = 'block';
 
         if (!wrongBank.includes(qId)) {
             wrongBank.push(qId);
             localStorage.setItem('yds_mistakes', JSON.stringify(wrongBank));
-            renderMenu();
+            const badge = document.querySelector('#menu-mistakes .badge');
+            if(badge) badge.innerText = wrongBank.length;
         }
+        
+        // Hatırlatıcıya ayrı listeye de gönder
+        let srsBank = JSON.parse(localStorage.getItem('yds_srs_bank')) || [];
+        if (!srsBank.includes(qId)) {
+            srsBank.push(qId);
+            localStorage.setItem('yds_srs_bank', JSON.stringify(srsBank));
+        }
+        
         progressData[qId] = 'wrong';
         progressData[qId + '_selected'] = selectedOpt;
     }
 
     localStorage.setItem('yds_progress', JSON.stringify(progressData));
-    // Progress bar güncellemeyi atlıyoruz, performans için.
     
-    // --- YENİ EKLENEN SATIR ---
-        trackDailyProgress(qId); // Günlük hedef takibini güncelle
-        // --------------------------
-
-        if (currentSectionKey !== 'mistakes') {
-            // ... (varsa diğer kodlar)
-        }
-
-
-}
-
+    // Hedef kontrolü
+    if(typeof trackDailyProgress === "function") trackDailyProgress(qId);
+};
+    
 function goToFirstUnsolved() {
     if (!currentSectionKey) { alert("Lütfen bölüm seçiniz."); return; }
 
@@ -8435,13 +9068,13 @@ function goToFirstUnsolved() {
 
         // 1. Yanlışlar Bölümü ise
         if (currentSectionKey === 'mistakes') {
+            const mistakeQuestions = allQuestions.filter(q => wrongBank.includes(q.id));
+            const mistakeAi = generatedQuestions.filter(q => wrongBank.includes(q.id));
+            [...mistakeQuestions, ...mistakeAi].forEach(q => targetIds.push(q.id));
             wrongBank = [];
             localStorage.setItem('yds_mistakes', JSON.stringify([]));
-            // Yanlış bankasındaki tüm soruların cevap geçmişini de temizle
-            const mistakeQuestions = allQuestions.filter(q => wrongBank.includes(q.id));
-            mistakeQuestions.forEach(q => targetIds.push(q.id));
             showMistakes();
-        } 
+        }
         // 2. Yapay Zeka Bölümü ise
         else if (currentSectionKey === 'ai') {
             if(confirm("AI tarafından üretilen sorular tamamen silinsin mi? (Geri alınamaz)")) {
@@ -8805,30 +9438,43 @@ function saveApiKey() {
         }
     }
 
-/* ================= VS MODU (MULTIPLAYER - CUSTOM ID) ================= */
+/* ================= VS MODU (MULTIPLAYER - REVAMPED) ================= */
 let peer = null;
 let conn = null;
 let amIHost = false;
 let vsQuestions = [];
 let currentVsIndex = 0;
-let myScore = 0;
-let oppScore = 0;
 let myAnswer = null;
 let oppAnswer = null;
+let myAnswerTime = 0;
+let oppAnswerTime = 0;
 let vsTimerInterval = null;
-let vsTimeLimit = 90; // YENİ DEĞİŞKEN (Varsayılan 90)
+let vsTimerStart = 0;
+
+// Health
+let p1HP = 100;
+let p2HP = 100;
+
+// Ready system
+let myReady = false;
+let oppReady = false;
+
+// Track if match ended
+let vsMatchEnded = false;
+
+// AI hint
+let hintRequested = false;
+let hintShown = false;
 
 
-// Menüden Tıklanınca (Sadece ekranı aç, bağlantı kurma)
+// Menuden Tiklaninca
 function initVsMode() {
     document.getElementById('questions-area').style.display = 'none';
     document.getElementById('vs-area').style.display = 'block';
-    document.getElementById('active-section-title').innerText = "VS Modu (Çok Oyunculu)";
+    document.getElementById('active-section-title').innerText = "VS Modu (Cok Oyunculu)";
     
-    // Eğer eski bağlantı varsa temizle
     if(peer) { peer.destroy(); peer = null; }
     
-    // UI Sıfırla
     document.getElementById('vs-lobby').classList.remove('d-none');
     document.getElementById('vs-setup').classList.add('d-none');
     document.getElementById('host-status').classList.add('d-none');
@@ -8837,44 +9483,38 @@ function initVsMode() {
     document.getElementById('join-id-input').value = "";
 }
 
-// ÖZEL İSİMLE ODA KUR (HOST)
+// OZEL ISIMLE ODA KUR (HOST)
 function createCustomRoom() {
-    const roomId = document.getElementById('host-id-input').value.trim().replace(/[^a-zA-Z0-9_-]/g, ""); // Sadece harf sayı
+    const roomId = document.getElementById('host-id-input').value.trim().replace(/[^a-zA-Z0-9_-]/g, "");
     
     if (roomId.length < 3) {
-        alert("Oda ismi en az 3 karakter olmalı!");
+        alert("Oda ismi en az 3 karakter olmali!");
         return;
     }
 
-    // UI Güncelle
     document.getElementById('host-status').classList.remove('d-none');
     document.getElementById('host-status').innerText = "Oda kuruluyor (" + roomId + ")...";
 
-    // Kendi ismimizle Peer başlat
     peer = new Peer(roomId);
 
-    // Başarılı Açılırsa
     peer.on('open', (id) => {
         amIHost = true;
         document.getElementById('host-status').classList.add('d-none');
         document.getElementById('host-ready-msg').classList.remove('d-none');
-        // Inputu kilitle
         document.getElementById('host-id-input').disabled = true;
     });
 
-    // Hata Olursa (Örn: İsim doluysa)
     peer.on('error', (err) => {
         document.getElementById('host-status').classList.add('d-none');
         if (err.type === 'unavailable-id') {
-            alert("Bu oda ismi (" + roomId + ") zaten kullanılıyor. Başka bir isim deneyin.");
+            alert("Bu oda ismi (" + roomId + ") zaten kullaniliyor. Baska bir isim deneyin.");
         } else {
-            alert("Hata oluştu: " + err.type);
+            alert("Hata olustu: " + err.type);
         }
         document.getElementById('host-id-input').disabled = false;
         peer = null;
     });
 
-    // Rakip Bağlanınca
     peer.on('connection', (c) => {
         conn = c;
         setupConnection();
@@ -8884,300 +9524,677 @@ function createCustomRoom() {
 // ODAYA KATIL (GUEST)
 function joinRoom() {
     const destId = document.getElementById('join-id-input').value.trim();
-    if (!destId) return alert("Lütfen oda ismini girin!");
+    if (!destId) return alert("Lutfen oda ismini girin!");
     
     amIHost = false;
-    
-    // Guest için rastgele ID oluştur (Çakışma olmasın diye)
-    // Guest'in isminin ne olduğu önemli değil, Host'a bağlanması yeterli
     peer = new Peer(); 
 
     peer.on('open', (id) => {
-        // Kendi ID'mizi alınca Host'a bağlanmayı dene
         conn = peer.connect(destId);
         
-        // Bağlantı hatası olursa (Host yoksa)
         peer.on('error', (err) => {
-            alert("Oda bulunamadı veya bağlantı hatası!");
+            alert("Oda bulunamadi veya baglanti hatasi!");
         });
 
         setupConnection();
     });
 }
 
-// BAĞLANTI KURULDUĞUNDA (ORTAK)
+// BAGLANTI KURULDUGUNDA (ORTAK)
 function setupConnection() {
     if(!conn) return;
 
     conn.on('open', () => {
-        console.log("Bağlantı sağlandı!");
+        console.log("Baglanti saglandi!");
         
         if (amIHost) {
-            // Host Kategori Seçimine Geçer
             document.getElementById('vs-lobby').classList.add('d-none');
             document.getElementById('vs-setup').classList.remove('d-none');
             renderCategorySelection();
         } else {
-            // Guest Bekleme Ekranına Geçer
-            document.getElementById('vs-lobby').innerHTML = `
-                <div class="text-center py-5">
-                    <h3 class="text-success fw-bold"><i class="bi bi-check-circle-fill"></i> Odaya Girildi!</h3>
-                    <p class="lead">Host'un oyunu başlatması bekleniyor...</p>
-                    <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;"></div>
-                </div>`;
+            document.getElementById('vs-lobby').innerHTML = '<div class="text-center py-5"><h3 class="text-success fw-bold"><i class="bi bi-check-circle-fill"></i> Odaya Girildi!</h3><p class="lead">Host\'un oyunu baslatmasi bekleniyor...</p><div class="spinner-border text-primary" style="width:3rem;height:3rem;"></div></div>';
         }
     });
 
     conn.on('data', (data) => {
-        handleData(data);
+        handleVsData(data);
     });
     
     conn.on('close', () => {
-        alert("Bağlantı koptu!");
-        location.reload();
+        if(!vsMatchEnded) {
+            alert("Baglanti koptu!");
+            location.reload();
+        }
     });
 }
 
-// VERİ ALINDIĞINDA (GUEST İÇİN GÜNCELLEME)
-function handleData(data) {
-    if (data.type === 'START_GAME') {
-        vsQuestions = data.questions;
-        vsTimeLimit = data.timeLimit; // HOST'UN BELİRLEDİĞİ SÜREYİ AL
-        startGameUI();
-    } 
-    else if (data.type === 'OPP_ANSWER') {
-        oppAnswer = data.ans;
-        checkRoundEnd();
-    }
-}
-
-// KATEGORİ SEÇİMİ (Sadece Host)
+// KATEGORI SECIMI (Fetih tarzi: per-section timer + quest count)
 function renderCategorySelection() {
     const list = document.getElementById('vs-cat-list');
     list.innerHTML = "";
-    // Yapay Zeka ve Hatalar hariç diğer bölümler
     const cats = sections.filter(s => s.key !== 'secAi' && s.key !== 'secMistakes');
     
     cats.forEach(c => {
-        list.innerHTML += `
-        <div class="col-6 mb-2">
-            <div class="form-check">
-                <input class="form-check-input vs-cat-check" type="checkbox" value="${c.key}" id="chk-${c.key}">
-                <label class="form-check-label" for="chk-${c.key}">${c.title}</label>
-            </div>
-        </div>`;
+        const count = allQuestions.filter(q => q.id >= c.start && q.id <= c.end).length;
+        list.innerHTML += '<div class="vs-cat-row">'
+            + '<div class="form-check mb-0" style="flex:1;">'
+            + '<input class="form-check-input vs-cat-check" type="checkbox" value="' + c.key + '" id="chk-' + c.key + '" checked>'
+            + '<label class="form-check-label text-white" for="chk-' + c.key + '">' + c.title + ' <small style="color:#888;">(' + count + ')</small></label>'
+            + '</div>'
+            + '<div class="d-flex align-items-center gap-1">'
+            + '<input type="number" class="vs-cat-qcount-input" id="qcount-' + c.key + '" value="3" min="1" max="50" title="Soru sayisi">'
+            + '<small style="color:#3498db;">soru</small>'
+            + '</div>'
+            + '<div class="d-flex align-items-center gap-1 ms-2">'
+            + '<input type="number" class="vs-cat-timer-input" id="timer-' + c.key + '" value="30" min="5" max="300" title="Sure (saniye)">'
+            + '<small style="color:#f1c40f;">sn</small>'
+            + '</div>'
+            + '</div>';
     });
 }
 
-// OYUNU BAŞLAT (HOST İÇİN GÜNCELLEME)
+// OYUNU BASLAT (HOST)
 function startVsMatch() {
-    // 1. Seçili Bölümleri Al
     const checkboxes = document.querySelectorAll('.vs-cat-check:checked');
     if (checkboxes.length < 1) {
-        alert("En az 1 bölüm seçmelisiniz!");
+        alert("En az 1 bolum secmelisiniz!");
         return;
     }
 
-    // 2. Ayarları Al (Soru Sayısı ve Süre)
-    const qPerSection = parseInt(document.getElementById('vs-q-count-input').value);
-    const timeSet = parseInt(document.getElementById('vs-time-input').value);
-    
-    if(timeSet < 10) { alert("Süre en az 10 saniye olmalı!"); return; }
-
-    // 3. Soruları Havuzdan Çek
     let pool = [];
     checkboxes.forEach(chk => {
         const sec = sections.find(s => s.key === chk.value);
-        const sectionQuestions = allQuestions.filter(q => q.id >= sec.start && q.id <= sec.end);
+        if(!sec) return;
+        const timerVal = parseInt(document.getElementById('timer-' + sec.key).value) || 30;
+        const qCount = parseInt(document.getElementById('qcount-' + sec.key).value) || 3;
+        const secQuestions = allQuestions.filter(q => q.id >= sec.start && q.id <= sec.end);
         
-        // Dinamik sayı kadar rastgele seç
-        const picked = sectionQuestions.sort(() => 0.5 - Math.random()).slice(0, qPerSection);
-        pool = pool.concat(picked);
+        secQuestions.forEach(q => q.timer = timerVal);
+        secQuestions.sort(() => 0.5 - Math.random());
+        pool = pool.concat(secQuestions.slice(0, qCount));
     });
 
-    if(pool.length === 0) { alert("Seçilen bölümlerde yeterli soru yok!"); return; }
+    if(pool.length === 0) { alert("Secilen bolumlerde yeterli soru yok!"); return; }
 
-    // 4. Hazırla ve Gönder
     vsQuestions = pool.sort(() => 0.5 - Math.random());
-    vsTimeLimit = timeSet; // Host için süreyi ayarla
 
-    // Guest'e hem soruları hem süreyi gönder
-    conn.send({ 
-        type: 'START_GAME', 
-        questions: vsQuestions, 
-        timeLimit: vsTimeLimit 
-    });
-    
+    conn.send({ type: 'START_GAME', questions: vsQuestions });
     startGameUI();
 }
 
-// OYUN ARAYÜZÜNÜ AÇ
+// VERI ALINDIGINDA
+function handleVsData(data) {
+    switch(data.type) {
+        case 'START_GAME':
+            vsQuestions = data.questions;
+            startGameUI();
+            break;
+        case 'OPP_ANSWER':
+            oppAnswer = data.ans;
+            oppAnswerTime = data.time;
+            checkRoundEnd();
+            break;
+        case 'OPP_READY':
+            oppReady = true;
+            checkBothReady();
+            break;
+        case 'NEXT_QUESTION':
+            goToNextQuestion();
+            break;
+        case 'HP_UPDATE':
+            p1HP = data.p1HP;
+            p2HP = data.p2HP;
+            updateHPBars();
+            break;
+        case 'MATCH_END':
+            vsMatchEnded = true;
+            p1HP = data.p1HP;
+            p2HP = data.p2HP;
+            updateHPBars();
+            showMatchResult(data.winner, data.reason);
+            break;
+        case 'AI_HINT_RESULT':
+            displayAiHint(data.hintText);
+            break;
+        case 'REQUEST_AI_HINT':
+            if(amIHost) generateAndSendHint();
+            break;
+    }
+}
+
+// OYUN ARAYUZUNU AC
 function startGameUI() {
     document.getElementById('vs-setup').classList.add('d-none');
     document.getElementById('vs-lobby').classList.add('d-none');
     document.getElementById('vs-gameplay').classList.remove('d-none');
     
+    const hostName = amIHost ? (currentUser || "HOST") : "RAKIP";
+    const guestName = amIHost ? "RAKIP" : (currentUser || "GUEST");
+    document.getElementById('vs-p1-name').innerText = hostName;
+    document.getElementById('vs-p2-name').innerText = guestName;
+    
     currentVsIndex = 0;
-    myScore = 0;
-    oppScore = 0;
+    p1HP = 100;
+    p2HP = 100;
+    vsMatchEnded = false;
+    updateHPBars();
     loadVsQuestion();
 }
 
-// SORUYU EKRANA BAS (DİNAMİK SAYI + RENK DÜZELTMESİ)
+// HP BAR UPDATE
+function updateHPBars() {
+    var bar1 = document.getElementById('vs-p1-hp-bar');
+    var bar2 = document.getElementById('vs-p2-hp-bar');
+    var text1 = document.getElementById('vs-p1-hp-text');
+    var text2 = document.getElementById('vs-p2-hp-text');
+
+    bar1.style.width = Math.max(0, p1HP) + '%';
+    bar2.style.width = Math.max(0, p2HP) + '%';
+    text1.innerText = Math.max(0, p1HP);
+    text2.innerText = Math.max(0, p2HP);
+
+    [bar1, bar2].forEach(function(bar, i) {
+        var hp = i === 0 ? p1HP : p2HP;
+        bar.classList.remove('danger', 'warning');
+        if(hp <= 25) bar.classList.add('danger');
+        else if(hp <= 50) bar.classList.add('warning');
+    });
+}
+
+// SORUYU EKRANA BAS
 function loadVsQuestion() {
+    if(vsMatchEnded) return;
     if (currentVsIndex >= vsQuestions.length) {
-        endGame();
+        if(amIHost) resolveMatchEnd();
         return;
     }
 
-    const q = vsQuestions[currentVsIndex];
+    var q = vsQuestions[currentVsIndex];
     myAnswer = null;
     oppAnswer = null;
+    myAnswerTime = 0;
+    oppAnswerTime = 0;
+    myReady = false;
+    oppReady = false;
+    hintRequested = false;
+    hintShown = false;
     
-    // UI Güncelle - DİNAMİK SORU SAYISI BURADA
-    document.getElementById('vs-q-count').innerText = `Soru ${currentVsIndex + 1} / ${vsQuestions.length}`;
+    document.getElementById('vs-ready-screen').classList.add('d-none');
+    document.getElementById('vs-hint-area').classList.add('d-none');
+    document.getElementById('vs-hint-content').classList.add('d-none');
+    document.getElementById('vs-hint-content').innerHTML = '';
+    document.getElementById('vs-hint-btn').disabled = false;
     
-    document.getElementById('score-me').innerText = myScore;
-    document.getElementById('score-opp').innerText = oppScore;
+    document.getElementById('vs-q-count').innerText = 'Soru ' + (currentVsIndex + 1) + ' / ' + vsQuestions.length;
     
-    // Soru Metni
-    const qTextEl = document.getElementById('vs-q-text');
-    qTextEl.className = "mb-4 font-weight-bold"; 
-    qTextEl.style.color = "var(--text-color)"; // Tema rengine uyumlu
-    qTextEl.innerText = formatQuestionText(q.text);
+    var qTextEl = document.getElementById('vs-q-text');
+    qTextEl.innerHTML = q.text || '';
     
     document.getElementById('vs-status-msg').innerHTML = "";
     
-    // Şıkları Bas
-    let optsHTML = "";
-    ['A', 'B', 'C', 'D', 'E'].forEach(opt => {
-        optsHTML += `<button class="btn text-start p-3 w-100 mb-2 vs-opt-btn" style="border: 1px solid var(--border-color);" onclick="submitVsAnswer('${opt}', this)"><b>${opt})</b> ${q.options[opt]}</button>`;
+    var opts = q.options || q.opts;
+    var optsHTML = "";
+    ['A', 'B', 'C', 'D', 'E'].forEach(function(opt) {
+        if(opts && opts[opt]) {
+            optsHTML += '<button class="btn text-start p-3 w-100 mb-2 vs-opt-btn" style="border:2px solid #ddd;border-radius:8px;font-weight:600;transition:0.15s;" onclick="submitVsAnswer(\'' + opt + '\', this)"><b>' + opt + ')</b> ' + opts[opt] + '</button>';
+        }
     });
     document.getElementById('vs-options').innerHTML = optsHTML;
 
-    // Sayacı Başlat
-    startTimer();
+    startVsTimer(q.timer || 30);
 }
 
-// SAYAÇ MANTIĞINI GÜNCELLE
-function startTimer() {
-    timeLeft = vsTimeLimit; // ARTIK 90 DEĞİL, AYARLANAN SÜRE
+// TIMER
+function startVsTimer(seconds) {
+    var timeLeft = seconds;
+    vsTimerStart = Date.now();
     
-    const bar = document.getElementById('vs-timer-bar');
-    const txt = document.getElementById('vs-timer-text');
+    var bar = document.getElementById('vs-timer-bar');
+    var txt = document.getElementById('vs-timer-text');
     
     clearInterval(vsTimerInterval);
     bar.style.width = "100%";
+    txt.innerText = timeLeft + "sn";
     
-    vsTimerInterval = setInterval(() => {
+    vsTimerInterval = setInterval(function() {
         timeLeft--;
-        txt.innerText = timeLeft + "sn";
-        // Yüzdeyi dinamik hesapla
-        bar.style.width = (timeLeft / vsTimeLimit * 100) + "%";
+        txt.innerText = Math.max(0, timeLeft) + "sn";
+        bar.style.width = (timeLeft / seconds * 100) + "%";
         
         if (timeLeft <= 0) {
             clearInterval(vsTimerInterval);
-            if (!myAnswer) submitVsAnswer('X', null); 
+            if (!myAnswer) submitVsAnswer('X', null);
         }
     }, 1000);
 }
 
 // CEVAP VERME
 function submitVsAnswer(ans, btnElement) {
-    if (myAnswer) return; // Zaten cevapladın
+    if (myAnswer) return;
     
     myAnswer = ans;
+    myAnswerTime = Date.now() - vsTimerStart;
     
-    // Butonları kilitle
-    document.querySelectorAll('.vs-opt-btn').forEach(btn => btn.classList.add('locked-answer'));
+    document.querySelectorAll('.vs-opt-btn').forEach(function(btn) {
+        btn.style.pointerEvents = 'none';
+        btn.style.opacity = '0.7';
+    });
     if(btnElement) {
-        btnElement.classList.remove('btn-outline-dark');
-        btnElement.classList.add('btn-primary'); // Seçileni mavi yap
+        btnElement.style.opacity = '1';
+        btnElement.style.background = '#3498db';
+        btnElement.style.color = '#fff';
+        btnElement.style.borderColor = '#2980b9';
     }
 
-    // Rakibe Gönder
-    conn.send({ type: 'OPP_ANSWER', ans: ans });
+    conn.send({ type: 'OPP_ANSWER', ans: ans, time: myAnswerTime });
     
-    // Durum mesajı
     if (!oppAnswer) {
-        document.getElementById('vs-status-msg').innerHTML = `<span class="waiting-pulse">Rakip bekleniyor...</span>`;
+        document.getElementById('vs-status-msg').innerHTML = '<span style="color:#f39c12;"><i class="bi bi-hourglass-split"></i> Rakip bekleniyor...</span>';
     } else {
         checkRoundEnd();
     }
 }
 
-// TUR SONU KONTROLÜ (İKİSİ DE CEVAPLAYINCA)
+// TUR SONU KONTROLU
 function checkRoundEnd() {
-    if (myAnswer && oppAnswer) {
-        clearInterval(vsTimerInterval); // Sayacı durdur
+    if (!myAnswer || !oppAnswer) return;
+    
+    clearInterval(vsTimerInterval);
+    
+    var q = vsQuestions[currentVsIndex];
+    var correct = q.correctAnswer;
+    var opts = q.options || q.opts;
+    
+    var iAmHost = amIHost;
+    var myCorrect = (myAnswer === correct);
+    var oppCorrect = (oppAnswer === correct);
+    
+    // Host calculates damage
+    if(amIHost) {
+        var p1Correct = myCorrect;
+        var p2Correct = oppCorrect;
+        var p1Time = myAnswerTime;
+        var p2Time = oppAnswerTime;
         
-        const q = vsQuestions[currentVsIndex];
-        const correct = q.correctAnswer;
-        
-        // Puanlama
-        if (myAnswer === correct) myScore += 100;
-        if (oppAnswer === correct) oppScore += 100;
-        
-        // Renklendirme
-        const btns = document.querySelectorAll('.vs-options button'); // Seçiciyi düzelttim
-        // Şıkları manuel bulup boyayalım
-        const optButtons = document.getElementById('vs-options').children;
-        
-        for (let btn of optButtons) {
-            const btnOpt = btn.innerText.split(')')[0]; // A, B, C...
-            
-            // Doğruysa Yeşil
-            if (btnOpt === correct) {
-                btn.classList.remove('btn-outline-dark', 'btn-primary');
-                btn.classList.add('btn-success');
-            } 
-            // Yanlış seçtiysem Kırmızı
-            else if (btnOpt === myAnswer) {
-                btn.classList.remove('btn-outline-dark', 'btn-primary');
-                btn.classList.add('btn-danger');
+        if(p1Correct && !p2Correct) {
+            p2HP = Math.max(0, p2HP - 6);
+        } else if(!p1Correct && p2Correct) {
+            p1HP = Math.max(0, p1HP - 6);
+        } else if(p1Correct && p2Correct) {
+            if(p1Time > p2Time) {
+                p1HP = Math.max(0, p1HP - 3);
+            } else if(p2Time > p1Time) {
+                p2HP = Math.max(0, p2HP - 3);
             }
         }
-
-        // Kim kazandı mesajı
-        let msg = "";
-        if (myAnswer === correct && oppAnswer === correct) msg = "İkiniz de bildiniz! (+100)";
-        else if (myAnswer === correct) msg = "Sen bildin! (+100)";
-        else if (oppAnswer === correct) msg = "Rakip bildi! (Rakip +100)";
-        else msg = "İkiniz de bilemediniz.";
         
-        document.getElementById('vs-status-msg').innerHTML = msg;
-        document.getElementById('score-me').innerText = myScore;
-        document.getElementById('score-opp').innerText = oppScore;
-
-        // 3 Saniye sonra yeni soru
-        setTimeout(() => {
-            currentVsIndex++;
-            loadVsQuestion();
-        }, 3000);
+        conn.send({ type: 'HP_UPDATE', p1HP: p1HP, p2HP: p2HP });
+        updateHPBars();
+        
+        if(p1HP <= 0 || p2HP <= 0) {
+            var winner = p1HP <= 0 ? 'p2' : 'p1';
+            var reason = 'KO! Can 0\'a dustu!';
+            conn.send({ type: 'MATCH_END', winner: winner, reason: reason, p1HP: p1HP, p2HP: p2HP });
+            vsMatchEnded = true;
+            showMatchResult(winner, reason);
+            return;
+        }
     }
-}
-
-// OYUN BİTİŞİ
-function endGame() {
-    document.getElementById('vs-gameplay').classList.add('d-none');
-    document.getElementById('vs-result').classList.remove('d-none');
     
-    document.getElementById('final-score-me').innerText = myScore;
-    document.getElementById('final-score-opp').innerText = oppScore;
+    // Show correct/wrong on buttons
+    var optButtons = document.getElementById('vs-options').children;
+    for (var i = 0; i < optButtons.length; i++) {
+        var btn = optButtons[i];
+        var btnOpt = btn.innerText.trim().charAt(0);
+        btn.style.pointerEvents = 'none';
+        
+        if (btnOpt === correct) {
+            btn.style.background = '#27ae60';
+            btn.style.color = '#fff';
+            btn.style.borderColor = '#2ecc71';
+        } else if (btnOpt === myAnswer && myAnswer !== correct) {
+            btn.style.background = '#e74c3c';
+            btn.style.color = '#fff';
+            btn.style.borderColor = '#c0392b';
+        }
+    }
     
-    const winTitle = document.getElementById('vs-winner-text');
-    if (myScore > oppScore) {
-        winTitle.innerText = "🏆 KAZANDIN! 🏆";
-        winTitle.className = "display-4 fw-bold mb-3 text-success";
-    } else if (oppScore > myScore) {
-        winTitle.innerText = "💀 KAYBETTİN...";
-        winTitle.className = "display-4 fw-bold mb-3 text-danger";
+    // Damage flash
+    if(iAmHost) {
+        if(!myCorrect && oppCorrect) flashDamage('p1');
+        if(myCorrect && !oppCorrect) flashDamage('p2');
+        if(myCorrect && oppCorrect && myAnswerTime > oppAnswerTime) flashDamage('p1');
+        if(myCorrect && oppCorrect && oppAnswerTime > myAnswerTime) flashDamage('p2');
     } else {
-        winTitle.innerText = "🤝 BERABERE!";
-        winTitle.className = "display-4 fw-bold mb-3 text-warning";
+        if(!myCorrect && oppCorrect) flashDamage('p2');
+        if(myCorrect && !oppCorrect) flashDamage('p1');
+        if(myCorrect && oppCorrect && myAnswerTime > oppAnswerTime) flashDamage('p2');
+        if(myCorrect && oppCorrect && oppAnswerTime > myAnswerTime) flashDamage('p1');
+    }
+    
+    // Result message
+    var msg = "";
+    if(myCorrect && oppCorrect) {
+        msg = 'Ikiniz de bildi! (Hizli olan kazandi: -3 HP)';
+    } else if(myCorrect && !oppCorrect) {
+        msg = '<span style="color:#2ecc71;">Sen bildin!</span> Rakip bilemedi (-6 HP)';
+    } else if(!myCorrect && oppCorrect) {
+        msg = '<span style="color:#e74c3c;">Bilemedin!</span> Rakip bildi (-6 HP sana)';
+    } else {
+        msg = 'Ikiniz de bilemedi. Hasar yok.';
+    }
+    document.getElementById('vs-status-msg').innerHTML = msg;
+    
+    // AI hint if at least one wrong
+    if(!myCorrect || !oppCorrect) {
+        document.getElementById('vs-hint-area').classList.remove('d-none');
+    }
+    
+    // Show Ready screen after delay
+    setTimeout(function() {
+        showReadyScreen(msg);
+    }, 1500);
+}
+
+// Damage flash effect
+function flashDamage(player) {
+    var el = player === 'p1' ? document.querySelector('.vs-player-row:not(.right)') : document.querySelector('.vs-player-row.right');
+    if(el) {
+        el.classList.add('dmg-flash');
+        setTimeout(function() { el.classList.remove('dmg-flash'); }, 700);
     }
 }
+
+// READY SYSTEM
+function showReadyScreen(resultMsg) {
+    var readyScreen = document.getElementById('vs-ready-screen');
+    var readyBtn = document.getElementById('vs-ready-btn');
+    var readyWait = document.getElementById('vs-ready-wait');
+    var resultText = document.getElementById('vs-round-result-text');
     
+    resultText.innerHTML = resultMsg;
+    readyBtn.classList.remove('done');
+    readyBtn.innerHTML = '<i class="bi bi-check-circle-fill"></i> HAZIRIM';
+    readyWait.classList.add('d-none');
+    readyScreen.classList.remove('d-none');
+    
+    myReady = false;
+}
+
+function pressReady() {
+    if(myReady) return;
+    myReady = true;
+    
+    var readyBtn = document.getElementById('vs-ready-btn');
+    readyBtn.classList.add('done');
+    readyBtn.innerHTML = '<i class="bi bi-check-circle-fill"></i> HAZIR &#10004;';
+    document.getElementById('vs-ready-wait').classList.remove('d-none');
+    
+    conn.send({ type: 'OPP_READY' });
+    checkBothReady();
+}
+
+function checkBothReady() {
+    if(myReady && oppReady) {
+        if(amIHost) {
+            currentVsIndex++;
+            conn.send({ type: 'NEXT_QUESTION' });
+            goToNextQuestion();
+        }
+    }
+}
+
+function goToNextQuestion() {
+    if(!amIHost) currentVsIndex++;
+    myReady = false;
+    oppReady = false;
+    loadVsQuestion();
+}
+
+// MATCH END
+function resolveMatchEnd() {
+    if(vsMatchEnded) return;
+    vsMatchEnded = true;
+    
+    var winner, reason;
+    if(p1HP > p2HP) {
+        winner = 'p1';
+        reason = 'Daha fazla HP ile kazandi! (' + p1HP + ' vs ' + p2HP + ')';
+    } else if(p2HP > p1HP) {
+        winner = 'p2';
+        reason = 'Daha fazla HP ile kazandi! (' + p2HP + ' vs ' + p1HP + ')';
+    } else {
+        winner = 'draw';
+        reason = 'Berabere! HP esit.';
+    }
+    
+    conn.send({ type: 'MATCH_END', winner: winner, reason: reason, p1HP: p1HP, p2HP: p2HP });
+    showMatchResult(winner, reason);
+}
+
+function showMatchResult(winner, reason) {
+    vsMatchEnded = true;
+    clearInterval(vsTimerInterval);
+    
+    var iAmHost = amIHost;
+    var iWon = (winner === 'p1' && iAmHost) || (winner === 'p2' && !iAmHost);
+    var iLost = (winner === 'p1' && !iAmHost) || (winner === 'p2' && iAmHost);
+    
+    // Show KO overlay if someone hit 0 HP
+    if(p1HP <= 0 || p2HP <= 0) {
+        showKoOverlay();
+    }
+    
+    var delay = (p1HP <= 0 || p2HP <= 0) ? 3500 : 500;
+    
+    setTimeout(function() {
+        document.getElementById('vs-gameplay').classList.add('d-none');
+        document.getElementById('vs-result').classList.remove('d-none');
+        
+        document.getElementById('final-hp-p1').innerText = Math.max(0, p1HP);
+        document.getElementById('final-hp-p2').innerText = Math.max(0, p2HP);
+        
+        var p1Label = iAmHost ? (currentUser || "HOST") : "RAKIP";
+        var p2Label = iAmHost ? "RAKIP" : (currentUser || "GUEST");
+        document.getElementById('vs-final-p1-label').innerText = p1Label;
+        document.getElementById('vs-final-p2-label').innerText = p2Label;
+        
+        var winTitle = document.getElementById('vs-winner-text');
+        if (winner === 'draw') {
+            winTitle.innerText = "\uD83E\uDD1D BERABERE!";
+            winTitle.className = "display-4 fw-bold mb-3 text-warning";
+        } else if (iWon) {
+            winTitle.innerText = "\uD83C\uDFC6 KAZANDIN! \uD83C\uDFC6";
+            winTitle.className = "display-4 fw-bold mb-3 text-success";
+        } else {
+            winTitle.innerText = "\uD83D\uDC80 KAYBETTIN...";
+            winTitle.className = "display-4 fw-bold mb-3 text-danger";
+        }
+    }, delay);
+}
+
+// KO OVERLAY
+function showKoOverlay() {
+    var koEl = document.getElementById('ko-overlay');
+    koEl.classList.remove('d-none', 'ko-anim');
+    void koEl.offsetWidth;
+    koEl.classList.add('ko-anim');
+    koEl.classList.remove('d-none');
+    
+    setTimeout(function() {
+        koEl.classList.add('d-none');
+        koEl.classList.remove('ko-anim');
+    }, 4000);
+}
+
+// AI HINT SYSTEM
+function requestAiHint() {
+    if(hintRequested) return;
+    hintRequested = true;
+    document.getElementById('vs-hint-btn').disabled = true;
+    document.getElementById('vs-hint-btn').innerHTML = '<i class="bi bi-hourglass-split"></i> Ipucu Yukleniyor...';
+    
+    if(amIHost) {
+        generateAndSendHint();
+    } else {
+        conn.send({ type: 'REQUEST_AI_HINT' });
+    }
+}
+
+async function generateAndSendHint() {
+    var q = vsQuestions[currentVsIndex];
+    var opts = q.options || q.opts;
+    var correct = q.correctAnswer;
+    
+    if(typeof userApiKey !== 'undefined' && userApiKey) {
+        try {
+            var url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=' + userApiKey;
+            var prompt = 'Soru: "' + q.text + '"\nDogru Cevap: ' + correct + ') ' + opts[correct] + '\nGOREV: Bu soruyu Kisaca acikla. Neden dogru cevap "' + correct + '" oldugunu 2-3 cumleyle belirt. Turkce yaz.';
+            
+            var response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: prompt }] }]
+                })
+            });
+            var data = await response.json();
+            var hintText = (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0]) ? data.candidates[0].content.parts[0].text : ('Dogru cevap: ' + correct + ') ' + opts[correct]);
+            
+            displayAiHint(hintText);
+            conn.send({ type: 'AI_HINT_RESULT', hintText: hintText });
+            return;
+        } catch(e) {
+            console.log("Gemini hint failed:", e);
+        }
+    }
+    
+    var hintText = q.tip || ('Dogru cevap: ' + correct + ') ' + opts[correct]);
+    displayAiHint(hintText);
+    conn.send({ type: 'AI_HINT_RESULT', hintText: hintText });
+}
+
+function displayAiHint(hintText) {
+    hintShown = true;
+    var contentEl = document.getElementById('vs-hint-content');
+    var btnEl = document.getElementById('vs-hint-btn');
+    
+    btnEl.innerHTML = '<i class="bi bi-check-circle"></i> Ipucu Gosterildi';
+    btnEl.disabled = true;
+    
+    contentEl.innerHTML = typeof formatAiOutput === 'function' ? formatAiOutput(hintText) : hintText;
+    contentEl.classList.remove('d-none');
+}
+/* ================= MODAL KAPATMA HATASI DÜZELTİCİ ================= */
+// Tüm modallar kapandığında çalışır
+document.addEventListener('hidden.bs.modal', function () {
+    // 1. Gölgeyi (backdrop) zorla sil
+    const backdrops = document.querySelectorAll('.modal-backdrop');
+    backdrops.forEach(bd => bd.remove());
+
+    // 2. Sayfanın kaydırılabilirliğini geri getir
+    document.body.classList.remove('modal-open');
+    document.body.style.overflow = 'auto';
+    document.body.style.paddingRight = '0';
+});
+/* ================= AI METİN DÜZELTİCİ VE GÜNCELLENMİŞ AI FONKSİYONLARI ================= */
+
+// Markdown yıldızlarını HTML kalın yazısına çeviren fonksiyon
+function formatAiOutput(text) {
+    if (!text) return "";
+    return text
+        .replace(/\*\*(.*?)\*\*/g, '<strong class="text-warning">$1</strong>') // **yazı** -> Sarı ve Kalın
+        .replace(/\*(.*?)\*/g, '<em>$1</em>') // *yazı* -> İtalik
+        .replace(/\n/g, '<br>'); // Satır sonlarını HTML'e uyarla
+}
+
+// 1. KELİME ÖRNEK CÜMLE (GÜNCELLENMİŞ)
+async function getAiVocabExample(questionId) {
+    if(!userApiKey) { alert("API Anahtarı eksik! Ayarlardan ekleyin."); openSettings(); return; }
+
+    let q = allQuestions.find(i => i.id === questionId);
+    if(!q) return;
+
+    if(q.aiVocabData) {
+        showTipBox(q.id, "Örnek Cümle & Çeviri", "bi-chat-quote-fill", q.aiVocabData);
+        return;
+    }
+
+    showLoading(q.id, "Örnek cümle hazırlanıyor...");
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${userApiKey}`;
+    const prompt = `
+        Sen bir YDS İngilizce öğretmenisin. Aşağıdaki kelime sorusu verilerini analiz et.
+        SORU: "${q.text}"
+        CEVAP: "${q.options[q.correctAnswer]}"
+        GÖREV: Bu sorudaki hedef akademik kelimeyi bul, onunla YDS seviyesinde İngilizce cümle kur ve Türkçeye çevir.
+        ÇIKTI FORMATI: Kelimeyi **bu şekilde yıldız içine al** ki kalın görünsün.
+    `;
+
+    try {
+        const rawData = await callGemini(url, prompt);
+        q.aiVocabData = formatAiOutput(rawData); // FORMATLAMA BURADA YAPILIYOR
+        showTipBox(q.id, "Örnek Cümle & Çeviri", "bi-chat-quote-fill", q.aiVocabData);
+    } catch (e) { showError(q.id, e.message); }
+}
+
+// 2. ANALİZ VE ÇEVİRİ (GÜNCELLENMİŞ)
+async function getAiAnalysis(questionId) {
+    if(!userApiKey) { alert("API Anahtarı eksik!"); openSettings(); return; }
+
+    let q = allQuestions.find(i => i.id === questionId) || generatedQuestions.find(i => i.id === questionId);
+    if(!q) return;
+
+    if(q.aiAnalysisData) {
+        showTipBox(q.id, "Analiz & Çeviri", "bi-translate", q.aiAnalysisData);
+        return;
+    }
+
+    showLoading(q.id, "Analiz yapılıyor...");
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${userApiKey}`;
+    const prompt = `
+        Soru: "${q.text}"
+        Şıklar: A) ${q.options.A}, B) ${q.options.B}, C) ${q.options.C}, D) ${q.options.D}, E) ${q.options.E}
+        Doğru Cevap: ${q.correctAnswer}
+        GÖREV: 1) Soruyu Türkçeye çevir. 2) Doğru cevabı açıkla. 3) Yanlış şıkları kısaca açıkla.
+        ÖNEMLİ: Önemli yerleri **yıldızlar içine alarak** vurgula.
+    `;
+
+    try {
+        const rawData = await callGemini(url, prompt);
+        q.aiAnalysisData = formatAiOutput(rawData); // FORMATLAMA BURADA YAPILIYOR
+        showTipBox(q.id, "Analiz & Çeviri", "bi-translate", q.aiAnalysisData);
+    } catch (e) { showError(q.id, e.message); }
+}
+
+// 3. TÜYO (GÜNCELLENMİŞ)
+async function getAiTip(questionId) {
+    if(!userApiKey) { alert("API Anahtarı eksik!"); openSettings(); return; }
+
+    let q = allQuestions.find(i => i.id === questionId) || generatedQuestions.find(i => i.id === questionId);
+    if(!q) return;
+
+    if(q.aiTipData) {
+        showTipBox(q.id, "Altın Tüyo", "bi-stars", q.aiTipData);
+        return;
+    }
+
+    showLoading(q.id, "Tüyo hazırlanıyor...");
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${userApiKey}`;
+    const prompt = `
+        Soru: "${q.text}"
+        Cevap: ${q.correctAnswer}
+        GÖREV: Sadece kısa bir sınav tüyosu ver. İpucu kelimeleri **kalın** yaz.
+    `;
+
+    try {
+        const rawData = await callGemini(url, prompt);
+        q.aiTipData = formatAiOutput(rawData); // FORMATLAMA BURADA YAPILIYOR
+        showTipBox(q.id, "Altın Tüyo", "bi-stars", q.aiTipData);
+    } catch (e) { showError(q.id, e.message); }
+}    
 </script>
     
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -9203,6 +10220,8 @@ function endGame() {
 <button class="scroll-top-btn" onclick="window.scrollTo({top: 0, behavior: 'smooth'});" title="Yukarı Çık">
     <i class="bi bi-arrow-up"></i>
 </button>
+    <!-- K.O. EFEKTİ İÇİN ELEMENTLER -->
+<div id="ko-overlay" class="d-none"><img src="ko.png" alt="K.O."></div>
     
 </body>
 </html>
