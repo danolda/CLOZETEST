@@ -8,19 +8,15 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"></script>
 
-    
     <style>
         /* --- CSS STİLLERİ (Yeni Tasarım) --- */
         :root {
             --bg-dark: #2c3e50;
             --map-water: #34495e;
             --p1-color: #3498db; 
-            --p2-color: #e74c3c;
-            --p3-color: #9b59b6; /* YENİ: Bot Rengi (Mor) */
+            --p2-color: #e74c3c; 
             --gold: #f1c40f;
         }
-        
-
         body { background-color: var(--bg-dark); color: white; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
         
         #map-container {
@@ -41,8 +37,7 @@
         }
         .p1-card { border-color: var(--p1-color); box-shadow: 0 0 15px rgba(52, 152, 219, 0.3); }
         .p2-card { border-color: var(--p2-color); box-shadow: 0 0 15px rgba(231, 76, 60, 0.3); }
-        .p3-card { border-color: var(--p3-color); box-shadow: 0 0 15px rgba(155, 89, 182, 0.3); }
-        
+
         .stat-box { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; font-size: 1rem; }
         .gold-icon { color: var(--gold); text-shadow: 0 0 5px orange; }
 
@@ -294,19 +289,7 @@
             <div class="stat-box"><span><i class="bi bi-building"></i> İl Sayısı:</span> <span id="p1-cities">0</span></div>
             <div class="stat-box"><span><i class="bi bi-heart-fill text-danger"></i> Kale Canı:</span> <span id="p1-hp">100</span></div>
         </div>
-        <!-- --- BURAYI EKLE (BAŞLANGIÇ) --- -->
-    <div class="player-card p3-card text-center" id="p3-card-display" style="display: none; transform: scale(0.9);">
-        <h5 style="color: var(--p3-color); margin:0;">Haydut Kral</h5>
-        <div class="stat-box justify-content-center mt-1">
-            <span class="badge bg-dark border border-secondary fs-6">
-                ❤️ <span id="p3-hp-display">15</span>
-            </span>
-        </div>
-        <div class="small text-warning" style="font-size: 0.7rem;">
-            💰 <span id="p3-gold-display">0</span>
-        </div>
-    </div>
-    <!-- --- BURAYI EKLE (BİTİŞ) --- -->
+        
         <!-- P2 KARTI -->
         <div class="player-card p2-card text-end">
             <h4 id="p2-name" style="color: var(--p2-color)">Kırmızı</h4>
@@ -7725,24 +7708,8 @@ function renderCategorySelection() {
 // =========================================================================
 const SVG_URL = './tr.svg';
 const UNIT_TYPES = {
-    inf: { 
-        name: "Piyade", 
-        cost: 100, 
-        power: 1, 
-        speed: 1, 
-        iconP1: './hostregularsoldier.svg', 
-        iconP2: './questregularsoldier.svg', 
-        iconP3: './banditsoldier.svg' // <-- YENİ: Bot, Host ile aynı piyade ikonunu kullanır
-    },
-    cav: { 
-        name: "Atlı",   
-        cost: 300, 
-        power: 2, 
-        speed: 2, 
-        iconP1: './hostsoldier.svg',        
-        iconP2: './questsoldier.svg',
-        iconP3: './banditcavalary.svg'        // <-- YENİ: Bot, Host ile aynı atlı ikonunu kullanır
-    }
+    inf: { name: "Piyade", cost: 100, power: 1, speed: 1, iconP1: './hostregularsoldier.svg', iconP2: './questregularsoldier.svg' },
+    cav: { name: "Atlı",   cost: 300, power: 2, speed: 2, iconP1: './hostsoldier.svg',        iconP2: './questsoldier.svg' }
 };
 
 // Şehir Komşulukları (SVG haritasından çıkarıldı, düzeltildi)
@@ -7787,8 +7754,7 @@ let selectedUnitId = null;
 
 let players = {
     p1: { name: "", base: null, gold: 0, hp: 100, cities: [], active: false, id:'p1' },
-    p2: { name: "", base: null, gold: 0, hp: 100, cities: [], active: false, id:'p2' },
-    p3: { name: "Haydut Kral", base: null, gold: 0, hp: 15, cities: [], active: false, id:'p3', isBot: true }
+    p2: { name: "", base: null, gold: 0, hp: 100, cities: [], active: false, id:'p2' }
 };
 
 let units = []; // { id, owner, type, loc, count, moved }
@@ -7930,23 +7896,6 @@ function handleData(data) {
         case 'JOIN': players.p2.name = data.p2Name; goToSetup(); break;
         case 'START_GAME_DATA': 
             gameQuestions = data.questions; 
-            
-            // YENİ: Botu Guest tarafında da kur
-            if(data.botBase) {
-                players.p3.base = data.botBase;
-                players.p3.cities = [data.botBase];
-                players.p3.gold = 200;
-                // Birliği manuel ekle (createUnit ID senkronizasyonunu bozmasın diye)
-                units.push({ 
-                    id: 9999, // Geçici güvenli ID
-                    owner: 'p3', 
-                    type: 'inf', 
-                    loc: data.botBase, 
-                    count: 5, 
-                    moved: true 
-                });
-            }
-            
             startGameUI(); 
             break;
         case 'UPDATE_MAP': 
@@ -8032,28 +7981,12 @@ function startFetihMatch() {
     if(pool.length < qCount) return alert("Yetersiz soru!");
     // Son karıştırma (kategoriler arası sıra rastgele olsun)
     const shuffled = pool.sort(() => 0.5 - Math.random());
-       // --- YENİ KISIM BAŞLANGIÇ ---
-    // Bot için rastgele bir şehir seç
-    const allCities = Object.keys(CITY_NAMES).map(Number);
-    const botBase = allCities[Math.floor(Math.random() * allCities.length)];
 
-    // Botu Host tarafında oluştur
-    players.p3.base = botBase;
-    players.p3.cities = [botBase];
-    players.p3.gold = 200;
-    createUnit('p3', 'inf', botBase, 5);
-
-    // Bot bilgisini Guest'e de gönder
-    const data = { 
-        type: 'START_GAME_DATA', 
-        questions: shuffled,
-        botBase: botBase // Botun yeri gönderiliyor
-    };
+    const data = { type: 'START_GAME_DATA', questions: shuffled };
     conn.send(data);
     
     gameQuestions = shuffled;
     startGameUI();
-    // --- YENİ KISIM BİTİŞ ---
 }
 
 function startGameUI() {
@@ -8248,11 +8181,6 @@ function distributeRewards(p1Ok, p2Ok, t1, t2) {
         const rnd = Math.random() > 0.5 ? 'p1' : 'p2';
         turnQueue = (rnd === 'p1') ? ['p1', 'p2'] : ['p2', 'p1'];
         msg="Kimse bilemedi! Sıra: " + players[rnd].name;
-    
-    
-     // YENİ: İkisi de bilemediyse Bot kazanır
-        players.p3.gold += 500;
-        showGameToast("🤖 Kimse bilemedi! Haydut Kral +500 Altın kazandı!");
     }
 
     // Hareket haklarını sıfırla (Her iki oyuncu için)
@@ -8310,63 +8238,12 @@ function endMyTurn() {
 }
 
 function endRoundPhase() {
-    players.p1.active = false; 
-    players.p2.active = false;
-    
-    // Gelirler
+    players.p1.active = false; players.p2.active = false;
     players.p1.gold += players.p1.cities.length * 10;
     players.p2.gold += players.p2.cities.length * 10;
-    players.p3.gold += players.p3.cities.length * 10; // Bot geliri
-
-    // YENİ: Sadece Host tarafında Bot oynar
-    if(isHost && players.p3.hp > 0) {
-        aiTurn();
-    }
-
     currentTurn++;
     broadcastState("Tur Bitti! Altınlar Toplandı.");
     setTimeout(startNewTurn, 3000);
-}
-    function aiTurn() {
-    console.log("🤖 Bot Hamlesi Başlıyor...");
-    
-    // 1. ASKER SATIN ALMA
-    // Kalesinde asker azsa veya parası çoksa asker basar
-    while(players.p3.gold >= 100) {
-        let uType = (players.p3.gold >= 300 && Math.random() > 0.5) ? 'cav' : 'inf';
-        executeBuyUnit('p3', uType);
-    }
-
-    // 2. HAREKET VE SALDIRI
-    // Botun tüm birliklerini bul
-    const myUnits = units.filter(u => u.owner === 'p3');
-
-    myUnits.forEach(unit => {
-        // Zaten hareket ettiyse pas geç (yeni alınanlar hariç)
-        if(unit.moved) return;
-
-        const neighbors = NEIGHBORS[unit.loc] || [];
-        let target = null;
-
-        // Hedef Önceliği:
-        // 1. Komşu oyuncu kalesi (Saldır!)
-        // 2. Komşu oyuncu şehri (Saldır!)
-        // 3. Boş şehir (Fethet!)
-        
-        // Rastgele bir komşuyu seç ama oyunculara öncelik ver
-        const enemyCity = neighbors.find(n => players.p1.cities.includes(n) || players.p2.cities.includes(n));
-        const emptyCity = neighbors.find(n => !players.p3.cities.includes(n)); // Kendisinin olmayan herhangi bir yer
-
-        if(enemyCity) target = enemyCity;
-        else if(emptyCity) target = emptyCity;
-        else target = neighbors[Math.floor(Math.random() * neighbors.length)]; // Rastgele gez
-
-        // Saldırı emri (Host yetkisiyle)
-        if(target) {
-            // Bot tüm gücüyle saldırır/gider
-            moveUnitCommand(unit.id, target, unit.count, 'p3');
-        }
-    });
 }
 
 // =========================================================================
@@ -8383,10 +8260,6 @@ function onMapClick(plate) {
     if(gameState === "BASE_SELECT") {
         if(players[me].base) return;
         const opp = isHost ? 'p2' : 'p1';
-        // YENİ KONTROL: Rakipte VEYA Botta ise seçeme
-        if(parseInt(players[opp].base) === plate || parseInt(players.p3.base) === plate) {
-            return alert("Bu şehir dolu!");
-        }
         if(parseInt(players[opp].base) === plate) return alert("Dolu!");
         
         if(isHost) {
@@ -8596,32 +8469,18 @@ function checkSiegeCombat(attUnit, baseLoc) {
         }
     }
 
-    // 2. KALE HASARI
+    // 2. KALE HASARI (Asker kalmadıysa veya yenildiyse)
     players[defender].hp -= attPower;
     showGameToast(`🔥 KALE VURULDU! -${attPower} Hasar (Kalan: ${players[defender].hp})`);
 
     if (players[defender].hp <= 0) {
         players[defender].hp = 0;
-        
-        // YENİ: Eğer yıkılan kale BOT'un kalesi ise
-        if(defender === 'p3') {
-            showGameToast(`🏆 HAYDUT KRAL YIKILDI! ${players[attUnit.owner].name} +2000 Altın Kazandı!`);
-            players[attUnit.owner].gold += 2000;
-            
-            // Botu oyundan sil (Şehirlerini boşa çıkar veya saldıran alsın)
-            players.p3.base = null; // Artık kale değil
-            conquerCity(baseLoc, attUnit.owner); // Şehri al
-            
-        } 
-        // Eğer yıkılan kale P1 veya P2 ise oyun biter
-        else {
-            setTimeout(() => {
-                alert(`🏆 OYUN BİTTİ! ${players[attUnit.owner].name} KAZANDI!`);
-                location.reload();
-            }, 1000);
-        }
+        setTimeout(() => {
+            alert(`🏆 OYUN BİTTİ! ${players[attUnit.owner].name} KAZANDI!`);
+            location.reload();
+        }, 1000);
     }
-} // <-- SENİN KODUNDA BU PARANTEZ EKSİKTİ
+}
 
 // Basit Fetih Yardımcısı
 function conquerCity(cityId, newOwner) {
@@ -8717,23 +8576,11 @@ async function loadSvgMap() {
 }
 
 function renderAll() {
-    // 1. Skorlar (Mevcut kodlar aynen kalsın...)
+    // --- BURAYI EKLE (BAŞLANGIÇ) ---
     document.getElementById('p1-name').innerText = players.p1.name;
     document.getElementById('p2-name').innerText = players.p2.name;
-    // --- BURAYI EKLE (BAŞLANGIÇ) ---
-    // Eğer Botun kalesi varsa kartı göster ve güncelle
-    if (players.p3 && players.p3.base) {
-        document.getElementById('p3-card-display').style.display = 'block';
-        document.getElementById('p3-hp-display').innerText = players.p3.hp;
-        document.getElementById('p3-gold-display').innerText = players.p3.gold;
-        
-        // Bot öldüyse kartı biraz soluklaştır
-        if(players.p3.hp <= 0) {
-            document.getElementById('p3-card-display').style.opacity = '0.5';
-            document.getElementById('p3-hp-display').innerText = "YIKILDI";
-        }
-    }
     // --- BURAYI EKLE (BİTİŞ) ---
+    // 1. Skorlar
     document.getElementById('p1-gold').innerText = players.p1.gold;
     document.getElementById('p2-gold').innerText = players.p2.gold;
     document.getElementById('p1-cities').innerText = players.p1.cities.length;
@@ -8741,6 +8588,7 @@ function renderAll() {
     document.getElementById('p1-hp').innerText = players.p1.hp;
     document.getElementById('p2-hp').innerText = players.p2.hp;
     
+    // Buton
     const me = isHost ? 'p1' : 'p2';
     document.getElementById('turn-controls').style.display = players[me].active ? 'block' : 'none';
 
@@ -8750,36 +8598,32 @@ function renderAll() {
         const pid = parseInt(p.id.split('-')[1]);
         if(players.p1.cities.includes(pid)) p.style.fill = "#3498db";
         if(players.p2.cities.includes(pid)) p.style.fill = "#e74c3c";
-        if(players.p3.cities.includes(pid)) p.style.fill = "#9b59b6"; // Bot Rengi
     });
 
     // 3. Asker İkonları
     const layer = document.getElementById('icon-layer');
     if(layer) {
+        // Önceki drag handler'ları temizle
         if(window._dragCleanups) {
             window._dragCleanups.forEach(fn => fn());
             window._dragCleanups = [];
         }
         layer.innerHTML = "";
-        
         // Grupla
         const counts = {};
         units.forEach(u => {
-            // HATA BURADAYDI: p3 EKLENDİ
-            if(!counts[u.loc]) counts[u.loc] = { p1:[], p2:[], p3:[] }; 
+            if(!counts[u.loc]) counts[u.loc] = { p1:[], p2:[] };
             counts[u.loc][u.owner].push(u);
         });
         
         for(const [loc, grp] of Object.entries(counts)) {
             if(grp.p1.length) drawIconGroup(loc, grp.p1, 'p1');
             if(grp.p2.length) drawIconGroup(loc, grp.p2, 'p2');
-            if(grp.p3.length) drawIconGroup(loc, grp.p3, 'p3'); // BOT İKONLARI ÇİZİLİYOR
         }
         
-        // Kale İkonları
+        // Kale İkonları (Ekstra süs)
         if(players.p1.base) drawCastle(players.p1.base, 'p1');
         if(players.p2.base) drawCastle(players.p2.base, 'p2');
-        if(players.p3.base) drawCastle(players.p3.base, 'p3'); // BOT KALESİ
     }
 }
 
