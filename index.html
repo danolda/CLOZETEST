@@ -355,8 +355,8 @@
     }
     .vs-player-row.right { flex-direction: row-reverse; }
     .vs-player-avatar {
-        width: 48px;
-        height: 48px;
+        width: 64px;
+        height: 64px;
         border-radius: 50%;
         object-fit: cover;
         border: 3px solid #3498db;
@@ -411,17 +411,15 @@
         text-shadow: 0 0 10px rgba(241,196,15,0.5);
     }
 
-    /* VS Ready overlay */
+    /* VS Ready bar (bottom, not blocking) */
     .vs-ready-overlay {
-        position: absolute;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background: rgba(0,0,0,0.7);
+        position: relative;
+        background: linear-gradient(180deg, rgba(0,0,0,0.85), rgba(0,0,0,0.95));
         display: flex;
         flex-direction: column;
         align-items: center;
-        justify-content: center;
-        z-index: 50;
-        border-radius: 6px;
+        padding: 16px 20px;
+        border-top: 2px solid #2ecc71;
     }
     .vs-ready-btn {
         padding: 14px 40px;
@@ -500,6 +498,79 @@
     }
     .vs-hint-btn:hover { transform: scale(1.05); box-shadow: 0 0 15px rgba(139,92,246,0.5); }
     .vs-hint-btn:disabled { opacity: 0.5; pointer-events: none; }
+
+    /* === DARK THEME: VS MODE + GOALS + RESULT === */
+    [data-theme="dark"] #vs-q-text,
+    [data-theme="dark"] #vs-status-msg,
+    [data-theme="dark"] #vs-question-body,
+    [data-theme="dark"] #vs-question-body h5 {
+        color: #e2e8f0 !important;
+    }
+    [data-theme="dark"] .vs-opt-btn {
+        background: #1e293b !important;
+        color: #e2e8f0 !important;
+        border-color: #475569 !important;
+    }
+    [data-theme="dark"] .vs-opt-btn:hover {
+        background: #334155 !important;
+        border-color: #94a3b8 !important;
+    }
+    [data-theme="dark"] #vs-hint-content {
+        color: #e2e8f0 !important;
+        background: rgba(139,92,246,0.15) !important;
+    }
+    [data-theme="dark"] #vs-result,
+    [data-theme="dark"] #vs-result h1,
+    [data-theme="dark"] #vs-result h2,
+    [data-theme="dark"] #vs-result h3,
+    [data-theme="dark"] #vs-result small {
+        color: #e2e8f0 !important;
+    }
+    [data-theme="dark"] #vs-result .bg-light {
+        background: #1e293b !important;
+        border-color: #475569 !important;
+    }
+    [data-theme="dark"] #vs-result .text-primary { color: #60a5fa !important; }
+    [data-theme="dark"] #vs-result .text-danger { color: #f87171 !important; }
+    [data-theme="dark"] #vs-lobby h3,
+    [data-theme="dark"] #vs-lobby h5,
+    [data-theme="dark"] #vs-lobby p {
+        color: #e2e8f0 !important;
+    }
+    /* Hedefler / Goals modal dark */
+    [data-theme="dark"] #goalModal .modal-body,
+    [data-theme="dark"] #goalModal .progress-bar,
+    [data-theme="dark"] #goalModal label,
+    [data-theme="dark"] #goalModal .input-group-text {
+        color: #e2e8f0 !important;
+    }
+    [data-theme="dark"] #goalModal .modal-body {
+        background: #151b2b !important;
+    }
+    [data-theme="dark"] #goalModal .input-group-text {
+        background: #334155 !important;
+        border-color: #475569 !important;
+    }
+    [data-theme="dark"] #goalModal .form-control {
+        background: #1e293b !important;
+        color: #e2e8f0 !important;
+        border-color: #475569 !important;
+    }
+    /* Leaderboard modal dark */
+    [data-theme="dark"] #leaderboardModal .modal-body {
+        background: #151b2b !important;
+    }
+    [data-theme="dark"] #leaderboardModal .card,
+    [data-theme="dark"] #leaderboardModal .list-group-item {
+        background: #1e293b !important;
+        color: #e2e8f0 !important;
+        border-color: #475569 !important;
+    }
+    [data-theme="dark"] #leaderboardModal h1,
+    [data-theme="dark"] #leaderboardModal h6,
+    [data-theme="dark"] #leaderboardModal small {
+        color: #e2e8f0 !important;
+    }
       /* --- MOBİL NAVBAR DÜZENLEMESİ (TAŞMA SORUNU İÇİN) --- */
     @media (max-width: 768px) {
         /* Navbar içeriğini sığdır */
@@ -692,6 +763,7 @@
                 <h5>Oda Kur (Host)</h5>
                 <p class="text-muted small">Odanıza bir isim verin (Örn: yds123)</p>
                 
+                <input type="text" id="vs-host-name" class="form-control mb-2 fw-bold text-center" placeholder="Senin İsmin" maxlength="15">
                 <div class="input-group mb-2">
                     <input type="text" id="host-id-input" class="form-control fw-bold" placeholder="Oda İsmi Yazın">
                     <button class="btn btn-primary" onclick="createCustomRoom()">
@@ -711,6 +783,7 @@
             <div class="col-md-6">
                 <h5>Odaya Katıl (Guest)</h5>
                 <p class="text-muted small">Arkadaşının belirlediği oda ismini gir.</p>
+                <input type="text" id="vs-guest-name" class="form-control mb-2 fw-bold text-center" placeholder="Senin İsmin" maxlength="15">
                 <input type="text" id="join-id-input" class="form-control mb-2 text-center" placeholder="Oda İsmi">
                 <button class="btn btn-lg btn-success w-100" onclick="joinRoom()">
                     <i class="bi bi-box-arrow-in-right"></i> Katıl
@@ -757,7 +830,7 @@
                     </div>
                 </div>
             </div>
-            <div class="vs-divider">âš" VS âš"</div>
+            <div class="vs-divider">VS</div>
             <!-- Player 2 (Guest) -->
             <div class="vs-player-row right">
                 <img src="Questimg.jpeg" alt="Quest" class="vs-player-avatar" id="vs-p2-avatar">
@@ -9466,6 +9539,10 @@ let vsMatchEnded = false;
 let hintRequested = false;
 let hintShown = false;
 
+// Player names
+let vsMyName = "";
+let vsOppName = "";
+
 
 // Menuden Tiklaninca
 function initVsMode() {
@@ -9491,6 +9568,8 @@ function createCustomRoom() {
         alert("Oda ismi en az 3 karakter olmali!");
         return;
     }
+
+    vsMyName = document.getElementById('vs-host-name').value.trim() || currentUser || "HOST";
 
     document.getElementById('host-status').classList.remove('d-none');
     document.getElementById('host-status').innerText = "Oda kuruluyor (" + roomId + ")...";
@@ -9526,6 +9605,7 @@ function joinRoom() {
     const destId = document.getElementById('join-id-input').value.trim();
     if (!destId) return alert("Lutfen oda ismini girin!");
     
+    vsMyName = document.getElementById('vs-guest-name').value.trim() || currentUser || "GUEST";
     amIHost = false;
     peer = new Peer(); 
 
@@ -9546,6 +9626,9 @@ function setupConnection() {
 
     conn.on('open', () => {
         console.log("Baglanti saglandi!");
+        
+        // Send my name to opponent
+        conn.send({ type: 'PLAYER_NAME', name: vsMyName });
         
         if (amIHost) {
             document.getElementById('vs-lobby').classList.add('d-none');
@@ -9618,15 +9701,19 @@ function startVsMatch() {
 
     vsQuestions = pool.sort(() => 0.5 - Math.random());
 
-    conn.send({ type: 'START_GAME', questions: vsQuestions });
+    conn.send({ type: 'START_GAME', questions: vsQuestions, hostName: vsMyName });
     startGameUI();
 }
 
 // VERI ALINDIGINDA
 function handleVsData(data) {
     switch(data.type) {
+        case 'PLAYER_NAME':
+            vsOppName = data.name || "RAKİP";
+            break;
         case 'START_GAME':
             vsQuestions = data.questions;
+            if(data.hostName) vsOppName = data.hostName;
             startGameUI();
             break;
         case 'OPP_ANSWER':
@@ -9668,10 +9755,11 @@ function startGameUI() {
     document.getElementById('vs-lobby').classList.add('d-none');
     document.getElementById('vs-gameplay').classList.remove('d-none');
     
-    const hostName = amIHost ? (currentUser || "HOST") : "RAKIP";
-    const guestName = amIHost ? "RAKIP" : (currentUser || "GUEST");
-    document.getElementById('vs-p1-name').innerText = hostName;
-    document.getElementById('vs-p2-name').innerText = guestName;
+    // P1 = host, P2 = guest
+    var p1Name = amIHost ? vsMyName : vsOppName;
+    var p2Name = amIHost ? vsOppName : vsMyName;
+    document.getElementById('vs-p1-name').innerText = p1Name || "HOST";
+    document.getElementById('vs-p2-name').innerText = p2Name || "RAKİP";
     
     currentVsIndex = 0;
     p1HP = 100;
@@ -9994,10 +10082,10 @@ function showMatchResult(winner, reason) {
         document.getElementById('final-hp-p1').innerText = Math.max(0, p1HP);
         document.getElementById('final-hp-p2').innerText = Math.max(0, p2HP);
         
-        var p1Label = iAmHost ? (currentUser || "HOST") : "RAKIP";
-        var p2Label = iAmHost ? "RAKIP" : (currentUser || "GUEST");
-        document.getElementById('vs-final-p1-label').innerText = p1Label;
-        document.getElementById('vs-final-p2-label').innerText = p2Label;
+        var p1Label = amIHost ? vsMyName : vsOppName;
+        var p2Label = amIHost ? vsOppName : vsMyName;
+        document.getElementById('vs-final-p1-label').innerText = p1Label || "HOST";
+        document.getElementById('vs-final-p2-label').innerText = p2Label || "RAKİP";
         
         var winTitle = document.getElementById('vs-winner-text');
         if (winner === 'draw') {
