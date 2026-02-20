@@ -55,6 +55,10 @@
         --shadow-sharp: 4px 4px 0px #000;
     }
 
+    html, body {
+        overflow-x: hidden;
+        max-width: 100vw;
+    }
     body {
         background-color: var(--bg-body);
         color: var(--text-main);
@@ -204,6 +208,21 @@
         .floating-btn { bottom: 20px; right: 20px; width: 50px; height: 50px; }
         .scroll-top-btn { bottom: 20px; left: 20px; width: 50px; height: 50px; }
         .sidebar-item { padding: 10px; font-size: 0.8rem; }
+        
+        /* VS MODE MOBİL FIX */
+        .vs-opt-btn { font-size: 0.85rem !important; padding: 10px 12px !important; }
+        #vs-q-text { font-size: 0.95rem !important; }
+        .card-body { padding: 12px !important; }
+        .container { padding-left: 8px; padding-right: 8px; }
+        .vs-container { overflow-x: hidden; }
+
+        /* BÖLÜMLER MENÜSÜ MOBİLDE SABİT (SCROLL YOK) */
+        .col-md-4 > .card.sticky-top {
+            position: relative !important;
+            top: auto !important;
+            max-height: none !important;
+            overflow-y: visible !important;
+        }
     }
          /* DARK MODE TEXT FIX (KESİN ÇÖZÜM) */
     [data-theme="dark"] body,
@@ -340,12 +359,65 @@
     }
     @keyframes ko-img-fade { to { opacity: 0; transform: scale(1.3); } }
 
-    /* --- VS MODE HEALTH BAR SYSTEM (MK / SF STYLE) --- */
+    /* --- HEDEF TAMAMLAMA KO EFEKTİ --- */
+    #goal-ko-overlay {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.80);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 200000;
+        pointer-events: none;
+        opacity: 0;
+    }
+    #goal-ko-overlay img {
+        max-width: 65vw;
+        max-height: 60vh;
+        transform: scale(0);
+        filter: drop-shadow(0 0 30px rgba(255, 200, 0, 0.8));
+    }
+    .goal-ko-anim {
+        animation: goal-ko-bg 0.2s ease-out forwards;
+    }
+    .goal-ko-anim img {
+        animation: 
+            goal-ko-slam 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.5) forwards,
+            goal-ko-shake 0.4s ease-in-out 0.3s,
+            goal-ko-glow 1.5s ease-in-out 0.3s 2,
+            goal-ko-fade 0.8s ease-in 3.2s forwards;
+    }
+    @keyframes goal-ko-bg { 0%{opacity:0} 100%{opacity:1} }
+    @keyframes goal-ko-slam {
+        0% { transform: scale(8); opacity: 0; }
+        50% { transform: scale(0.85); opacity: 1; }
+        70% { transform: scale(1.1); opacity: 1; }
+        100% { transform: scale(1); opacity: 1; }
+    }
+    @keyframes goal-ko-shake {
+        0%,100% { transform: scale(1) rotate(0deg); }
+        15% { transform: scale(1.03) rotate(-5deg); }
+        30% { transform: scale(1.03) rotate(5deg); }
+        45% { transform: scale(1.02) rotate(-3deg); }
+        60% { transform: scale(1.02) rotate(3deg); }
+        75% { transform: scale(1.01) rotate(-1deg); }
+    }
+    @keyframes goal-ko-glow {
+        0%,100% { filter: drop-shadow(0 0 30px rgba(255, 200, 0, 0.8)); }
+        50% { filter: drop-shadow(0 0 60px rgba(255, 100, 0, 1)) drop-shadow(0 0 100px rgba(255, 50, 0, 0.5)); }
+    }
+    @keyframes goal-ko-fade { 
+        0% { opacity: 1; transform: scale(1); }
+        100% { opacity: 0; transform: scale(1.4); } 
+    }
+
+    /* --- VS MODE HEALTH BAR SYSTEM (FIGHTING GAME PARALLELOGRAM STYLE) --- */
     .vs-healthbar-container {
         background: linear-gradient(180deg, #0a0a1a 0%, #141428 100%);
         padding: 10px 12px 8px;
         border-bottom: 3px solid #0f3460;
         position: relative;
+        overflow: visible;
     }
     .vs-hb-row {
         display: flex;
@@ -357,6 +429,7 @@
         display: flex;
         align-items: center;
         gap: 8px;
+        min-width: 0;
     }
     .vs-player-side.right {
         flex-direction: row-reverse;
@@ -387,46 +460,79 @@
         overflow: hidden;
         text-overflow: ellipsis;
     }
+    /* PARALLELOGRAM HEALTH BAR (eşkenar dörtgen - kalın) */
     .vs-hp-bar-wrap {
         width: 100%;
-        height: 18px;
+        height: 28px;
         background: #1a1a2e;
-        border-radius: 3px;
-        overflow: hidden;
+        overflow: visible;
         position: relative;
-        border: 1px solid #333;
+        border: 2px solid #555;
+        transform: skewX(-10deg);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.5), inset 0 1px 2px rgba(255,255,255,0.08);
     }
+    /* Ghost damage layer (kırmızı arka plan - yavaşça azalır) */
+    .vs-hp-ghost {
+        position: absolute;
+        top: 0;
+        height: 100%;
+        background: linear-gradient(180deg, #ff4444 0%, #cc0000 60%, #990000 100%);
+        transition: width 1.8s ease-out 0.3s;
+        z-index: 1;
+    }
+    .vs-player-side:not(.right) .vs-hp-ghost { left: 0; }
+    .vs-player-side.right .vs-hp-ghost { right: 0; }
+    
+    /* Actual HP fill */
     .vs-hp-bar {
         height: 100%;
-        border-radius: 3px;
-        transition: width 0.6s ease;
+        transition: width 0.4s ease;
         position: relative;
-        background: linear-gradient(180deg, #4cff4c 0%, #27ae60 50%, #1e8449 100%);
-        box-shadow: inset 0 2px 4px rgba(255,255,255,0.25), 0 0 8px rgba(46,204,113,0.3);
+        z-index: 2;
+        background: linear-gradient(180deg, #66ff66 0%, #27ae60 40%, #1e8449 100%);
+        box-shadow: inset 0 3px 6px rgba(255,255,255,0.3), inset 0 -2px 4px rgba(0,0,0,0.2), 0 0 10px rgba(46,204,113,0.4);
+    }
+    /* Shine effect on health bar */
+    .vs-hp-bar::after {
+        content: '';
+        position: absolute;
+        top: 2px;
+        left: 0;
+        right: 0;
+        height: 40%;
+        background: linear-gradient(180deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0) 100%);
     }
     .vs-hp-bar.danger {
-        background: linear-gradient(180deg, #ff6b6b 0%, #e74c3c 50%, #c0392b 100%);
-        box-shadow: inset 0 2px 4px rgba(255,255,255,0.2), 0 0 8px rgba(231,76,60,0.3);
+        background: linear-gradient(180deg, #ff6b6b 0%, #e74c3c 40%, #c0392b 100%);
+        box-shadow: inset 0 3px 6px rgba(255,255,255,0.2), inset 0 -2px 4px rgba(0,0,0,0.2), 0 0 10px rgba(231,76,60,0.4);
+        animation: hp-pulse-danger 0.8s ease-in-out infinite;
     }
     .vs-hp-bar.warning {
-        background: linear-gradient(180deg, #ffd93d 0%, #f39c12 50%, #e67e22 100%);
-        box-shadow: inset 0 2px 4px rgba(255,255,255,0.2), 0 0 8px rgba(243,156,18,0.3);
+        background: linear-gradient(180deg, #ffd93d 0%, #f39c12 40%, #e67e22 100%);
+        box-shadow: inset 0 3px 6px rgba(255,255,255,0.2), inset 0 -2px 4px rgba(0,0,0,0.2), 0 0 10px rgba(243,156,18,0.4);
+    }
+    @keyframes hp-pulse-danger {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.7; }
     }
     /* Right side bar goes right-to-left */
     .vs-player-side.right .vs-hp-bar {
         float: right;
     }
+    /* HP text - counter-skew so it's readable, positioned outside clip */
     .vs-hp-text {
         position: absolute;
         top: 50%;
-        transform: translateY(-50%);
-        font-size: 0.7rem;
-        font-weight: 800;
+        transform: translateY(-50%) skewX(10deg);
+        font-size: 0.8rem;
+        font-weight: 900;
         color: #fff;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.9);
+        text-shadow: 1px 1px 3px rgba(0,0,0,1), -1px -1px 3px rgba(0,0,0,1), 0 0 8px rgba(0,0,0,0.8);
+        z-index: 10;
+        letter-spacing: 1px;
     }
-    .vs-player-side:not(.right) .vs-hp-text { right: 6px; }
-    .vs-player-side.right .vs-hp-text { left: 6px; }
+    .vs-player-side:not(.right) .vs-hp-text { right: 8px; }
+    .vs-player-side.right .vs-hp-text { left: 8px; }
     .vs-hb-vs-badge {
         flex-shrink: 0;
         color: #f1c40f;
@@ -434,6 +540,48 @@
         font-size: 1rem;
         text-shadow: 0 0 10px rgba(241,196,15,0.6);
         padding: 0 4px;
+    }
+    
+    /* Damage shake on health bar */
+    @keyframes hp-shake {
+        0%, 100% { transform: skewX(-10deg) translateX(0); }
+        20% { transform: skewX(-10deg) translateX(-4px); }
+        40% { transform: skewX(-10deg) translateX(4px); }
+        60% { transform: skewX(-10deg) translateX(-3px); }
+        80% { transform: skewX(-10deg) translateX(2px); }
+    }
+    .hp-shake { animation: hp-shake 0.4s ease-in-out; }
+    
+    /* === MOBILE: Üst üste (stacked) layout === */
+    @media (max-width: 768px) {
+        .vs-healthbar-container { padding: 8px 8px 6px; }
+        .vs-hb-row {
+            flex-direction: column;
+            gap: 6px;
+        }
+        .vs-hb-vs-badge {
+            order: -1;
+            font-size: 0.9rem;
+            padding: 0;
+            margin: -2px 0;
+        }
+        .vs-player-side {
+            width: 100%;
+            flex-direction: row;
+            gap: 8px;
+        }
+        .vs-player-side.right {
+            flex-direction: row;
+            order: 2;
+        }
+        .vs-player-side.right .vs-player-info { text-align: left; }
+        .vs-player-side.right .vs-hp-bar { float: left; }
+        .vs-player-side.right .vs-hp-text { left: auto; right: 8px; }
+        .vs-player-side.right .vs-hp-ghost { right: auto; left: 0; }
+        .vs-player-avatar { width: 48px; height: 48px; }
+        .vs-player-name { font-size: 0.7rem; letter-spacing: 0.5px; }
+        .vs-hp-bar-wrap { height: 26px; }
+        .vs-hp-text { font-size: 0.75rem; }
     }
 
     /* --- VS answer coloring (fetih style) --- */
@@ -457,15 +605,16 @@
         box-shadow: 0 0 12px #2ecc71, 0 0 24px rgba(46,204,113,0.3) !important;
     }
 
-    /* VS Ready bar (bottom, not blocking) */
+    /* VS Ready bar (always visible at bottom) */
     .vs-ready-overlay {
         position: relative;
         background: linear-gradient(180deg, rgba(0,0,0,0.85), rgba(0,0,0,0.95));
         display: flex;
         flex-direction: column;
         align-items: center;
-        padding: 16px 20px;
+        padding: 12px 20px;
         border-top: 2px solid #2ecc71;
+        transition: opacity 0.3s;
     }
     .vs-ready-btn {
         padding: 14px 40px;
@@ -480,12 +629,33 @@
         cursor: pointer;
         transition: all 0.2s;
     }
-    .vs-ready-btn:hover { background: #2ecc71; transform: scale(1.05); }
+    .vs-ready-btn:hover:not(:disabled) { background: #2ecc71; transform: scale(1.05); }
     .vs-ready-btn.done {
         background: #555;
         border-color: #777;
         cursor: default;
         pointer-events: none;
+    }
+    /* Ghost mode - visible but faded and disabled */
+    .vs-ready-btn.vs-ready-ghost {
+        opacity: 0.2;
+        pointer-events: none;
+        background: #333;
+        border-color: #555;
+        color: #777;
+    }
+    /* Active mode - fully visible */
+    .vs-ready-btn.vs-ready-active {
+        opacity: 1;
+        pointer-events: auto;
+        background: #27ae60;
+        border-color: #2ecc71;
+        color: #fff;
+        animation: ready-pulse 1.5s ease-in-out infinite;
+    }
+    @keyframes ready-pulse {
+        0%, 100% { box-shadow: 0 0 0px rgba(46,204,113,0.3); }
+        50% { box-shadow: 0 0 20px rgba(46,204,113,0.6); }
     }
 
     /* Damage flash */
@@ -663,7 +833,23 @@
     body.modal-open-fix {
         overflow: auto !important;
         padding-right: 0 !important;
-    }  
+    }
+
+    /* --- SORU METNİNDEKİ KALIN (STRONG) KELİMELER --- */
+    .question-text strong,
+    #vs-q-text strong {
+        color: #d35400;
+        font-weight: 900;
+        background: linear-gradient(to bottom, transparent 60%, rgba(211, 84, 0, 0.15) 60%);
+        padding: 0 3px;
+        border-radius: 2px;
+        letter-spacing: 0.3px;
+    }
+    [data-theme="dark"] .question-text strong,
+    [data-theme="dark"] #vs-q-text strong {
+        color: #f39c12;
+        background: linear-gradient(to bottom, transparent 60%, rgba(243, 156, 18, 0.2) 60%);
+    }
 </style>
 
 </head>
@@ -743,7 +929,10 @@
             <button class="btn btn-outline-success btn-sm" onclick="openDailyGoals()">
                 <i class="bi bi-graph-up-arrow"></i> Hedefler
             </button>
-
+            <!-- YENİ EKLENEN OYUN DÜNYASI BUTONU -->
+            <a href="game.html" class="btn btn-outline-warning btn-sm fw-bold" target="_blank" style="background-color: #2c3e50; color: #f1c40f; border-color: #f1c40f;">
+                <i class="bi bi-globe-americas"></i> Oyun Dünyası
+            </a>
                 <!-- YENİ EKLENEN HATIRLATICI LİNKİ -->
         <a href="hatirlatici.html" class="btn btn-outline-warning btn-sm" target="_blank">
             <i class="bi bi-alarm-fill"></i> Hatırlatıcı
@@ -765,8 +954,8 @@
     </div>
 </nav>
 
-<div class="container py-4">
-    <div class="row">
+<div class="container py-4" style="max-width:100%;overflow-x:hidden;">
+    <div class="row" style="margin-left:0;margin-right:0;">
         <!-- SOL MENÜ -->
         <div class="col-md-4 col-lg-3 mb-4">
             <div class="card p-3 sticky-top" style="top: 20px; max-height: 90vh; overflow-y: auto;">
@@ -797,7 +986,7 @@
                     <div class="text-center py-5 text-muted">Lütfen soldan bir bölüm seçin.</div>
                 </div>
                 <!-- VS MODU ALANI -->
-<div id="vs-area" class="vs-container">
+<div id="vs-area" class="vs-container" style="overflow-x:hidden;max-width:100%;">
     
   <!-- LOBİ EKRANI -->
     <div id="vs-lobby" class="card p-4 text-center">
@@ -871,7 +1060,8 @@
                     <img src="Hostimg.jpeg" alt="Host" class="vs-player-avatar" id="vs-p1-avatar">
                     <div class="vs-player-info">
                         <div class="vs-player-name" id="vs-p1-name">HOST</div>
-                        <div class="vs-hp-bar-wrap">
+                        <div class="vs-hp-bar-wrap" id="vs-p1-hp-wrap">
+                            <div class="vs-hp-ghost" id="vs-p1-hp-ghost" style="width:100%"></div>
                             <div class="vs-hp-bar" id="vs-p1-hp-bar" style="width:100%"></div>
                             <span class="vs-hp-text" id="vs-p1-hp-text">100</span>
                         </div>
@@ -884,7 +1074,8 @@
                     <img src="Questimg.jpeg" alt="Quest" class="vs-player-avatar" id="vs-p2-avatar">
                     <div class="vs-player-info">
                         <div class="vs-player-name" id="vs-p2-name">RAKİP</div>
-                        <div class="vs-hp-bar-wrap">
+                        <div class="vs-hp-bar-wrap" id="vs-p2-hp-wrap">
+                            <div class="vs-hp-ghost" id="vs-p2-hp-ghost" style="width:100%"></div>
                             <div class="vs-hp-bar" id="vs-p2-hp-bar" style="width:100%"></div>
                             <span class="vs-hp-text" id="vs-p2-hp-text">100</span>
                         </div>
@@ -914,15 +1105,15 @@
             </div>
         </div>
 
-        <!-- Ready overlay (hidden by default) -->
-        <div id="vs-ready-screen" class="vs-ready-overlay d-none">
-            <div class="text-center text-white mb-3">
+        <!-- Ready bar (always visible, ghost when inactive) -->
+        <div id="vs-ready-screen" class="vs-ready-overlay">
+            <div class="text-center text-white mb-2">
                 <div id="vs-round-result-text" style="font-size:1.1rem;font-weight:700;"></div>
             </div>
-            <button class="vs-ready-btn" id="vs-ready-btn" onclick="pressReady()">
+            <button class="vs-ready-btn vs-ready-ghost" id="vs-ready-btn" onclick="pressReady()" disabled>
                 <i class="bi bi-check-circle-fill"></i> HAZIRIM
             </button>
-            <div id="vs-ready-wait" class="d-none text-white mt-3">
+            <div id="vs-ready-wait" class="d-none text-white mt-2">
                 <div class="spinner-border spinner-border-sm text-warning"></div> Rakip bekleniyor...
             </div>
         </div>
@@ -953,28 +1144,96 @@
 
     <!-- LEADERBOARD MODAL -->
 <div class="modal fade" id="leaderboardModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content border-0 shadow-lg">
             <div class="modal-header bg-dark text-white border-bottom-0">
-                <h5 class="modal-title fw-bold"><i class="bi bi-trophy text-warning"></i> GÜNLÜK SKOR TABLOSU</h5>
+                <h5 class="modal-title fw-bold"><i class="bi bi-trophy text-warning"></i> LİDERLİK TABLOSU</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body bg-light">
-                <!-- Kullanıcı İsmi Girişi -->
-                <div class="input-group mb-3">
-                    <span class="input-group-text bg-secondary text-white fw-bold">Komutan Adı:</span>
-                    <input type="text" id="leaderboard-name" class="form-control fw-bold" placeholder="Adını Gir" onchange="saveUserName()">
+            <div class="modal-body bg-light" style="max-height:80vh;overflow-y:auto;">
+
+                <!-- MOGGER BANNER -->
+                <div id="mogger-banner" class="text-center p-3 mb-3 rounded-3" style="background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460);border:2px solid #e94560;display:none;">
+                    <div class="text-warning fw-bold text-uppercase small mb-1" style="letter-spacing:3px;">Bu Haftanin MOGGER'i</div>
+                    <div id="mogger-avatar" style="width:64px;height:64px;border-radius:50%;margin:0 auto 8px;border:3px solid #f1c40f;overflow:hidden;background:#334155;display:flex;align-items:center;justify-content:center;font-size:1.5rem;color:#f1c40f;font-weight:900;"></div>
+                    <div id="mogger-name" class="text-white fw-bold fs-5"></div>
+                    <div id="mogger-wins" class="text-warning small"></div>
                 </div>
 
+                <!-- Haftalik Kazanimlar -->
+                <div id="weekly-wins-section" class="mb-3" style="display:none;">
+                    <h6 class="fw-bold border-bottom pb-2"><i class="bi bi-calendar-week text-info"></i> Haftalik Gun Birincilikleri</h6>
+                    <div id="weekly-wins-list" class="d-flex flex-wrap gap-2"></div>
+                </div>
+
+                <!-- Profil Ayarlari -->
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center gap-3 mb-2">
+                            <!-- Avatar -->
+                            <div style="position:relative;cursor:pointer;" onclick="document.getElementById('avatar-upload').click()">
+                                <div id="my-avatar-display" style="width:52px;height:52px;border-radius:50%;background:#334155;display:flex;align-items:center;justify-content:center;font-size:1.3rem;color:#fff;font-weight:800;overflow:hidden;border:2px solid #3498db;"></div>
+                                <div style="position:absolute;bottom:-2px;right:-2px;background:#3498db;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;">
+                                    <i class="bi bi-camera-fill" style="font-size:0.55rem;color:#fff;"></i>
+                                </div>
+                                <input type="file" id="avatar-upload" accept="image/*" style="display:none;" onchange="handleAvatarUpload(event)">
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="input-group input-group-sm mb-1">
+                                    <span class="input-group-text bg-secondary text-white fw-bold" style="font-size:0.75rem;">Ad:</span>
+                                    <input type="text" id="leaderboard-name" class="form-control fw-bold" placeholder="Adını Gir" onchange="saveUserName()">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BİLDİRİM AYARI -->
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-body py-2">
+                        <div class="d-flex align-items-center justify-content-between mb-1">
+                            <span class="fw-bold small"><i class="bi bi-bell-fill text-danger"></i> Otomatik Bildirim</span>
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox" id="notif-toggle" onchange="toggleNotifSetup()">
+                            </div>
+                        </div>
+                        <div id="notif-setup" style="display:none;">
+                            <div class="alert alert-info py-2 px-2 small mb-2" style="font-size:0.72rem;">
+                                <strong>Nasıl çalışır?</strong> Biri seni geçtiğinde telefonuna anında bildirim gelir (site kapalıyken bile!)<br>
+                                <strong>1.</strong> Telefonuna <a href="https://play.google.com/store/apps/details?id=io.heckel.ntfy" target="_blank" class="fw-bold">ntfy uygulamasını</a> yükle (iOS: App Store'da "ntfy")<br>
+                                <strong>2.</strong> Uygulamada <strong>"+"</strong> bas → aşağıdaki kanal adını yapıştır → Subscribe
+                            </div>
+                            <div class="input-group input-group-sm mb-1">
+                                <span class="input-group-text bg-danger text-white fw-bold" style="font-size:0.7rem;">📢 Kanal:</span>
+                                <input type="text" id="notif-channel" class="form-control fw-bold" readonly style="font-size:0.85rem;letter-spacing:0.5px;">
+                                <button class="btn btn-outline-secondary btn-sm" onclick="copyNotifChannel()" title="Kopyala"><i class="bi bi-clipboard"></i></button>
+                            </div>
+                            <small class="text-muted" style="font-size:0.6rem;">Bu kanalı ntfy uygulamasında subscribe et. Biri seni geçtiğinde otomatik bildirim alırsın.</small>
+                            
+                            <div class="mt-2">
+                                <button class="btn btn-sm btn-outline-primary w-100" onclick="testNotification()">
+                                    <i class="bi bi-send-fill"></i> Test Bildirimi Gönder
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bugünün Skoru -->
                 <div class="card bg-white border-0 shadow-sm mb-3">
-                    <div class="card-body text-center">
-                        <h6 class="text-muted text-uppercase small fw-bold">Bugünkü Puanın</h6>
-                        <h1 class="display-4 fw-bold text-primary mb-0" id="my-daily-score">0</h1>
+                    <div class="card-body text-center py-2">
+                        <h6 class="text-muted text-uppercase small fw-bold mb-1">Bugünün Puanı</h6>
+                        <h1 class="display-5 fw-bold text-primary mb-0" id="my-daily-score">0</h1>
                         <small class="text-muted">Sıfırlanma: 00:00</small>
                     </div>
                 </div>
 
-                <h6 class="fw-bold border-bottom pb-2">🏆 En İyiler (Global Simülasyon)</h6>
+                <!-- Geçilme Uyarısı -->
+                <div id="overtake-alert" class="alert alert-danger d-none mb-3 p-2" style="font-size:0.85rem;">
+                    <i class="bi bi-exclamation-triangle-fill"></i> <strong id="overtake-name">---</strong> seni geçti!
+                </div>
+
+                <h6 class="fw-bold border-bottom pb-2">🏆 En Iyiler (Bugun)</h6>
                 <ul class="list-group list-group-flush" id="leaderboard-list">
                     <!-- JS ile dolacak -->
                 </ul>
@@ -988,179 +1247,510 @@
     
 <script>
     
-/* ================= ONLINE LEADERBOARD & PUAN SİSTEMİ (FIXED ID) ================= */
+/* ================= ONLINE LEADERBOARD & PUAN SİSTEMİ (V2 - MOGGER) ================= */
 
-// --- SENİN ID'N BURAYA GÖMÜLDÜ ---
+// --- PANTRY API ---
 const PANTRY_ID = "41e0725c-beab-4cea-9de2-ed320c7b115a"; 
-const BUCKET_NAME = "YdsLiderlikTablosu"; // Sepet ismi
+const BUCKET_NAME = "YdsLiderlikTablosu";
+const WEEKLY_BUCKET = "YdsHaftalikMogger";
 
-// Yerel Değişkenler
+// --- YEREL DEĞİŞKENLER ---
 let currentUser = localStorage.getItem('yds_username') || "İsimsiz Komutan";
-let myLocalScore = 0; // Anlık takip
+let myLocalScore = 0;
+let myAvatar = localStorage.getItem('yds_avatar') || null;
+let myNotifChannel = localStorage.getItem('yds_notif_channel') || "";
+let notifEnabled = localStorage.getItem('yds_notif_enabled') === 'true';
+let previousLeader = localStorage.getItem('yds_prev_leader') || "";
 
-// 1. GÜNLÜK SKORU YERELDEN YÜKLE (Sayfa Yenilenince Puan Gitmesin)
+// 1. GÜNLÜK SKORU YERELDEN YÜKLE
 let dailyScoreData = JSON.parse(localStorage.getItem('yds_daily_score_v2')) || { date: new Date().toLocaleDateString(), score: 0 };
 
-// Gün değiştiyse yerel skoru sıfırla
-if (dailyScoreData.date !== new Date().toLocaleDateString()) {
-    dailyScoreData = { date: new Date().toLocaleDateString(), score: 0 };
-    localStorage.setItem('yds_daily_score_v2', JSON.stringify(dailyScoreData));
-}
-myLocalScore = dailyScoreData.score; // Yerel değişkeni güncelle
+// Gün değiştiyse → gün birincisini kaydet, sonra sıfırla
+(async function checkDayReset() {
+    const today = new Date().toLocaleDateString();
+    if (dailyScoreData.date !== today) {
+        // Eski günün birincisini haftalık tabloya yaz
+        await recordDailyWinner();
+        dailyScoreData = { date: today, score: 0 };
+        localStorage.setItem('yds_daily_score_v2', JSON.stringify(dailyScoreData));
+        previousLeader = "";
+        localStorage.setItem('yds_prev_leader', "");
+    }
+    myLocalScore = dailyScoreData.score;
+})();
 
-// 2. KULLANICI ADINI KAYDETME
+// 2. AVATAR SİSTEMİ
+function handleAvatarUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    // Boyut limiti YOK - canvas ile otomatik küçültüyoruz
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 64; canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+            // Kare kırpma (ortadan)
+            const size = Math.min(img.width, img.height);
+            const sx = (img.width - size) / 2;
+            const sy = (img.height - size) / 2;
+            ctx.drawImage(img, sx, sy, size, size, 0, 0, 64, 64);
+            myAvatar = canvas.toDataURL('image/jpeg', 0.6);
+            localStorage.setItem('yds_avatar', myAvatar);
+            updateMyAvatarDisplay();
+            syncScoreToCloud(0);
+            alert("Profil fotoğrafı kaydedildi!");
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+
+function getAvatarHTML(name, avatarData, size) {
+    size = size || 40;
+    if (avatarData) {
+        return `<img src="${avatarData}" style="width:${size}px;height:${size}px;border-radius:50%;object-fit:cover;">`;
+    }
+    const initial = (name || "?").charAt(0).toUpperCase();
+    const colors = ['#e74c3c','#3498db','#2ecc71','#f39c12','#9b59b6','#1abc9c','#e67e22','#e91e63'];
+    const colorIdx = name ? name.charCodeAt(0) % colors.length : 0;
+    return `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${colors[colorIdx]};display:flex;align-items:center;justify-content:center;font-weight:900;color:#fff;font-size:${size*0.45}px;">${initial}</div>`;
+}
+
+function updateMyAvatarDisplay() {
+    const el = document.getElementById('my-avatar-display');
+    if (el) el.innerHTML = getAvatarHTML(currentUser, myAvatar, 52);
+}
+
+// 3. NTFY BİLDİRİM SİSTEMİ
+function generateNotifChannel(username) {
+    // Kullanıcı adından benzersiz kanal oluştur
+    const clean = username.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const hash = Math.abs(username.split('').reduce((a, c) => ((a << 5) - a) + c.charCodeAt(0), 0)).toString(36).substring(0, 4);
+    return `yds-lider-${clean}-${hash}`;
+}
+
+function toggleNotifSetup() {
+    const toggle = document.getElementById('notif-toggle');
+    const setup = document.getElementById('notif-setup');
+    notifEnabled = toggle.checked;
+    localStorage.setItem('yds_notif_enabled', notifEnabled);
+    setup.style.display = notifEnabled ? '' : 'none';
+    
+    if (notifEnabled && !myNotifChannel) {
+        myNotifChannel = generateNotifChannel(currentUser);
+        localStorage.setItem('yds_notif_channel', myNotifChannel);
+    }
+    document.getElementById('notif-channel').value = myNotifChannel;
+    syncScoreToCloud(0); // Kanalı buluta kaydet
+}
+
+function copyNotifChannel() {
+    const ch = document.getElementById('notif-channel').value;
+    navigator.clipboard.writeText(ch).then(() => {
+        alert("Kanal kopyalandı! ntfy uygulamasında yapıştır.");
+    }).catch(() => {
+        // Fallback
+        const input = document.getElementById('notif-channel');
+        input.select();
+        document.execCommand('copy');
+        alert("Kanal kopyalandı!");
+    });
+}
+
+async function testNotification() {
+    if (!myNotifChannel) {
+        alert("Önce bildirim kanalı oluştur!");
+        return;
+    }
+    try {
+        await fetch(`https://ntfy.sh/${myNotifChannel}`, {
+            method: 'POST',
+            headers: { 'Title': 'YDS Liderlik Test', 'Tags': 'trophy' },
+            body: '🏆 Test bildirimi! Biri seni geçtiğinde böyle bir bildirim alacaksın. 💪'
+        });
+        alert("Test bildirimi gönderildi! Telefonunu kontrol et.");
+    } catch(e) {
+        alert("Bildirim gönderilemedi. İnternet bağlantını kontrol et.\n" + e.message);
+    }
+}
+
+// Rakibi geçtiğinde ona ntfy bildirimi gönder
+async function sendOvertakeNotification(overtakenPlayerName, overtakenChannel, myName) {
+    if (!overtakenChannel) return;
+    try {
+        await fetch(`https://ntfy.sh/${overtakenChannel}`, {
+            method: 'POST',
+            headers: { 
+                'Title': '🚨 Liderliği Kaybettin!', 
+                'Tags': 'rotating_light,trophy',
+                'Priority': '4'
+            },
+            body: `${myName} seni geçti! 😤 Hadi geri al tahtını! 💪🔥`
+        });
+        console.log("Bildirim gönderildi:", overtakenPlayerName);
+    } catch(e) {
+        console.log("Bildirim gönderilemedi:", e);
+    }
+}
+
+// 4. KULLANICI ADINI KAYDETME
 function saveUserName() {
     const inputName = document.getElementById('leaderboard-name').value.trim();
-    if(inputName && inputName.length > 2) {
+    if (inputName && inputName.length > 2) {
         currentUser = inputName;
         localStorage.setItem('yds_username', currentUser);
-        syncScoreToCloud(0); // İsmi sunucuya kaydet
+        // Bildirim kanalını yeni isme göre güncelle
+        myNotifChannel = generateNotifChannel(currentUser);
+        localStorage.setItem('yds_notif_channel', myNotifChannel);
+        const chInput = document.getElementById('notif-channel');
+        if (chInput) chInput.value = myNotifChannel;
+        updateMyAvatarDisplay();
+        syncScoreToCloud(0);
         alert("Komutan adı kaydedildi: " + currentUser);
     } else {
         alert("Lütfen en az 3 harfli bir isim gir.");
     }
 }
 
-// 3. PUAN EKLEME (YEREL + ONLINE)
+// 5. PUAN EKLEME
 function addScorePoints(amount) {
-    // A) Yerel Depolama (Hız için)
     if (dailyScoreData.date !== new Date().toLocaleDateString()) {
         dailyScoreData = { date: new Date().toLocaleDateString(), score: 0 };
     }
     dailyScoreData.score += amount;
     myLocalScore = dailyScoreData.score;
     localStorage.setItem('yds_daily_score_v2', JSON.stringify(dailyScoreData));
-
-    // B) Ekrana Bildirim
-    showScoreToast(`+${amount} PUAN! (Kaydediliyor...)`);
-    
-    // C) Buluta Gönder
+    showScoreToast(`+${amount} PUAN!`);
     syncScoreToCloud(amount);
 }
 
-// 4. BULUT İLE SENKRONİZE ET (GÜNCELLENMİŞ)
+// 6. BULUT SENKRONİZASYON (avatar + ntfy channel dahil)
 async function syncScoreToCloud(pointsToAdd) {
     const url = `https://getpantry.cloud/apiv1/pantry/${PANTRY_ID}/basket/${BUCKET_NAME}`;
     const todayStr = new Date().toLocaleDateString("tr-TR");
-
     try {
-        // 1. Mevcut listeyi çekmeye çalış
         let data = { date: todayStr, players: [] };
-        
         try {
-            let response = await fetch(url, { 
-                method: "GET", 
-                headers: { "Content-Type": "application/json" }
-            });
-            if (response.ok) {
-                let json = await response.json();
-                // Eğer veri boş değilse ve tarih bugüne aitse kullan
-                if(json.date === todayStr) {
-                    data = json;
-                }
+            let resp = await fetch(url, { method: "GET", headers: { "Content-Type": "application/json" } });
+            if (resp.ok) {
+                let json = await resp.json();
+                if (json.date === todayStr) data = json;
             }
-        } catch(e) {
-            console.log("Sepet henüz yok veya okuma hatası, yeni oluşturulacak.");
-        }
+        } catch(e) {}
 
-        // 2. Listeyi Güncelle
-        // Mevcut oyuncular dizisinde bizi bul
         if (!data.players) data.players = [];
-        
-        let playerIndex = data.players.findIndex(p => p.name === currentUser);
-        
-        if (playerIndex > -1) {
-            // Oyuncu varsa: Yerel skor ile sunucu skorunu karşılaştır, büyük olanı al
-            // (Senkron hatasını önlemek için yerel skoru baz alıyoruz çünkü en güncel bizde)
-            data.players[playerIndex].score = myLocalScore; 
+
+        // Eski sıralamayı kaydet
+        let sortedBefore = [...data.players].sort((a,b) => b.score - a.score);
+        let oldLeader = sortedBefore.length > 0 ? sortedBefore[0].name : "";
+
+        let idx = data.players.findIndex(p => p.name === currentUser);
+        const playerObj = { 
+            name: currentUser, 
+            score: myLocalScore, 
+            avatar: myAvatar || "", 
+            ntfyChannel: (notifEnabled && myNotifChannel) ? myNotifChannel : ""
+        };
+
+        if (idx > -1) {
+            data.players[idx] = playerObj;
         } else {
-            // Oyuncu yoksa ekle
-            data.players.push({ name: currentUser, score: myLocalScore });
+            data.players.push(playerObj);
         }
 
-        // 3. Güncellenmiş listeyi sunucuya gönder (POST = Create/Update)
-        await fetch(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(data)
-        });
+        // Yeni sıralama
+        let sortedAfter = [...data.players].sort((a,b) => b.score - a.score);
+        let newLeader = sortedAfter[0]?.name || "";
 
-        console.log("Skor başarıyla buluta işlendi: " + myLocalScore);
+        // BEN birini geçtiyse → o kişiye ntfy bildirimi gönder!
+        if (pointsToAdd > 0 && newLeader === currentUser && oldLeader !== currentUser && oldLeader !== "") {
+            // Eski lideri bul, ntfy kanalı varsa bildirim at
+            const overtakenPlayer = data.players.find(p => p.name === oldLeader);
+            if (overtakenPlayer && overtakenPlayer.ntfyChannel) {
+                sendOvertakeNotification(oldLeader, overtakenPlayer.ntfyChannel, currentUser);
+            }
+        }
+
+        // BENİ biri geçtiyse → ekranda uyarı göster
+        if (oldLeader === currentUser && newLeader !== currentUser && newLeader !== "") {
+            checkOvertakeAlert(newLeader);
+        }
+
+        previousLeader = newLeader;
+        localStorage.setItem('yds_prev_leader', newLeader);
+
+        await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
 
     } catch (error) {
         console.error("Online skor hatası:", error);
     }
 }
 
-// 5. LEADERBOARD AÇMA (GÜNCELLENMİŞ)
+// 7. GEÇİLME KONTROLÜ
+function checkOvertakeAlert(newLeaderName) {
+    showOvertakeToast(newLeaderName);
+    const alertEl = document.getElementById('overtake-alert');
+    if (!alertEl) return;
+    alertEl.classList.remove('d-none');
+    document.getElementById('overtake-name').textContent = newLeaderName;
+}
+
+function showOvertakeToast(name) {
+    const existing = document.querySelector('.overtake-toast');
+    if (existing) existing.remove();
+    const div = document.createElement('div');
+    div.className = 'overtake-toast';
+    div.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:99999;background:linear-gradient(135deg,#e74c3c,#c0392b);color:#fff;padding:12px 24px;border-radius:12px;font-weight:800;font-size:1rem;box-shadow:0 8px 32px rgba(0,0,0,0.4);animation:slideDown 0.5s;text-align:center;max-width:90vw;';
+    div.innerHTML = `<i class="bi bi-exclamation-triangle-fill"></i> ${name} seni geçti! 😤<br><small style="font-weight:400;">Liderlik tahtını geri al!</small>`;
+    document.body.appendChild(div);
+    setTimeout(() => { if (div.parentNode) div.remove(); }, 6000);
+}
+
+// Sayfa açılışında liderliği kontrol et
+async function checkLeadershipOnLoad() {
+    const url = `https://getpantry.cloud/apiv1/pantry/${PANTRY_ID}/basket/${BUCKET_NAME}`;
+    const todayStr = new Date().toLocaleDateString("tr-TR");
+    try {
+        let resp = await fetch(url, { method: "GET", headers: { "Content-Type": "application/json" } });
+        if (!resp.ok) return;
+        let data = await resp.json();
+        if (!data.players || data.date !== todayStr) return;
+        
+        data.players.sort((a,b) => b.score - a.score);
+        const leader = data.players[0]?.name || "";
+        
+        // Eğer önceki lider bendim ama artık değilsem → geçildim!
+        if (previousLeader === currentUser && leader !== currentUser && leader !== "") {
+            checkOvertakeAlert(leader);
+        }
+        
+        // Ben şu an lidersem ve önceki lider ben değildiyse → birini geçtik, ona bildirim at
+        if (leader === currentUser && previousLeader !== currentUser && previousLeader !== "") {
+            const overtakenPlayer = data.players.find(p => p.name === previousLeader);
+            if (overtakenPlayer && overtakenPlayer.ntfyChannel) {
+                sendOvertakeNotification(previousLeader, overtakenPlayer.ntfyChannel, currentUser);
+            }
+        }
+        
+        previousLeader = leader;
+        localStorage.setItem('yds_prev_leader', leader);
+    } catch(e) {}
+}
+// Sayfa yüklendiğinde kontrol et
+setTimeout(checkLeadershipOnLoad, 3000);
+// Her 2 dakikada bir kontrol et
+setInterval(checkLeadershipOnLoad, 120000);
+
+// 8. HAFTALIK MOGGER SİSTEMİ
+function getWeekKey() {
+    const d = new Date();
+    const jan1 = new Date(d.getFullYear(), 0, 1);
+    const weekNum = Math.ceil(((d - jan1) / 86400000 + jan1.getDay() + 1) / 7);
+    return `${d.getFullYear()}-W${weekNum}`;
+}
+
+async function recordDailyWinner() {
+    // Eski günün verilerini çek ve birinciye +1 haftalık puan ver
+    const url = `https://getpantry.cloud/apiv1/pantry/${PANTRY_ID}/basket/${BUCKET_NAME}`;
+    const weeklyUrl = `https://getpantry.cloud/apiv1/pantry/${PANTRY_ID}/basket/${WEEKLY_BUCKET}`;
+    const weekKey = getWeekKey();
+
+    try {
+        // Günlük veriyi oku
+        let resp = await fetch(url, { method: "GET", headers: { "Content-Type": "application/json" } });
+        if (!resp.ok) return;
+        let dailyData = await resp.json();
+        if (!dailyData.players || dailyData.players.length === 0) return;
+
+        // Birincisi
+        dailyData.players.sort((a,b) => b.score - a.score);
+        const winner = dailyData.players[0];
+        if (winner.score === 0) return; // 0 puanla birinci olmaz
+
+        // Haftalık veriyi oku/oluştur
+        let weeklyData = { week: weekKey, winners: [] };
+        try {
+            let wr = await fetch(weeklyUrl, { method: "GET", headers: { "Content-Type": "application/json" } });
+            if (wr.ok) {
+                let wj = await wr.json();
+                if (wj.week === weekKey) weeklyData = wj;
+            }
+        } catch(e) {}
+
+        if (!weeklyData.winners) weeklyData.winners = [];
+
+        // Gün birincisine +1
+        let wIdx = weeklyData.winners.findIndex(w => w.name === winner.name);
+        if (wIdx > -1) {
+            weeklyData.winners[wIdx].wins++;
+            weeklyData.winners[wIdx].avatar = winner.avatar || weeklyData.winners[wIdx].avatar || "";
+        } else {
+            weeklyData.winners.push({ name: winner.name, wins: 1, avatar: winner.avatar || "" });
+        }
+
+        await fetch(weeklyUrl, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(weeklyData) });
+    } catch(e) {
+        console.error("Haftalık mogger kaydı hatası:", e);
+    }
+}
+
+async function loadWeeklyMogger() {
+    const weeklyUrl = `https://getpantry.cloud/apiv1/pantry/${PANTRY_ID}/basket/${WEEKLY_BUCKET}`;
+    const weekKey = getWeekKey();
+    try {
+        let resp = await fetch(weeklyUrl, { method: "GET", headers: { "Content-Type": "application/json" } });
+        if (!resp.ok) return null;
+        let data = await resp.json();
+        if (data.week !== weekKey) return null;
+        return data;
+    } catch(e) { return null; }
+}
+
+// 9. LEADERBOARD AÇMA (MEGA UPDATE)
 async function openLeaderboard() {
     const modal = new bootstrap.Modal(document.getElementById('leaderboardModal'));
     modal.show();
-    
+
     document.getElementById('leaderboard-name').value = currentUser;
     document.getElementById('my-daily-score').innerText = myLocalScore;
-    const list = document.getElementById('leaderboard-list');
+    updateMyAvatarDisplay();
     
-    list.innerHTML = `<div class="text-center p-4"><div class="spinner-border text-warning"></div><p class="mt-2">Sıralama Yükleniyor...</p></div>`;
+    // Bildirim ayarlarını yükle
+    const notifToggle = document.getElementById('notif-toggle');
+    const notifSetup = document.getElementById('notif-setup');
+    const notifChannelInput = document.getElementById('notif-channel');
+    notifToggle.checked = notifEnabled;
+    notifSetup.style.display = notifEnabled ? '' : 'none';
+    if (!myNotifChannel && currentUser) {
+        myNotifChannel = generateNotifChannel(currentUser);
+        localStorage.setItem('yds_notif_channel', myNotifChannel);
+    }
+    notifChannelInput.value = myNotifChannel;
 
+    const list = document.getElementById('leaderboard-list');
+    list.innerHTML = `<div class="text-center p-4"><div class="spinner-border text-warning"></div><p class="mt-2">Yükleniyor...</p></div>`;
+
+    // Haftalık mogger'ı yükle
+    const weeklyData = await loadWeeklyMogger();
+
+    // Günlük veri
     const url = `https://getpantry.cloud/apiv1/pantry/${PANTRY_ID}/basket/${BUCKET_NAME}`;
     const todayStr = new Date().toLocaleDateString("tr-TR");
 
     try {
         let response = await fetch(url);
-        
         if (!response.ok) {
             list.innerHTML = `<li class="list-group-item text-center">Henüz kayıtlı skor yok. İlk sen ol!</li>`;
-            // İlk açılışta sepet yoksa senkronize et ki oluşsun
+            renderWeeklySection(weeklyData, null);
             syncScoreToCloud(0);
             return;
         }
-        
-        let data = await response.json();
 
-        // Tarih kontrolü
+        let data = await response.json();
         if (!data.date || data.date !== todayStr) {
             list.innerHTML = `<li class="list-group-item text-center">Bugün henüz kimse puan almadı.</li>`;
+            renderWeeklySection(weeklyData, null);
             return;
         }
 
-        // Puanı yüksekten düşüğe sırala
         data.players.sort((a, b) => b.score - a.score);
+        
+        // Bugünün liderini MOGGER alanına göster
+        const todayLeader = data.players.length > 0 && data.players[0].score > 0 ? data.players[0] : null;
+        renderWeeklySection(weeklyData, todayLeader);
 
         list.innerHTML = "";
+
         data.players.forEach((p, index) => {
             const isMe = p.name === currentUser;
-            // Sıralama ikonları
-            let rankIcon = `#${index+1}`;
-            if(index === 0) rankIcon = "👑";
-            if(index === 1) rankIcon = "🥈";
-            if(index === 2) rankIcon = "🥉";
+            let rankIcon = `<span class="badge bg-secondary">#${index+1}</span>`;
+            if (index === 0) rankIcon = "👑";
+            if (index === 1) rankIcon = "🥈";
+            if (index === 2) rankIcon = "🥉";
 
-            // Tasarım
             const bgClass = isMe ? "bg-warning bg-opacity-25 border-warning" : "";
-            const textClass = document.body.getAttribute('data-theme') === 'dark' ? "text-white" : "text-dark";
-            
+            const isDark = document.body.getAttribute('data-theme') === 'dark';
+            const textClass = isDark ? "text-white" : "text-dark";
+            const avatarHtml = getAvatarHTML(p.name, p.avatar, 36);
+
             list.innerHTML += `
-            <li class="list-group-item d-flex justify-content-between align-items-center mb-1 rounded ${bgClass} ${textClass}" style="background-color: ${isMe ? '' : 'transparent'}; border-bottom: 1px solid #ccc;">
-                <div>
-                    <span class="fw-bold me-2 fs-5">${rankIcon}</span> 
-                    <span class="fw-bold text-uppercase">${p.name}</span>
-                    ${isMe ? '<span class="badge bg-danger ms-2" style="font-size:0.6rem">SEN</span>' : ''}
+            <li class="list-group-item d-flex justify-content-between align-items-center mb-1 rounded ${bgClass} ${textClass}" style="border-bottom:1px solid #ccc;">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="fw-bold fs-5" style="min-width:28px;text-align:center;">${rankIcon}</span>
+                    ${avatarHtml}
+                    <div>
+                        <span class="fw-bold text-uppercase" style="font-size:0.9rem;">${p.name}</span>
+                        ${isMe ? '<span class="badge bg-danger ms-1" style="font-size:0.55rem;">SEN</span>' : ''}
+                    </div>
                 </div>
-                <span class="badge bg-primary rounded-pill p-2 fs-6" style="min-width: 60px;">${p.score} P</span>
+                <span class="badge bg-primary rounded-pill p-2 fs-6" style="min-width:55px;">${p.score} P</span>
             </li>`;
         });
+
+        // Geçilme kontrolü
+        if (data.players.length > 0 && data.players[0].name !== currentUser) {
+            const myIdx = data.players.findIndex(p => p.name === currentUser);
+            if (myIdx > 0 && previousLeader === currentUser) {
+                checkOvertakeAlert(data.players[0].name);
+            }
+        }
 
     } catch (error) {
         list.innerHTML = `<div class="text-center text-danger">Veri alınamadı.<br><small>${error.message}</small></div>`;
     }
 }
 
-// 6. TOAST BİLDİRİMİ
+// 10. HAFTALIK MOGGER RENDER
+function renderWeeklySection(weeklyData, todayLeader) {
+    const banner = document.getElementById('mogger-banner');
+    const section = document.getElementById('weekly-wins-section');
+    const winsList = document.getElementById('weekly-wins-list');
+
+    const hasWeeklyData = weeklyData && weeklyData.winners && weeklyData.winners.length > 0;
+
+    if (hasWeeklyData) {
+        // Haftalık veri var → en çok gün kazanan = MOGGER
+        weeklyData.winners.sort((a,b) => b.wins - a.wins);
+        const mogger = weeklyData.winners[0];
+
+        banner.style.display = '';
+        document.getElementById('mogger-avatar').innerHTML = getAvatarHTML(mogger.name, mogger.avatar, 64);
+        document.getElementById('mogger-name').textContent = mogger.name;
+        document.getElementById('mogger-wins').textContent = `${mogger.wins} gün birinci 🔥`;
+
+        // Herkesin haftalık gün sayısı
+        section.style.display = '';
+        winsList.innerHTML = '';
+        weeklyData.winners.forEach(w => {
+            const isMe = w.name === currentUser;
+            winsList.innerHTML += `
+            <div class="d-flex align-items-center gap-1 px-2 py-1 rounded ${isMe ? 'bg-warning bg-opacity-25' : 'bg-light'}" style="font-size:0.8rem;">
+                ${getAvatarHTML(w.name, w.avatar, 24)}
+                <span class="fw-bold">${w.name}</span>
+                <span class="badge bg-info">${w.wins} gün</span>
+            </div>`;
+        });
+    } else if (todayLeader) {
+        // Haftalık veri yok ama bugünün lideri var → günlük lider olarak göster
+        banner.style.display = '';
+        document.getElementById('mogger-avatar').innerHTML = getAvatarHTML(todayLeader.name, todayLeader.avatar, 64);
+        document.getElementById('mogger-name').textContent = todayLeader.name;
+        document.getElementById('mogger-wins').textContent = `Bugünün lideri 👑 (${todayLeader.score} P)`;
+
+        section.style.display = 'none';
+        winsList.innerHTML = '';
+    } else {
+        banner.style.display = 'none';
+        section.style.display = 'none';
+    }
+}
+
+// 11. TOAST BİLDİRİMİ
 function showScoreToast(msg) {
     const existing = document.querySelector('.score-toast');
-    if(existing) existing.remove();
-
+    if (existing) existing.remove();
     const div = document.createElement('div');
     div.className = 'score-toast';
     div.innerHTML = `<i class="bi bi-lightning-fill"></i> ${msg}`;
@@ -1193,16 +1783,27 @@ window.checkAnswer = function(qId, selectedOpt) {
         feedbackDiv.innerHTML = `<div class="mt-2 text-success fw-bold"><i class="bi bi-check-circle"></i> Doğru!</div>`;
         if(!q.aiExplanation && tipDiv) tipDiv.style.display = 'none';
         
-        // --- PUANLAMA ---
-        if (!q.isAi) { 
+        // --- PUANLAMA VE ALTIN KAZANMA SİSTEMİ ---
+        if (!q.isAi) {
             let points = 0;
-            // Eğer daha önce doğru yapılmadıysa
-            if (progressData[qId] !== 'correct') {
-                if (currentSectionKey === 'mistakes') points = 50; 
-                else points = 100;
-                
-                addScorePoints(points); // Puan ver ve kaydet
+            let gold = 0; // Kazanılacak altın miktarı
+
+            if (currentSectionKey === 'mistakes') {
+                points = 50;
+                gold = 2; // Yanlış soruyu düzeltince 2 Altın
+            } else {
+                points = 100;
+                gold = 5; // Yeni doğru soruda 5 Altın
             }
+            
+            addScorePoints(points); // Mevcut puanı ekle
+
+            // ALTINLARI LOCALSTORAGE'A KAYDET (Şimdilik game.html buradan okuyacak)
+            let currentGold = parseInt(localStorage.getItem('yds_game_gold')) || 0;
+            localStorage.setItem('yds_game_gold', currentGold + gold);
+
+            // Ekranda Altın kazandığını da gösterelim
+            showScoreToast(`+${points} PUAN & +${gold} ALTIN! 🪙`);
         }
         // -----------------
 
@@ -1356,7 +1957,7 @@ window.checkAnswer = function(qId, selectedOpt) {
         { en: "Bring back", tr: "Geri getirmek, hatırlatmak" },
         { en: "Bring down", tr: "Devirmek, azaltmak, indirmek" },
         { en: "Bring in", tr: "Kazandırmak, getirmek" },
-        { en: "Bring out", tr: "Ortaya çıkarmak, yayımlamak" },
+        { en: "Bring out", tr: "Ortaya çık, yayımlamak" },
         { en: "Bring up", tr: "Büyütmek (çocuk), gündeme getirmek" },
         { en: "Broad", tr: "Geniş" },
 
@@ -2716,7 +3317,7 @@ window.checkAnswer = function(qId, selectedOpt) {
 
     /* ================= GRAMER SORULARI (RAW TEXT) ================= */
     const rawQuestionsText = `
-Section: Prepositions & Collocations (1–70)
+Section: Prepositions & Collocations (1—70)
 1) She insisted ___ paying for the damage, even though it wasn't her fault.
    A) at
    B) to
@@ -2747,9 +3348,9 @@ TIP: Kalıp → depend on/upon + noun/clause.
    C) for
    D) in
    E) to
-TIP: apply to (uygulanmak) ↔ apply for (başvurmak).
+TIP: apply to (uygulanmak) â†” apply for (başvurmak).
 
-5) I’m not accustomed ___ driving in heavy traffic every day.
+5) I'm not accustomed ___ driving in heavy traffic every day.
    A) on
    B) to
    C) at
@@ -2771,7 +3372,7 @@ TIP: be known/famous for + noun/V-ing.
    C) at
    D) to
    E) on
-TIP: blame X on Y (suçu Y’ye atmak).
+TIP: blame X on Y (suçu Y'ye atmak).
 
 8) He was charged ___ fraud and faced a lengthy trial.
    A) about
@@ -2885,7 +3486,7 @@ TIP: responsible for + iş/sonuç; responsible to + kişi.
    E) to
 TIP: succeed in + V-ing.
 
-22) I’m looking forward ___ hearing from you soon.
+22) I'm looking forward ___ hearing from you soon.
    A) at
    B) in
    C) for
@@ -2957,7 +3558,7 @@ TIP: Passive agent → influenced by + etken.
    E) at
 TIP: be short of + şey (time, money, staff).
 
-31) She was absorbed ___ the novel and didn’t hear the doorbell.
+31) She was absorbed ___ the novel and didn't hear the doorbell.
    A) at
    B) in
    C) for
@@ -3117,7 +3718,7 @@ TIP: be accused of + V-ing/noun.
    E) to
 TIP: similar to (not with).
 
-51) I’m satisfied ___ the results so far.
+51) I'm satisfied ___ the results so far.
    A) about
    B) with
    C) for
@@ -3133,7 +3734,7 @@ TIP: satisfied with + sonuç.
    E) to
 TIP: En doğal kalıp/bağlantıyı ara → doğru seçenek 'for'.
 
-53) We ran ___ sugar, so the cake wasn’t ready.
+53) We ran ___ sugar, so the cake wasn't ready.
    A) down
    B) into
    C) off
@@ -3245,7 +3846,7 @@ TIP: refer to + konu/şey.
    E) Because
 TIP: although/even though + clause → zıtlık (ama).
 
-67) I’ll call you ___ I get home.
+67) I'll call you ___ I get home.
    A) unless
    B) even though
    C) as soon as
@@ -3253,7 +3854,7 @@ TIP: although/even though + clause → zıtlık (ama).
    E) despite
 TIP: as soon as = ... olur olmaz.
 
-68) We couldn’t enter the building ___ we didn’t have permission.
+68) We couldn't enter the building ___ we didn't have permission.
    A) whereas
    B) because
    C) despite
@@ -3277,7 +3878,7 @@ TIP: so = sonuç; so that = amaç.
    E) so that
 TIP: in case = olur da ... diye (ihtimale karşı).
 
-Section: Conjunctions & Linkers (71–130)
+Section: Conjunctions & Linkers (71—130)
 71) She spoke quietly ___ nobody would overhear the conversation.
    A) because
    B) unless
@@ -3286,7 +3887,7 @@ Section: Conjunctions & Linkers (71–130)
    E) so that
 TIP: so that + clause → amaç (… diye).
 
-72) I won’t sign the contract ___ the terms are clarified.
+72) I won't sign the contract ___ the terms are clarified.
    A) unless
    B) since
    C) until
@@ -3326,7 +3927,7 @@ TIP: Amaç: to + V.
    E) unless
 TIP: Bağlaç sorusu → ilişkiyi bul. Doğru: 'but'.
 
-77) ___ you study regularly, you’re unlikely to improve.
+77) ___ you study regularly, you're unlikely to improve.
    A) So that
    B) Whereas
    C) Although
@@ -3334,7 +3935,7 @@ TIP: Bağlaç sorusu → ilişkiyi bul. Doğru: 'but'.
    E) Unless
 TIP: unless = if not.
 
-78) I’ll lend you the book ___ you promise to return it tomorrow.
+78) I'll lend you the book ___ you promise to return it tomorrow.
    A) unless
    B) provided that
    C) because
@@ -3350,7 +3951,7 @@ TIP: provided that = şartıyla.
    E) best
 TIP: Bağlaç sorusu → ilişkiyi bul. Doğru: 'the better'.
 
-80) He didn’t call; ___, I decided to check on him.
+80) He didn't call; ___, I decided to check on him.
    A) unless
    B) because
    C) nevertheless
@@ -3390,7 +3991,7 @@ TIP: however = ancak/ama.
    E) because
 TIP: so that + clause → amaç (… diye).
 
-85) ___ you hurry, you’ll miss the beginning of the film.
+85) ___ you hurry, you'll miss the beginning of the film.
    A) Unless
    B) Whereas
    C) Although
@@ -3406,7 +4007,7 @@ TIP: unless = if not.
    E) whereas
 TIP: so that + clause → amaç (… diye).
 
-87) I’ll wait here ___ you finish your call.
+87) I'll wait here ___ you finish your call.
    A) until
    B) despite
    C) because
@@ -3438,7 +4039,7 @@ TIP: as if = sanki (genelde past form).
    E) since
 TIP: despite/in spite of + noun/V-ing (not + clause).
 
-91) I’ll take notes ___ I forget the details.
+91) I'll take notes ___ I forget the details.
    A) whereas
    B) because
    C) despite
@@ -3446,7 +4047,7 @@ TIP: despite/in spite of + noun/V-ing (not + clause).
    E) in case
 TIP: in case = olur da ... diye (ihtimale karşı).
 
-92) He didn’t just complain; ___, he demanded compensation.
+92) He didn't just complain; ___, he demanded compensation.
    A) in fact
    B) since
    C) unless
@@ -3462,7 +4063,7 @@ TIP: Bağlaç sorusu → ilişkiyi bul. Doğru: 'in fact'.
    E) Since
 TIP: unless = if not.
 
-94) She didn’t go out, ___ she was feeling unwell.
+94) She didn't go out, ___ she was feeling unwell.
    A) whereas
    B) despite
    C) even though
@@ -3566,7 +4167,7 @@ TIP: nevertheless = yine de.
    E) Whereas
 TIP: Bağlaç sorusu → ilişkiyi bul. Doğru: 'If'.
 
-107) He didn’t answer the email, ___ he had read it.
+107) He didn't answer the email, ___ he had read it.
    A) unless
    B) so that
    C) because
@@ -3574,7 +4175,7 @@ TIP: Bağlaç sorusu → ilişkiyi bul. Doğru: 'If'.
    E) even though
 TIP: although/even though + clause → zıtlık (ama).
 
-108) We can’t start the presentation ___ everyone is seated.
+108) We can't start the presentation ___ everyone is seated.
    A) unless
    B) because
    C) whereas
@@ -3598,7 +4199,7 @@ TIP: Bağlaç sorusu → ilişkiyi bul. Doğru: 'as a result'.
    E) Whereas
 TIP: unless = if not.
 
-111) He didn’t mention the problem, ___ he expected us to notice it.
+111) He didn't mention the problem, ___ he expected us to notice it.
    A) since
    B) unless
    C) yet
@@ -3678,7 +4279,7 @@ TIP: while = -iken / buna karşın (bağlama göre).
    E) since
 TIP: whereas = karşılaştırmalı zıtlık.
 
-121) I’ll email you the file ___ I have finished editing it.
+121) I'll email you the file ___ I have finished editing it.
    A) despite
    B) once
    C) because
@@ -3694,7 +4295,7 @@ TIP: once = ... olunca/olduktan sonra.
    E) Because
 TIP: despite/in spite of + noun/V-ing (not + clause).
 
-123) He didn’t attend the meeting, ___ did he send an apology.
+123) He didn't attend the meeting, ___ did he send an apology.
    A) so
    B) because
    C) but
@@ -3716,7 +4317,7 @@ TIP: either ... or ...
    C) where
    D) which
    E) who
-TIP: whose = sahiplik (…’ın).
+TIP: whose = sahiplik (…'ın).
 
 126) This is the book ___ I was telling you about.
    A) what
@@ -3750,7 +4351,7 @@ TIP: reason why.
    E) who
 TIP: who = kişi (özne).
 
-130) I’ve found the file ___ you asked for.
+130) I've found the file ___ you asked for.
    A) whom
    B) who
    C) that
@@ -3758,495 +4359,376 @@ TIP: who = kişi (özne).
    E) whose
 TIP: that = defining; only/first/superlative ile sık.
 
-Section: Relative Clauses & Reduced Structures (131–190)
-131) Anyone ___ wants to apply must submit a CV.
-   A) which
-   B) who
-   C) where
-   D) what
-   E) whose
-TIP: who = kişi (özne).
-
-132) The meeting ___ was scheduled for Monday has been cancelled.
-   A) scheduled
-   B) schedule
-   C) scheduling
-   D) schedules
-   E) to schedule
-TIP: V3 = pasif kısaltılmış relative.
-
-133) The documents ___ yesterday are on your desk.
-   A) to send
-   B) send
-   C) sends
-   D) sending
-   E) sent
-TIP: Relative ipuçlarını yakala. Doğru: 'sent'.
-
-134) The woman ___ next door is a surgeon.
-   A) live
-   B) lived
-   C) to live
-   D) living
-   E) lives
-TIP: V-ing = aktif kısaltılmış relative.
-
-135) The only thing ___ matters is honesty.
-   A) where
-   B) what
-   C) whose
-   D) that
-   E) whom
-TIP: that = defining; only/first/superlative ile sık.
-
-136) The first person ___ arrive should open the door.
-   A) being
-   B) to have
-   C) having
-   D) to be
-   E) to
-TIP: the first/only person to + V.
-
-137) The report, ___ was published last week, received criticism.
-   A) where
-   B) who
-   C) what
-   D) which
-   E) whose
-TIP: which = cansız/üst cümle; virgüllü yapı sık.
-
-138) The company ___ he works for is expanding rapidly.
-   A) what
+Section: Relative Clauses & Reduced Structures (131—190)
+131) The institute launched a new data portal for researchers. The portal ___ most datasets are accessed was down for hours.
+   A) through which
    B) where
-   C) whose
+   C) on which
+   D) in which
+   E) that
+132) The board rejected the proposal without further discussion. This is the main reason ___ it was turned down.
+   A) to which
+   B) for which
+   C) why
+   D) on which
+   E) that
+133) A journalist asked unusually direct questions during the interview. The reporter ___ questions unsettled the minister later apologized.
+   A) of which
+   B) to whom
+   C) for which
    D) that
-   E) whom
-TIP: that = defining; only/first/superlative ile sık.
-
-139) The person to ___ you spoke is my supervisor.
-   A) what
-   B) whom
-   C) which
-   D) whose
-   E) where
-TIP: whom = kişi (nesne), özellikle preposition sonrası.
-
-140) The professor ___ lecture we attended is internationally known.
-   A) whom
-   B) who
-   C) where
-   D) which
    E) whose
-TIP: whose = sahiplik (…’ın).
-
-141) The day ___ we met was raining heavily.
-   A) whose
-   B) where
-   C) what
-   D) when
+134) The team signed a protocol before starting the trial. This was the protocol ___ all staff had to adhere.
+   A) to which
+   B) which
+   C) on which
+   D) that
+   E) in which
+135) An engineer led the investigation into the incident. The engineer ___ led the investigation resigned last week.
+   A) to whom
+   B) who
+   C) by which
+   D) with whom
+   E) for whom
+136) The reforms were introduced quietly last year. The framework ___ the reforms were embedded was approved unanimously.
+   A) on which
+   B) in which
+   C) under which
+   D) that
    E) which
-TIP: when = zaman.
-
-142) This is the best solution ___ we can offer right now.
-   A) whose
-   B) where
-   C) whom
-   D) that
-   E) what
-TIP: that = defining; only/first/superlative ile sık.
-
-143) The students ___ study consistently tend to succeed.
-   A) where
-   B) what
+137) The treaty was signed decades ago but still affects relations today. The year ___ it was signed is often cited.
+   A) to which
+   B) for which
+   C) by which
+   D) where
+   E) when
+138) The official refused to comment on the complaint. The person ___ the complaint was addressed remained anonymous.
+   A) who
+   B) with whom
+   C) whose
+   D) for whom
+   E) to whom
+139) A senior researcher joined the panel this morning. The scientist ___ earlier work shaped the project became our advisor.
+   A) to which
+   B) on which
    C) whose
    D) who
-   E) which
-TIP: who = kişi (özne).
-
-144) The building ___ in 1920 is being restored.
-   A) to build
-   B) built
-   C) building
-   D) builds
-   E) build
-TIP: Relative ipuçlarını yakala. Doğru: 'built'.
-
-145) The woman ___ I met yesterday lives nearby.
-   A) whose
-   B) what
-   C) which
-   D) (who/that)
-   E) where
-TIP: Relative ipuçlarını yakala. Doğru: '(who/that)'.
-
-146) The subject ___ he is most interested in is linguistics.
-   A) whose
-   B) whom
-   C) what
-   D) where
-   E) that
-TIP: that = defining; only/first/superlative ile sık.
-
-147) The man from ___ I borrowed the book is a historian.
-   A) whose
-   B) what
-   C) where
-   D) which
-   E) whom
-TIP: whom = kişi (nesne), özellikle preposition sonrası.
-
-148) The island, ___ lies off the coast, is uninhabited.
-   A) what
-   B) which
-   C) where
-   D) whose
-   E) who
-TIP: which = cansız/üst cümle; virgüllü yapı sık.
-
-149) A dictionary is a tool ___ helps you understand meanings.
-   A) who
-   B) whom
-   C) whose
-   D) that
-   E) where
-TIP: that = defining; only/first/superlative ile sık.
-
-150) The only person ___ could solve the puzzle was her brother.
+   E) for which
+140) The report focuses on an issue most companies ignore. The topic ___ the report focuses has been widely debated.
    A) which
-   B) who
-   C) where
-   D) whose
-   E) whom
-TIP: who = kişi (özne).
-
-151) The film ___ we watched last night was based on a novel.
-   A) whom
-   B) what
+   B) on which
+   C) to which
+   D) that
+   E) for which
+141) The source of the statistics was questioned immediately. The archive ___ these figures were derived is unknown.
+   A) from which
+   B) which
+   C) by which
+   D) that
+   E) on which
+142) The committee described a verification process in detail. The mechanism ___ the data are validated remains controversial.
+   A) through which
+   B) with which
    C) that
-   D) where
-   E) whose
-TIP: that = defining; only/first/superlative ile sık.
-
-152) The woman ___ car was damaged called the insurance company.
-   A) whom
-   B) whose
-   C) where
-   D) who
-   E) which
-TIP: whose = sahiplik (…’ın).
-
-153) The house ___ roof collapsed was abandoned.
-   A) where
-   B) whose
-   C) which
-   D) whom
-   E) who
-TIP: whose = sahiplik (…’ın).
-
-154) This is the cafe ___ they make excellent desserts.
-   A) whom
-   B) what
-   C) whose
-   D) where
-   E) which
-TIP: where = yer.
-
-155) The project, ___ aimed to reduce costs, was successful.
-   A) who
-   B) what
-   C) where
-   D) which
-   E) whose
-TIP: which = cansız/üst cümle; virgüllü yapı sık.
-
-156) The applicant ___ interview went well was hired.
-   A) whom
-   B) which
-   C) whose
-   D) where
-   E) who
-TIP: whose = sahiplik (…’ın).
-
-157) The route ___ we took was longer than expected.
-   A) where
-   B) whom
-   C) whose
-   D) that
-   E) what
-TIP: that = defining; only/first/superlative ile sık.
-
-158) The engineer ___ designed the bridge received an award.
-   A) what
-   B) which
-   C) where
-   D) who
-   E) whose
-TIP: who = kişi (özne).
-
-159) The speech, ___ lasted nearly an hour, bored the audience.
-   A) whose
-   B) which
-   C) where
-   D) what
-   E) who
-TIP: which = cansız/üst cümle; virgüllü yapı sık.
-
-160) The village ___ I grew up has changed a lot.
-   A) where
-   B) which
-   C) whom
-   D) whose
-   E) what
-TIP: where = yer.
-
-161) The method ___ recommended by experts is very costly.
-   A) recommending
-   B) to recommend
-   C) recommended
-   D) recommend
-   E) recommends
-TIP: V3 = pasif kısaltılmış relative.
-
-162) The woman with ___ I discussed the issue is a consultant.
-   A) whose
-   B) what
-   C) which
-   D) whom
+   D) by which
    E) where
-TIP: whom = kişi (nesne), özellikle preposition sonrası.
-
-163) The reason ___ I’m calling is to confirm the appointment.
-   A) whose
-   B) why
-   C) which
-   D) where
-   E) what
-TIP: reason why.
-
-164) There are several factors, one of ___ is cost, that affect the decision.
-   A) which
-   B) where
-   C) what
-   D) who
-   E) whose
-TIP: which = cansız/üst cümle; virgüllü yapı sık.
-
-165) The students, most of ___ had never travelled abroad, were excited.
-   A) whom
-   B) whose
-   C) which
-   D) what
-   E) who
-TIP: whom = kişi (nesne), özellikle preposition sonrası.
-
-166) This is the first time ___ I have tried online learning.
-   A) which
-   B) when
-   C) whose
-   D) what
-   E) that
-TIP: that = defining; only/first/superlative ile sık.
-
-167) He is the only one ___ knows the password.
-   A) whom
-   B) which
-   C) who
-   D) whose
-   E) where
-TIP: who = kişi (özne).
-
-168) The book ___ I borrowed from you was fascinating.
-   A) that
-   B) whom
-   C) whose
-   D) where
-   E) what
-TIP: that = defining; only/first/superlative ile sık.
-
-169) The manager, ___ office is on the top floor, is out today.
-   A) which
-   B) who
-   C) whose
-   D) whom
-   E) where
-TIP: whose = sahiplik (…’ın).
-
-170) The woman ___ you were talking about has arrived.
-   A) where
-   B) who
-   C) which
-   D) whose
-   E) what
-TIP: who = kişi (özne).
-
-171) The article ___ I referred to is no longer available.
-   A) whose
+143) A ceremony will be held in a small village this weekend. The place ___ the ceremony will take place is remote.
+   A) on which
    B) that
+   C) where
+   D) to which
+   E) for which
+144) The lab imported a new device for the experiment. The instrument ___ the samples were examined required calibration.
+   A) by which
+   B) in which
    C) which
-   D) where
-   E) what
-TIP: that = defining; only/first/superlative ile sık.
-
-172) The students ___ papers were late received a penalty.
-   A) whom
-   B) where
+   D) with which
+   E) that
+145) The company hired a consultant for the audit. The analyst ___ prepared the final report resigned unexpectedly.
+   A) to whom
+   B) with whom
+   C) who
+   D) which
+   E) for whom
+146) The contract states strict rules about refunds. The terms ___ the refund is issued are clearly stated.
+   A) that
+   B) on which
    C) which
-   D) whose
+   D) in which
+   E) under which
+147) A senator delivered a speech that shocked the audience. The politician ___ speech sparked controversy issued an apology.
+   A) whose
+   B) who
+   C) to whom
+   D) of whom
+   E) for whom
+148) The countries reached a formal agreement yesterday. The treaty ___ all parties had to adhere was signed at noon.
+   A) that
+   B) to which
+   C) on which
+   D) which
+   E) in which
+149) The company released a statement last night. The statement, ___ was later withdrawn, caused confusion.
+   A) in which
+   B) by which
+   C) that
+   D) to which
+   E) which
+150) The expedition lasted two weeks in harsh conditions. The period ___ researchers collected samples was exhausting.
+   A) during which
+   B) in which
+   C) where
+   D) at which
    E) who
-TIP: whose = sahiplik (…’ın).
-
-173) The company ___ headquarters are in Berlin opened a new branch.
+151) The team discovered a hidden laboratory in the mountains. The facility ___ the vaccine was first tested is still guarded.
+   A) on which
+   B) that
+   C) where
+   D) to which
+   E) for which
+152) The board set a clear criterion for selection. The standard ___ candidates are evaluated is consistency.
+   A) by which
+   B) which
+   C) on which
+   D) that
+   E) under which
+153) Everyone questioned the sudden resignation. No one knows the reason ___ he left so abruptly.
+   A) on which
+   B) to which
+   C) which
+   D) with which
+   E) why
+154) The hospital upgraded its monitoring system. The device ___ the data were recorded was outdated.
+   A) by which
+   B) with which
+   C) that
+   D) in which
+   E) which
+155) The company introduced a strict access policy. A boundary ___ no further entry is permitted was installed.
+   A) under which
+   B) that
+   C) at which
+   D) beyond which
+   E) who
+156) A consultant visited the site during the investigation. The expert ___ inspected the premises wrote a detailed report.
+   A) to whom
+   B) with whom
+   C) who
+   D) which
+   E) for whom
+157) She received an international award last year. The achievement ___ she was honored was groundbreaking.
+   A) for which
+   B) that
+   C) to which
+   D) which
+   E) with which
+158) The team proposed a solution in the meeting. The approach ___ reduced costs immediately was adopted.
+   A) in which
+   B) to which
+   C) who
+   D) that
+   E) by which
+159) The article defines several technical terms precisely. The context ___ these terms are interpreted is highly specialized.
+   A) through which
+   B) that
+   C) in which
+   D) under which
+   E) who
+160) The platform was rebuilt after repeated failures. The system ___ the entire service depends is heavily encrypted.
+   A) which
+   B) to which
+   C) that
+   D) in which
+   E) on which
+161) A famous scientist received an honorary degree. The researcher ___ theory changed the field spoke briefly.
+   A) to whom
+   B) whose
+   C) who
+   D) of which
+   E) which
+162) The university renovated an old lab this summer. The lab ___ the tests were conducted has reopened.
+   A) on which
+   B) when
+   C) where
+   D) to which
+   E) that
+163) The ministry ignored the complaint for weeks. The official ___ the letter was addressed did not respond.
+   A) who
+   B) that
+   C) with whom
+   D) to whom
+   E) which
+164) The alarm rang unexpectedly during the exam. The moment ___ it rang, everyone froze.
+   A) where
+   B) to which
+   C) when
+   D) which
+   E) for which
+165) The argument relies on a single assumption. The principle ___ the entire argument rests is questionable.
+   A) which
+   B) where
+   C) in which
+   D) that
+   E) on which
+166) A novelist moved abroad after winning a prize. The author ___ latest book topped the charts lives in Berlin.
+   A) of which
+   B) whose
+   C) who
+   D) to whom
+   E) which
+167) Investors reacted sharply to the announcement. The policy was changed overnight, ___ surprised everyone.
+   A) that
+   B) in which
+   C) which
+   D) who
+   E) for which
+168) The contract lists strict rules for operation. The legal framework ___ the company operates is complex.
+   A) that
+   B) who
+   C) on which
+   D) under which
+   E) which
+169) The analyst worked overnight on the report. The expert ___ prepared the final version resigned.
+   A) which
+   B) to whom
+   C) who
+   D) with which
+   E) when
+170) The report mentioned a controversial claim. The proposal ___ the minister referred was not finalized.
+   A) which
+   B) where
+   C) on which
+   D) that
+   E) to which
+171) A technician discovered the error in minutes. The engineer ___ discovered it wrote an urgent memo.
    A) which
    B) who
-   C) whom
-   D) where
-   E) whose
-TIP: whose = sahiplik (…’ın).
-
-174) The experiment ___ results surprised everyone was repeated.
-   A) where
-   B) whose
-   C) which
-   D) whom
+   C) to whom
+   D) whose
+   E) with whom
+172) The committee described a complaint procedure. The method ___ complaints are handled was published online.
+   A) that
+   B) under which
+   C) when
+   D) by which
    E) who
-TIP: whose = sahiplik (…’ın).
-
-175) The man ___ I saw at the conference was your colleague.
-   A) what
-   B) whom
-   C) where
-   D) which
-   E) whose
-TIP: whom = kişi (nesne), özellikle preposition sonrası.
-
-176) The island ___ we visited had no airport.
-   A) what
-   B) whose
-   C) whom
-   D) that
-   E) where
-TIP: that = defining; only/first/superlative ile sık.
-
-177) The woman ___ to you I was introduced is my neighbor.
-   A) who
-   B) what
-   C) whose
-   D) which
-   E) whom
-TIP: whom = kişi (nesne), özellikle preposition sonrası.
-
-178) The report ___ findings were widely discussed was leaked online.
-   A) who
-   B) whom
-   C) whose
-   D) where
-   E) which
-TIP: whose = sahiplik (…’ın).
-
-179) The only explanation ___ makes sense is the simplest one.
-   A) what
-   B) whom
-   C) whose
-   D) that
-   E) where
-TIP: that = defining; only/first/superlative ile sık.
-
-180) The student ___ I gave the book to thanked me later.
-   A) what
+173) The journalist asked the panel uncomfortable questions. The reporter ___ questions upset the panel was removed.
+   A) to whom
    B) which
-   C) whose
-   D) whom
-   E) who
-TIP: whom = kişi (nesne), özellikle preposition sonrası.
-
-181) The company, for ___ he used to work, went bankrupt last year.
-   A) whose
-   B) whom
+   C) with which
+   D) who
+   E) whose
+174) She received a grant for her latest study. The achievement ___ she was selected impressed the board.
+   A) for which
+   B) which
    C) that
-   D) where
-   E) which
-TIP: which = cansız/üst cümle; virgüllü yapı sık.
-
-182) The colleague ___ advice I trust most is leaving the firm.
-   A) whom
-   B) where
-   C) which
-   D) who
+   D) to which
    E) whose
-TIP: whose = sahiplik (…’ın).
-
-183) The conference, during ___ several new projects were announced, lasted two days.
-   A) where
-   B) whose
-   C) which
-   D) whom
+175) The workshop took place in a newly built center. The hall ___ the event was held has better acoustics.
+   A) on which
+   B) when
+   C) where
+   D) to which
    E) that
-TIP: which = cansız/üst cümle; virgüllü yapı sık.
-
-184) The problem ___ we are dealing with is more complex than it seems.
-   A) what
-   B) where
-   C) whom
-   D) that
-   E) whose
-TIP: that = defining; only/first/superlative ile sık.
-
-185) The only time ___ I can study is late at night.
-   A) when
-   B) which
-   C) where
-   D) what
-   E) whose
-TIP: when = zaman.
-
-186) The equipment ___ in the lab must be handled carefully.
-   A) to keep
-   B) keeping
-   C) kept
-   D) keeps
-   E) keep
-TIP: Relative ipuçlarını yakala. Doğru: 'kept'.
-
-187) The students ___ invited to the ceremony were given certificates.
-   A) invites
-   B) to invite
-   C) inviting
-   D) invite
-   E) invited
-TIP: V3 = pasif kısaltılmış relative.
-
-188) The man, ___ I had never seen before, introduced himself politely.
+176) The company hired a new director last month. The manager ___ decision changed everything resigned later.
+   A) who
+   B) to whom
+   C) which
+   D) whose
+   E) with whom
+177) The results shocked the entire research team. The experiment failed, ___ was completely unexpected.
    A) which
-   B) whom
-   C) where
+   B) that
+   C) in which
    D) who
+   E) for which
+178) The term is used differently across disciplines. The context ___ it is used is highly technical.
+   A) that
+   B) to which
+   C) in which
+   D) which
+   E) when
+179) A student filed a complaint this morning. The child ___ backpack was stolen asked for help.
+   A) of whom
+   B) who
+   C) to whom
+   D) which
    E) whose
-TIP: whom = kişi (nesne), özellikle preposition sonrası.
-
-189) The rule ___ you mentioned does not apply in this case.
-   A) whom
-   B) what
-   C) where
-   D) that
-   E) whose
-TIP: that = defining; only/first/superlative ile sık.
-
-190) The researcher ___ work focuses on climate change published a new paper.
-   A) whom
+180) The service depends on a secure portal. The platform ___ the service depends is frequently updated.
+   A) that
    B) which
+   C) to which
+   D) on which
+   E) where
+181) A researcher led the clinical trial for two years. The scientist ___ led it published the findings.
+   A) who
+   B) which
+   C) with whom
+   D) whose
+   E) to whom
+182) The document explains a detection technique. The method ___ errors are identified is not straightforward.
+   A) that
+   B) which
+   C) through which
+   D) when
+   E) by which
+183) The system failed without warning last night. Nobody could explain the reason ___ it crashed.
+   A) why
+   B) to which
+   C) when
+   D) on which
+   E) which
+184) The nations reached an agreement at noon. The treaty ___ all parties must adhere was signed immediately.
+   A) that
+   B) to which
+   C) which
+   D) on which
+   E) when
+185) The verdict was announced in the evening. The day ___ it was announced is still remembered.
+   A) to which
+   B) when
    C) where
-   D) who
-   E) whose
-TIP: whose = sahiplik (…’ın).
+   D) for which
+   E) which
+186) A student’s phone was stolen on campus. The student ___ phone was stolen reported it.
+   A) to whom
+   B) whose
+   C) who
+   D) of which
+   E) which
+187) The university created a secure reporting mechanism. The mechanism ___ students can report issues is encrypted.
+   A) that
+   B) when
+   C) under which
+   D) through which
+   E) who
+188) The exam will be held in a different hall this year. The room ___ the exam will take place is on the second floor.
+   A) where
+   B) to which
+   C) which
+   D) on which
+   E) when
+189) A technician fixed the server in ten minutes. The worker ___ fixed it left immediately.
+   A) who
+   B) which
+   C) to whom
+   D) whose
+   E) with which
+190) She won an award for her discovery. The discovery ___ she was recognized changed the field.
+   A) that
+   B) which
+   C) to which
+   D) for which
+   E) when
 
-Section: Tense, Passive, Modals, Conditionals (191–250)
+Section: Tense, Passive, Modals, Conditionals (191—250)
 191) By the time we arrived, the meeting ___ already ___.
    A) has / started
    B) have / started
    C) is / starting
    D) had / started
    E) was / starting
-TIP: ‘By the time’ + past → Past Perfect (had + V3).
+TIP: 'By the time' + past → Past Perfect (had + V3).
 
 192) I ___ in this city since 2018.
    A) have lived
@@ -4256,7 +4738,7 @@ TIP: ‘By the time’ + past → Past Perfect (had + V3).
    E) had lived
 TIP: since/for → Present Perfect (have/has + V3).
 
-193) When I called, she ___ dinner, so she couldn’t talk.
+193) When I called, she ___ dinner, so she couldn't talk.
    A) cooked
    B) is cooking
    C) had cooked
@@ -4264,7 +4746,7 @@ TIP: since/for → Present Perfect (have/has + V3).
    E) was cooking
 TIP: Geçmişte devam eden eylem → was/were + V-ing.
 
-194) He ___ his keys, so he couldn’t open the door.
+194) He ___ his keys, so he couldn't open the door.
    A) has lost
    B) had lost
    C) lost
@@ -4296,29 +4778,29 @@ TIP: Gelecek pasif: will be + V3.
    E) buy
 TIP: Modal + passive → must be + V3.
 
-198) He can’t ___ the truth; he looks too calm.
+198) He can't ___ the truth; he looks too calm.
    A) have told
    B) told
    C) be telling
    D) tells
    E) tell
-TIP: Şu an çıkarımı: can’t + be + V-ing.
+TIP: Şu an çıkarımı: can't + be + V-ing.
 
 199) She ___ be at home; the lights are off and her car is gone.
    A) may
    B) should
    C) must
    D) would
-   E) can’t
-TIP: Güçlü olumsuz çıkarım: can’t be.
+   E) can't
+TIP: Güçlü olumsuz çıkarım: can't be.
 
 200) You ___ leave early; the meeting ends at five.
-   A) don’t have to
-   B) shouldn’t
-   C) can’t
+   A) don't have to
+   B) shouldn't
+   C) can't
    D) might
-   E) mustn’t
-TIP: Zorunluluk yok: don’t have to.
+   E) mustn't
+TIP: Zorunluluk yok: don't have to.
 
 201) If you heat ice, it ___.
    A) will melt
@@ -4336,7 +4818,7 @@ TIP: Zero conditional: If + Present, Present.
    E) have
 TIP: 2nd conditional: If + Past, would + V1.
 
-203) If she ___ earlier, she wouldn’t have missed the bus.
+203) If she ___ earlier, she wouldn't have missed the bus.
    A) has left
    B) leaves
    C) left
@@ -4352,7 +4834,7 @@ TIP: 3rd conditional: If + had V3, would have V3.
    E) had been
 TIP: wish (şimdi) → past form; be → were.
 
-205) It’s essential that he ___ on time.
+205) It's essential that he ___ on time.
    A) will be
    B) be
    C) has been
@@ -4392,7 +4874,7 @@ TIP: suggest + V-ing.
    E) to sign
 TIP: deny + V-ing.
 
-210) I’m used to ___ up early on weekdays.
+210) I'm used to ___ up early on weekdays.
    A) getting
    B) got
    C) have got
@@ -4459,22 +4941,22 @@ TIP: Şu an pasif: am/is/are being + V3.
 218) You ___ have told me; I already knew.
    A) could
    B) might
-   C) needn’t
+   C) needn't
    D) should
    E) must
-TIP: needn’t have V3 = gereksiz yaptın.
+TIP: needn't have V3 = gereksiz yaptın.
 
 219) He ___ have missed the train; he arrived far too early.
-   A) can’t
+   A) can't
    B) should
    C) might
    D) would
    E) must
-TIP: can’t have V3 = imkânsız.
+TIP: can't have V3 = imkânsız.
 
 220) She ___ be working; her computer is on.
-   A) shouldn’t
-   B) can’t
+   A) shouldn't
+   B) can't
    C) would
    D) must
    E) need
@@ -4488,12 +4970,12 @@ TIP: must be + V-ing = güçlü çıkarım.
    E) leave
 TIP: 1st conditional: if/unless + Present.
 
-222) I’d rather you ___ so much noise at night.
-   A) hadn’t made
-   B) don’t make
-   C) didn’t make
-   D) haven’t made
-   E) won’t make
+222) I'd rather you ___ so much noise at night.
+   A) hadn't made
+   B) don't make
+   C) didn't make
+   D) haven't made
+   E) won't make
 TIP: would rather + past (başkası için).
 
 223) He made me ___ the report again.
@@ -4520,7 +5002,7 @@ TIP: Passive: be made to + V.
    E) will finish
 TIP: By + future time → Future Perfect.
 
-226) The letter ___ yesterday, but it still hasn’t arrived.
+226) The letter ___ yesterday, but it still hasn't arrived.
    A) was sent
    B) had been sent
    C) is sent
@@ -4536,7 +5018,7 @@ TIP: yesterday → simple past passive.
    E) sends
 TIP: Reported speech: will → would.
 
-228) If it ___ tomorrow, we’ll cancel the picnic.
+228) If it ___ tomorrow, we'll cancel the picnic.
    A) has rained
    B) rained
    C) will rain
@@ -4552,21 +5034,21 @@ TIP: 1st conditional: If + Present, will + V1.
    E) accept
 TIP: If I were you → would + V1.
 
-230) You ___ wear a seatbelt; it’s the law.
+230) You ___ wear a seatbelt; it's the law.
    A) might
    B) must
    C) would
    D) can
-   E) needn’t
+   E) needn't
 TIP: Kural/zorunluluk: must.
 
 231) Students ___ submit the assignment after the deadline.
    A) should
-   B) mustn’t
+   B) mustn't
    C) may
    D) might
-   E) don’t have to
-TIP: Yasak: mustn’t.
+   E) don't have to
+TIP: Yasak: mustn't.
 
 232) He ___ speak English fluently when he was ten.
    A) could
@@ -4586,10 +5068,10 @@ TIP: will be + V3 (pasif).
 
 234) She ___ have called you, but her phone battery died.
    A) should
-   B) needn’t
+   B) needn't
    C) could
    D) must
-   E) can’t
+   E) can't
 TIP: could have V3 = yapabilirdi ama olmadı.
 
 235) He said he ___ never seen such a place before.
@@ -4608,13 +5090,13 @@ TIP: Reported speech + before → had + V3.
    E) did
 TIP: No sooner had + S + V3 than ...
 
-237) It’s time we ___ home.
+237) It's time we ___ home.
    A) go
    B) went
    C) had gone
    D) will go
    E) have gone
-TIP: It’s time + past (gecikmişlik).
+TIP: It's time + past (gecikmişlik).
 
 238) She would rather ___ at home than go out.
    A) stays
@@ -4624,7 +5106,7 @@ TIP: It’s time + past (gecikmişlik).
    E) to stay
 TIP: would rather + V1 (özne aynı).
 
-239) The work ___ by Friday, otherwise we’ll lose the client.
+239) The work ___ by Friday, otherwise we'll lose the client.
    A) must to finish
    B) must be finished
    C) must finishing
@@ -4649,11 +5131,11 @@ TIP: 3rd conditional if-clause: had + V3.
 TIP: wish (geçmiş pişmanlık) → had + V3.
 
 242) They ___ the decision yet, so we should wait.
-   A) haven’t made
-   B) didn’t make
-   C) don’t make
-   D) won’t make
-   E) hadn’t made
+   A) haven't made
+   B) didn't make
+   C) don't make
+   D) won't make
+   E) hadn't made
 TIP: yet + Present Perfect.
 
 243) This is the first time I ___ such a challenging exam.
@@ -4689,11 +5171,11 @@ TIP: Tek olay dizisi → simple past.
 TIP: Talimat/genel durum: present tense.
 
 247) I ___ to the gym lately because of my exams.
-   A) wasn’t going
-   B) didn’t go
-   C) haven’t been going
-   D) don’t go
-   E) hadn’t gone
+   A) wasn't going
+   B) didn't go
+   C) haven't been going
+   D) don't go
+   E) hadn't gone
 TIP: lately + süre → Present Perfect Continuous.
 
 248) It is believed that the painting ___ stolen years ago.
@@ -4704,7 +5186,7 @@ TIP: lately + süre → Present Perfect Continuous.
    E) has been
 TIP: years ago → simple past passive.
 
-249) The suspect ___ released if there isn’t enough evidence.
+249) The suspect ___ released if there isn't enough evidence.
    A) is
    B) will
    C) has been
@@ -4735,12 +5217,12 @@ TIP: Main clause: would have V3 (burada would).
 101:B  102:B  103:D  104:C  105:D  106:A  107:E  108:E  109:B  110:C
 111:C  112:E  113:C  114:E  115:C  116:C  117:D  118:A  119:B  120:D
 121:B  122:D  123:E  124:B  125:A  126:B  127:E  128:E  129:E  130:C
-131:B  132:A  133:E  134:D  135:D  136:E  137:D  138:D  139:B  140:E
-141:D  142:D  143:D  144:B  145:D  146:E  147:E  148:B  149:D  150:B
-151:C  152:B  153:B  154:D  155:D  156:C  157:D  158:D  159:B  160:A
-161:C  162:D  163:B  164:A  165:A  166:E  167:C  168:A  169:C  170:B
-171:B  172:D  173:E  174:B  175:B  176:D  177:E  178:C  179:D  180:D
-181:E  182:E  183:C  184:D  185:A  186:C  187:E  188:B  189:D  190:E
+131:D  132:B  133:E  134:A  135:B  136:B  137:E  138:E  139:C  140:B
+141:A  142:D  143:C  144:D  145:C  146:E  147:A  148:B  149:E  150:A
+151:C  152:A  153:E  154:B  155:D  156:C  157:A  158:D  159:C  160:E
+161:B  162:C  163:D  164:C  165:E  166:B  167:C  168:D  169:C  170:E
+171:B  172:D  173:E  174:A  175:C  176:D  177:A  178:C  179:E  180:D
+181:A  182:E  183:A  184:B  185:B  186:B  187:D  188:A  189:A  190:D
 191:D  192:A  193:E  194:B  195:B  196:B  197:A  198:C  199:E  200:A
 201:E  202:A  203:E  204:D  205:B  206:C  207:D  208:D  209:C  210:A
 211:C  212:C  213:E  214:E  215:C  216:D  217:E  218:C  219:A  220:D
@@ -4793,7 +5275,7 @@ TIP: Main clause: would have V3 (burada would).
     C) under / towards
     D) about / onto
     E) for / behind
-    8. Therapeutic dyad is a medical term for the relationship ---- the therapist and the patient, and it is ---- the context of the therapeutic dyad that positive changes in the patient’s outlook and behaviours can take place. (2025 TEMMUZ YÖKDİL SAĞLIK)
+    8. Therapeutic dyad is a medical term for the relationship ---- the therapist and the patient, and it is ---- the context of the therapeutic dyad that positive changes in the patient's outlook and behaviours can take place. (2025 TEMMUZ YÖKDİL SAĞLIK)
     A) in / for
     B) about / from
     C) between / within
@@ -4805,7 +5287,7 @@ TIP: Main clause: would have V3 (burada would).
     C) through / without
     D) across / on
     E) at / for
-    10. Ready meals labelled ---- phrases like ‘finest’ and ‘best’ are marketed as premium shortcuts ---- a balanced meal, but cooking equivalent dishes from scratch is still a nutritionally better option. (2025 MART YDS)
+    10. Ready meals labelled ---- phrases like 'finest' and 'best' are marketed as premium shortcuts ---- a balanced meal, but cooking equivalent dishes from scratch is still a nutritionally better option. (2025 MART YDS)
     A) about / over
     B) in / from
     C) for / on
@@ -4829,7 +5311,7 @@ TIP: Main clause: would have V3 (burada would).
     C) at / through
     D) to / on
     E) for / from
-    14. Behaviourist psychologists claim that language is learned ---- the mechanism of reinforcing the contingent association between stimulus and response – the same general-purpose mechanism invoked to explain other learning processes ---- humans. (2024 KASIM YDS)
+    14. Behaviourist psychologists claim that language is learned ---- the mechanism of reinforcing the contingent association between stimulus and response — the same general-purpose mechanism invoked to explain other learning processes ---- humans. (2024 KASIM YDS)
     A) about / at
     B) with / on
     C) for / among
@@ -4889,7 +5371,7 @@ TIP: Main clause: would have V3 (burada would).
     C) with / across
     D) from / towards
     E) about / to
-    24. The Tokyo-Yokohama is the largest urban concentration area in the world, and 70 per cent of Japan’s population live ---- the Pacific coast stretching ---- Tokyo and Kyushu. (2022 YDT)
+    24. The Tokyo-Yokohama is the largest urban concentration area in the world, and 70 per cent of Japan's population live ---- the Pacific coast stretching ---- Tokyo and Kyushu. (2022 YDT)
     A) at / beyond
     B) under / through
     C) in / towards
@@ -4913,7 +5395,7 @@ TIP: Main clause: would have V3 (burada would).
     C) over / between
     D) about / to
     E) at / across
-    28. Much research suggests that ---- its core, Alzheimer’s disease may be a metabolic disorder, an irregularity in fuel use ---- the brain, a process that loses efficiency with age. (2021 YDT)
+    28. Much research suggests that ---- its core, Alzheimer's disease may be a metabolic disorder, an irregularity in fuel use ---- the brain, a process that loses efficiency with age. (2021 YDT)
     A) in / from
     B) to / with
     C) on / for
@@ -4985,7 +5467,7 @@ TIP: Main clause: would have V3 (burada would).
     C) Throughout / among
     D) From / against
     E) Across / over
-    40. The word adolescence is Latin ---- origin, derived from the verb adolescere, which means ‘to grow ---- adulthood’. (2019 EYLÜL YDS)
+    40. The word adolescence is Latin ---- origin, derived from the verb adolescere, which means 'to grow ---- adulthood'. (2019 EYLÜL YDS)
     A) through / on
     B) from / to
     C) at / beyond
@@ -5027,7 +5509,7 @@ TIP: Main clause: would have V3 (burada would).
     C) With / for
     D) Through / from
     E) Among / at
-    47. Research ---- media has primarily examined the effects of media on children ---- a developmental perspective with a psychological focus on the correlation or causal variable between the media and children’s behaviour. (2018 EYLÜL YDS)
+    47. Research ---- media has primarily examined the effects of media on children ---- a developmental perspective with a psychological focus on the correlation or causal variable between the media and children's behaviour. (2018 EYLÜL YDS)
     A) against / under
     B) on / from
     C) through / across
@@ -5039,7 +5521,7 @@ TIP: Main clause: would have V3 (burada would).
     C) by / down
     D) on / within
     E) from / through
-    49. The world’s first complex societies arose in the Near East ---- the fertile area, known as Mesopotamia, ---- the Tigris and Euphrates rivers. (2018 ARALIK YDS)
+    49. The world's first complex societies arose in the Near East ---- the fertile area, known as Mesopotamia, ---- the Tigris and Euphrates rivers. (2018 ARALIK YDS)
     A) around / to
     B) within / between
     C) about / with
@@ -5093,13 +5575,13 @@ TIP: Main clause: would have V3 (burada would).
     C) along / about
     D) at / on
     E) into / for
-    58. By the middle of the 19th century, the growing acceptance that microbes can kill us had once more focused people’s attention ---- a world only visible ---- a microscope. (2016 MART YDS)
+    58. By the middle of the 19th century, the growing acceptance that microbes can kill us had once more focused people's attention ---- a world only visible ---- a microscope. (2016 MART YDS)
     A) on / through
     B) to / upon
     C) by / over
     D) against / in
     E) of / for
-    59. Education plays an important role ---- improving people’s health, and educated people are more likely to be informed consumers of health care, gathering information ---- diseases and potential treatments. (2016 EYLÜL YDS)
+    59. Education plays an important role ---- improving people's health, and educated people are more likely to be informed consumers of health care, gathering information ---- diseases and potential treatments. (2016 EYLÜL YDS)
     A) to / upon
     B) in / on
     C) at / about
@@ -5141,7 +5623,7 @@ TIP: Main clause: would have V3 (burada would).
     C) into / from
     D) for / beyond
     E) at / behind
-    66. Personality psychology focuses on the consistency in people’s behaviour ---- time and the traits that differentiate one person ---- another. (2015 EYLÜL YDS)
+    66. Personality psychology focuses on the consistency in people's behaviour ---- time and the traits that differentiate one person ---- another. (2015 EYLÜL YDS)
     A) at / for
     B) over / from
     C) in / of
@@ -5182,7 +5664,7 @@ C) thanks to
 D) rather than
 E) for the purpose of
 
-5. Insects do not navigate by scanning their environment and reducing the image to trillions of pixels that they process with supercomputers; ----, their brains are composed of ‘neural networks,’ learning machines that slowly learn how to navigate in a hostile world by bumping into it. (2025 TEMMUZ YDS)
+5. Insects do not navigate by scanning their environment and reducing the image to trillions of pixels that they process with supercomputers; ----, their brains are composed of 'neural networks,' learning machines that slowly learn how to navigate in a hostile world by bumping into it. (2025 TEMMUZ YDS)
 A) instead
 B) likewise
 C) for example
@@ -5329,7 +5811,7 @@ C) not only / but also
 D) the more / the more
 E) either / or
 
-26. ---- lung cancer is globally the leading cause of death from cancer, health experts believe it is also the most preventable type due to smoking’s role in its development. (2025 TEMMUZ YÖKDİL SAĞLIK)
+26. ---- lung cancer is globally the leading cause of death from cancer, health experts believe it is also the most preventable type due to smoking's role in its development. (2025 TEMMUZ YÖKDİL SAĞLIK)
 A) Even though
 B) Since
 C) If
@@ -5378,7 +5860,7 @@ C) because of
 D) unlike
 E) in spite of
 
-33. ---- prescription medications ---- herbal products have the ability to fully restore cognitive functions lost to permanent brain damage caused by Alzheimer’s disease or traumatic brain injury. (2025 TEMMUZ YÖKDİL SAĞLIK)
+33. ---- prescription medications ---- herbal products have the ability to fully restore cognitive functions lost to permanent brain damage caused by Alzheimer's disease or traumatic brain injury. (2025 TEMMUZ YÖKDİL SAĞLIK)
 A) As / as
 B) Such / that
 C) Whether / or
@@ -5532,7 +6014,7 @@ C) because of
 D) instead of
 E) due to
 
-55. Ancient Egypt has long been considered the domestic cat’s cradle, but when researchers sequenced DNA from more than 200 ancient cats, they discovered that ---- Nile natives formed the most broadly distributed lineage, they were not the first. (2023 EKİM YDS)
+55. Ancient Egypt has long been considered the domestic cat's cradle, but when researchers sequenced DNA from more than 200 ancient cats, they discovered that ---- Nile natives formed the most broadly distributed lineage, they were not the first. (2023 EKİM YDS)
 A) if
 B) because
 C) while
@@ -5581,7 +6063,7 @@ C) as if
 D) while
 E) just as
 
-62. It is a strange twist of fate that both the Ötzi, an ancient iceman, and Helmut Simon were found dead on the ice ---- Helmut Simon was the man who discovered the Ötzi’s remains in 1991. (2023 NİSAN YDS)
+62. It is a strange twist of fate that both the Ötzi, an ancient iceman, and Helmut Simon were found dead on the ice ---- Helmut Simon was the man who discovered the Ötzi's remains in 1991. (2023 NİSAN YDS)
 A) until
 B) given that
 C) only when
@@ -5630,7 +6112,7 @@ C) due to
 D) along with
 E) by means of
 
-69. In linguistics, the distinction between a word’s sense and reference is a critical one, ---- it allows us to study the many cases where we happily use words, even though they do not naturally correspond to the way things are in the world. (2022 NİSAN YDS)
+69. In linguistics, the distinction between a word's sense and reference is a critical one, ---- it allows us to study the many cases where we happily use words, even though they do not naturally correspond to the way things are in the world. (2022 NİSAN YDS)
 A) in order that
 B) so that
 C) because
@@ -5686,7 +6168,7 @@ C) As well as
 D) In spite of
 E) Rather than
 
-77. ---- he was never regarded as a musical genius at a very young age like Mozart or Mendelssohn, Beethoven’s talent was quite impressive. (2021 YDT)
+77. ---- he was never regarded as a musical genius at a very young age like Mozart or Mendelssohn, Beethoven's talent was quite impressive. (2021 YDT)
 A) As long as
 B) Because
 C) Even though
@@ -5714,7 +6196,7 @@ C) in order that
 D) in case
 E) unless
 
-81. They are some of the oldest monuments in the world, ---- much about Egypt’s pyramids remains a mystery. (2021 YÖKDİL SOSYAL)
+81. They are some of the oldest monuments in the world, ---- much about Egypt's pyramids remains a mystery. (2021 YÖKDİL SOSYAL)
 A) but
 B) otherwise
 C) as
@@ -5728,7 +6210,7 @@ C) In terms of
 D) Unlike
 E) Together with
 
-83. ---- he was never regarded as a musical genius at a very young age like Mozart or Mendelssohn, Beethoven’s talent was quite impressive. (2021 YDT)
+83. ---- he was never regarded as a musical genius at a very young age like Mozart or Mendelssohn, Beethoven's talent was quite impressive. (2021 YDT)
 A) As long as
 B) Because
 C) Even though
@@ -5903,7 +6385,7 @@ C) the more / the more
 D) either / or
 E) so / that
 
-108. The numerous Italian princes’ palaces became significant centres of the Renaissance and the Baroque periods ---- their comparatively minor political influence. (2019 YDT)
+108. The numerous Italian princes' palaces became significant centres of the Renaissance and the Baroque periods ---- their comparatively minor political influence. (2019 YDT)
 A) due to
 B) rather than
 C) in terms of
@@ -5945,7 +6427,7 @@ C) in terms of
 D) despite
 E) along with
 
-114. ---- immigrants to North America’s new colonies were primarily British in the 17th and 18th centuries, significant numbers of people of other nationalities also established a presence in the Americas. (2019 EYLÜL YDS)
+114. ---- immigrants to North America's new colonies were primarily British in the 17th and 18th centuries, significant numbers of people of other nationalities also established a presence in the Americas. (2019 EYLÜL YDS)
 A) Because
 B) While
 C) As long as
@@ -5966,7 +6448,7 @@ C) until
 D) if
 E) as soon as
 
-117. Liquid water covers more than two-thirds of the Blue Planet’s surface, ---- exactly how it got there has always been puzzling. (2019 EYLÜL YDS)
+117. Liquid water covers more than two-thirds of the Blue Planet's surface, ---- exactly how it got there has always been puzzling. (2019 EYLÜL YDS)
 A) so
 B) instead
 C) but
@@ -5987,7 +6469,7 @@ C) in place of
 D) in spite of
 E) contrary to
 
-120. Among the drawbacks of aging is a creeping tendency to put on weight ---- our resting metabolism slows down – by roughly 1 to 2 percent every decade. (2019 ARALIK YDS)
+120. Among the drawbacks of aging is a creeping tendency to put on weight ---- our resting metabolism slows down — by roughly 1 to 2 percent every decade. (2019 ARALIK YDS)
 A) but
 B) since
 C) as if
@@ -6092,7 +6574,7 @@ C) instead of
 D) in terms of
 E) in case of
 
-135. Most cheesemakers believe that the brilliant nuances of flavour found in raw milk, with its naturally present ‘good’ bacteria, simply cannot be duplicated in a pasteurised milk cheese ---- some well-respected cheeses, including British Stilton, are made only from pasteurised milk. (2018 EYLÜL YDS)
+135. Most cheesemakers believe that the brilliant nuances of flavour found in raw milk, with its naturally present 'good' bacteria, simply cannot be duplicated in a pasteurised milk cheese ---- some well-respected cheeses, including British Stilton, are made only from pasteurised milk. (2018 EYLÜL YDS)
 A) now that
 B) after
 C) although
@@ -6148,7 +6630,7 @@ C) as if
 D) even though
 E) in case
 
-143. Known as the ‘Lady with the Lamp’ during the Crimean War, Florence Nightingale, the most famous nurse in history, focused her efforts ---- on the prevention of diseases ---- the promotion of healthy living in a more positive way. (2018 ARALIK YDS)
+143. Known as the 'Lady with the Lamp' during the Crimean War, Florence Nightingale, the most famous nurse in history, focused her efforts ---- on the prevention of diseases ---- the promotion of healthy living in a more positive way. (2018 ARALIK YDS)
 A) the more / the more
 B) not only / but also
 C) whether / or
@@ -6211,7 +6693,7 @@ C) as / as
 D) the more / the more
 E) either / or
 
-152. ---- its similarities with other Italian cities, it is important to emphasise that Venice’s aquatic environment and associations with foreign lands via the sea endowed it with a uniqueness. (2017 İLKBAHAR YDS)
+152. ---- its similarities with other Italian cities, it is important to emphasise that Venice's aquatic environment and associations with foreign lands via the sea endowed it with a uniqueness. (2017 İLKBAHAR YDS)
 A) Due to
 B) By means of
 C) In terms of
@@ -6232,7 +6714,7 @@ C) In case
 D) Once
 E) Even though
 
-155. The story of the cat’s domestication is one of mutual appreciation: early farming communities benefited from cats’ rodent-catching skills ---- cats won themselves protection and shelter without losing their independence. (2017 SONBAHAR YDS)
+155. The story of the cat's domestication is one of mutual appreciation: early farming communities benefited from cats' rodent-catching skills ---- cats won themselves protection and shelter without losing their independence. (2017 SONBAHAR YDS)
 A) even if
 B) only when
 C) as soon as
@@ -6260,7 +6742,7 @@ C) If
 D) Once
 E) In case
 
-159. Your body’s cells cannot work properly ---- the conditions around them are perfectly balanced. (2016 YDT)
+159. Your body's cells cannot work properly ---- the conditions around them are perfectly balanced. (2016 YDT)
 A) because
 B) unless
 C) whereas
@@ -6337,7 +6819,7 @@ C) so that
 D) even if
 E) now that
 
-170. Leonardo da Vinci’s drawings for machines are ---- accurate ---- it has been possible for modern engineers to build some of them. (2016 SONBAHAR YDS)
+170. Leonardo da Vinci's drawings for machines are ---- accurate ---- it has been possible for modern engineers to build some of them. (2016 SONBAHAR YDS)
 A) so / that
 B) as / as
 C) either / or
@@ -6407,7 +6889,7 @@ C) whenever
 D) as
 E) in case
 
-180. Japan is enormously centralized, and Tokyo, the capital city, hosts ---- the national government ---- the stock market and the world’s largest companies. (2015 İLKBAHAR YDS)
+180. Japan is enormously centralized, and Tokyo, the capital city, hosts ---- the national government ---- the stock market and the world's largest companies. (2015 İLKBAHAR YDS)
 A) not only / but also
 B) whether / or
 C) neither / nor
@@ -6688,7 +7170,7 @@ C) kept / continues
 D) had kept / would continue
 E) would have kept / continued
 
-33. Various lines of evidence suggest that the composition of the Earth’s atmosphere ---- considerably over the history of the Solar System and that the original atmosphere ---- denser than the present day atmosphere and dominated by carbon dioxide. (2022 NİSAN YDS)
+33. Various lines of evidence suggest that the composition of the Earth's atmosphere ---- considerably over the history of the Solar System and that the original atmosphere ---- denser than the present day atmosphere and dominated by carbon dioxide. (2022 NİSAN YDS)
 A) was evolving / would be
 B) evolves / had been
 C) had been evolving / is
@@ -6702,7 +7184,7 @@ C) having enabled / influenced
 D) being enabled / would have influenced
 E) having been enabled / could influence
 
-35. The moment the first stars ---- is one of the most evocative milestones in the evolution of the cosmos – it marks the beginning of the age of light, the moment when the Universe ---- recognisable to us. (2021 YDT)
+35. The moment the first stars ---- is one of the most evocative milestones in the evolution of the cosmos — it marks the beginning of the age of light, the moment when the Universe ---- recognisable to us. (2021 YDT)
 A) were born / would have become
 B) are being born / might become
 C) had been born / will become
@@ -6730,7 +7212,7 @@ C) have developed / had invaded
 D) developed / could have invaded
 E) had developed / invaded
 
-39. London ----- the oldest and most comprehensive subway system in the world today, and all of the city’s train stations ----- by subway. (2021 YÖKDİL SOSYAL)
+39. London ----- the oldest and most comprehensive subway system in the world today, and all of the city's train stations ----- by subway. (2021 YÖKDİL SOSYAL)
 A) had / might be reached
 B) has had / could have been reached
 C) has / can be reached
@@ -6856,7 +7338,7 @@ C) used to go / may have enjoyed
 D) had to go / could enjoy
 E) would go / ought to have enjoyed
 
-57. Humanity’s extraordinary success ---- due to our ingenuity in devising cultural means ---- our physical limitations. (2019 YDS İLKBAHAR)
+57. Humanity's extraordinary success ---- due to our ingenuity in devising cultural means ---- our physical limitations. (2019 YDS İLKBAHAR)
 A) has been / to overcome
 B) was / having overcome
 C) had been / overcoming
@@ -6884,7 +7366,7 @@ C) showed / is helping
 D) will have shown / was helping
 E) will be showing / has been helping
 
-61. The Martian atmosphere is so thin, and the planet’s temperature so low that liquid water ---- there, and if it ever did in the past, conditions ---- very different. (2019 YDS SONBAHAR)
+61. The Martian atmosphere is so thin, and the planet's temperature so low that liquid water ---- there, and if it ever did in the past, conditions ---- very different. (2019 YDS SONBAHAR)
 A) might not have existed / were to be
 B) could not exist / may be
 C) would not exist /can be
@@ -6940,14 +7422,14 @@ C) making / could alter
 D) having made / should have altered
 E) to have been making / must have altered
 
-69. For a long time, scientists ---- aware that the Earth’s atmosphere is not static, but is in constant motion, producing areas of ever-changing pressure around the globe, but from 1700 onward, scientists ---- to discover how and why large-scale atmospheric movements occur. (2018 YDS SONBAHAR)
+69. For a long time, scientists ---- aware that the Earth's atmosphere is not static, but is in constant motion, producing areas of ever-changing pressure around the globe, but from 1700 onward, scientists ---- to discover how and why large-scale atmospheric movements occur. (2018 YDS SONBAHAR)
 A) had been / have begun
 B) would have been / had begun
 C) have been / began
 D) would be / were beginning
 E) were / would have begun
 
-70. Science ---- our every question, but it ---- humanity’s best tool yet for tackling our greatest challenges. (2018 YDS SONBAHAR)
+70. Science ---- our every question, but it ---- humanity's best tool yet for tackling our greatest challenges. (2018 YDS SONBAHAR)
 A) may not answer / had remained
 B) must not answer / has remained
 C) should not answer / will remain
@@ -7003,7 +7485,7 @@ C) suggested / have turned
 D) has suggested / turn
 E) will suggest / are turning
 
-78. Patients with implants or electronic devices put inside their bodies ---- using magnetic resonance imaging (MRI) because the machine’s magnet ---- these objects within the body, causing damage. (2017 YDS İLKBAHAR)
+78. Patients with implants or electronic devices put inside their bodies ---- using magnetic resonance imaging (MRI) because the machine's magnet ---- these objects within the body, causing damage. (2017 YDS İLKBAHAR)
 A) should not be examined / must move
 B) could not be examined / had to move
 C) may not be examined / used to move
@@ -7031,7 +7513,7 @@ C) would have been used / might have imagined
 D) were used / could have imagined
 E) must have been used / can imagine
 
-82. Humans ---- 43 percent of the Earth’s surface from its natural state radically, far greater than the smaller changes that ---- trigger the last great planetary shift during the ice ages. (2016 YDT)
+82. Humans ---- 43 percent of the Earth's surface from its natural state radically, far greater than the smaller changes that ---- trigger the last great planetary shift during the ice ages. (2016 YDT)
 A) would alter / have helped
 B) had altered / help
 C) have altered / helped
@@ -7115,7 +7597,7 @@ C) could prevent / sending
 D) must prevent / having sent
 E) may prevent / to send
 
-94. It ---- fourteen years since his last feature film, Ryan’s Daughter, when David Lean ---- to filmmaking with his 1984 adaptation of E. M. Forster’s celebrated novel, A Passage to India. (2015 YDS İLKBAHAR)
+94. It ---- fourteen years since his last feature film, Ryan's Daughter, when David Lean ---- to filmmaking with his 1984 adaptation of E. M. Forster's celebrated novel, A Passage to India. (2015 YDS İLKBAHAR)
 A) had been / returned
 B) has been / had returned
 C) was / returns
@@ -7129,7 +7611,7 @@ C) had been / would not have been built
 D) was / need not have been built
 E) will be / should not have been built
 
-96. Philosophy did not play a large part in Roman culture, other than Stoicism, which ---- by the Romans for its emphasis on virtuous conduct and ---- one’s duty. (2015 YDS İLKBAHAR)
+96. Philosophy did not play a large part in Roman culture, other than Stoicism, which ---- by the Romans for its emphasis on virtuous conduct and ---- one's duty. (2015 YDS İLKBAHAR)
 A) is to be admired / to have done
 B) is admired / to do
 C) had been admired / having done
@@ -7176,7 +7658,7 @@ C) conspire
 D) strive
 E) warrant
 
-6. Cellulose and other complex food constituents that are not susceptible to digestion by the animal’s own digestive enzymes are ---- digestible end-products by bacterial fermentation. (2025 TEMMUZ YDS)
+6. Cellulose and other complex food constituents that are not susceptible to digestion by the animal's own digestive enzymes are ---- digestible end-products by bacterial fermentation. (2025 TEMMUZ YDS)
 A) found out
 B) converted into
 C) identified with
@@ -7239,14 +7721,14 @@ C) compulsorly
 D) adversely
 E) scarcely
 
-15. Proper nutrition and good medical care, especially during the first year of life, significantly ---- an infant’s cognitive and physical development. (2025 YDT)
+15. Proper nutrition and good medical care, especially during the first year of life, significantly ---- an infant's cognitive and physical development. (2025 YDT)
 A) constrain
 B) exploit
 C) enhance
 D) overcome
 E) scatter
 
-16. Whale sharks, the world’s largest fish, are regarded as a vulnerable species as their population has been falling dramatically, which ---- strict environmental regulation for their protection. (2025 YDT)
+16. Whale sharks, the world's largest fish, are regarded as a vulnerable species as their population has been falling dramatically, which ---- strict environmental regulation for their protection. (2025 YDT)
 A) turns down
 B) calls for
 C) wards off
@@ -7372,14 +7854,14 @@ C) credited with
 D) deprived of
 E) counted against
 
-34. Modern understanding of the structure of Earth is derived in large part from the ---- of seismic studies that examine various features in Earth’s interior. (2023 EKİM YDS)
+34. Modern understanding of the structure of Earth is derived in large part from the ---- of seismic studies that examine various features in Earth's interior. (2023 EKİM YDS)
 A) extraction
 B) mitigation
 C) alteration
 D) interpretation
 E) compensation
 
-35. A geneticist can calculate with remarkable ---- the likelihood of certain traits passing from parents to offspring, and such calculations accommodate the potential combinations that can arise from each parent’s genotype. (2023 EKİM YDS)
+35. A geneticist can calculate with remarkable ---- the likelihood of certain traits passing from parents to offspring, and such calculations accommodate the potential combinations that can arise from each parent's genotype. (2023 EKİM YDS)
 A) adversity
 B) abstention
 C) accuracy
@@ -7400,7 +7882,7 @@ C) explicitly
 D) evenly
 E) productively
 
-38. The world-famous explorer Marco Polo is credited with many things, but perhaps the greatest one is ---- one of the world’s first best-selling travelogues. (2023 EKİM YDS)
+38. The world-famous explorer Marco Polo is credited with many things, but perhaps the greatest one is ---- one of the world's first best-selling travelogues. (2023 EKİM YDS)
 A) hindering
 B) validating
 C) alienating
@@ -7414,14 +7896,14 @@ C) get over
 D) interfere with
 E) pass down
 
-40. The ---- of chocolate with romance is probably responsible for the creation of boxes in the shape of hearts, filled with chocolates, being the gift of choice for lovers every Valentine’s Day. (2023 NİSAN YDS)
+40. The ---- of chocolate with romance is probably responsible for the creation of boxes in the shape of hearts, filled with chocolates, being the gift of choice for lovers every Valentine's Day. (2023 NİSAN YDS)
 A) enrichment
 B) association
 C) proposal
 D) advent
 E) resolution
 
-41. A mere 7 percent of the world’s oceans has any protection – mostly weak rules, with multiple exceptions – and only 2.5 percent is highly protected from ----. (2023 NİSAN YDS)
+41. A mere 7 percent of the world's oceans has any protection — mostly weak rules, with multiple exceptions — and only 2.5 percent is highly protected from ----. (2023 NİSAN YDS)
 A) exploitation
 B) diversion
 C) fragmentation
@@ -7442,7 +7924,7 @@ C) reluctantly
 D) accurately
 E) implicitly
 
-44. Among the problems stemming from space activity, ‘space junk’ is a growing concern as disused satellites and other objects ---- in our planet’s orbit. (2023 NİSAN YDS)
+44. Among the problems stemming from space activity, 'space junk' is a growing concern as disused satellites and other objects ---- in our planet's orbit. (2023 NİSAN YDS)
 A) perpetuate
 B) overtake
 C) accumulate
@@ -7456,7 +7938,7 @@ C) take up
 D) draw up
 E) get off
 
-46. Scientists believe an asteroid struck the planet Earth off Mexico’s Yucatán Peninsula some 65 million years ago, bringing about the ---- of almost 50 percent of the plant species then living on Earth. (2023 YDT)
+46. Scientists believe an asteroid struck the planet Earth off Mexico's Yucatán Peninsula some 65 million years ago, bringing about the ---- of almost 50 percent of the plant species then living on Earth. (2023 YDT)
 A) extinction
 B) identification
 C) differentiation
@@ -7498,7 +7980,7 @@ C) references
 D) deformities
 E) obstructions
 
-52. According to Piaget, an infant’s initial knowledge is limited to innate reflexes and is combined with an ---- to actively use and adapt these reflexes as a result of repeated interactions with objects. (2022 NİSAN YDS)
+52. According to Piaget, an infant's initial knowledge is limited to innate reflexes and is combined with an ---- to actively use and adapt these reflexes as a result of repeated interactions with objects. (2022 NİSAN YDS)
 A) assertion
 B) equivalent
 C) inclination
@@ -7547,7 +8029,7 @@ C) obsolete
 D) futile
 E) implicit
 
-59. Although children’s literature is intended ---- for children, it is more accurate to view such texts as having dual audiences of children and adults. (2022 YDT)
+59. Although children's literature is intended ---- for children, it is more accurate to view such texts as having dual audiences of children and adults. (2022 YDT)
 A) tightly
 B) primarily
 C) vividly
@@ -7568,7 +8050,7 @@ C) took over
 D) turned into
 E) amounted to
 
-62. Attaining ---- in the current job is a basic career strategy, given that organisations make promotion decisions, at least in part, on an employee’s present performance. (2021 EKİM YDS)
+62. Attaining ---- in the current job is a basic career strategy, given that organisations make promotion decisions, at least in part, on an employee's present performance. (2021 EKİM YDS)
 A) assurance
 B) competence
 C) balance
@@ -7645,21 +8127,21 @@ C) deception
 D) resistance
 E) nomination
 
-73. In 1558, Queen Mary I of England was persuaded by her husband, King Philip II of Spain, to join him in a renewed war with France, which proved ---- for England as it led to the loss of Calais, England’s last foothold in continental Europe. (2021 YDT)
+73. In 1558, Queen Mary I of England was persuaded by her husband, King Philip II of Spain, to join him in a renewed war with France, which proved ---- for England as it led to the loss of Calais, England's last foothold in continental Europe. (2021 YDT)
 A) compatible
 B) vulnerable
 C) predictable
 D) disastrous
 E) indicative
 
-74. Governments around the world, in partnership with civil society, must continue to act ---- against the tobacco epidemic – the leading global cause of preventable death. (2021 YDT)
+74. Governments around the world, in partnership with civil society, must continue to act ---- against the tobacco epidemic — the leading global cause of preventable death. (2021 YDT)
 A) deficiently
 B) decisively
 C) suspiciously
 D) adversely
 E) roughly
 
-75. The term ‘Geography’ formally applies to an academic discipline that ---- the study of the Earth’s surface, its inhabitants, and more recently, its environment. (2021 YDT)
+75. The term 'Geography' formally applies to an academic discipline that ---- the study of the Earth's surface, its inhabitants, and more recently, its environment. (2021 YDT)
 A) attaches
 B) occupies
 C) considers
@@ -7687,7 +8169,7 @@ C) conversion
 D) fluctuation
 E) deviation
 
-79. While newspapers have been in dramatic decline in much of the developed West, the industry is ---- and still growing in many of Asia’s booming cities. (2020 EYLÜL YDS)
+79. While newspapers have been in dramatic decline in much of the developed West, the industry is ---- and still growing in many of Asia's booming cities. (2020 EYLÜL YDS)
 A) fragile
 B) profitable
 C) confidential
@@ -7715,7 +8197,7 @@ C) getting away with
 D) looking around for
 E) coming down with
 
-83. Although considering how someone may react to a situation can be worthwhile, making ---- about another person’s behaviour may lead you to the wrong conclusions. (2020 YDT)
+83. Although considering how someone may react to a situation can be worthwhile, making ---- about another person's behaviour may lead you to the wrong conclusions. (2020 YDT)
 A) promises
 B) assumptions
 C) mistakes
@@ -7792,7 +8274,7 @@ C) make out
 D) take on
 E) bring about
 
-94. Research has found that the typical brain is a ‘mosaic’ combining some features that are more common in males and some that appear more frequently in females, pointing to the ---- that human brains do not belong to two distinct types categorised by gender. (2019 EYLÜL YDS)
+94. Research has found that the typical brain is a 'mosaic' combining some features that are more common in males and some that appear more frequently in females, pointing to the ---- that human brains do not belong to two distinct types categorised by gender. (2019 EYLÜL YDS)
 A) violation
 B) conclusion
 C) development
@@ -7806,7 +8288,7 @@ C) ambiguity
 D) efficacy
 E) uniformity
 
-96. Human accomplishments ---- our ability to acquire knowledge from others and to use that communal store of experience to devise novel solutions to life’s challenges. (2019 EYLÜL YDS)
+96. Human accomplishments ---- our ability to acquire knowledge from others and to use that communal store of experience to devise novel solutions to life's challenges. (2019 EYLÜL YDS)
 A) call off
 B) stem from
 C) bring down
@@ -7834,7 +8316,7 @@ C) provoking
 D) identifying
 E) improving
 
-100. Human accomplishments ---- our ability to acquire knowledge from others and to use that communal store of experience to devise novel solutions to life’s challenges. (2019 EYLÜL YDS)
+100. Human accomplishments ---- our ability to acquire knowledge from others and to use that communal store of experience to devise novel solutions to life's challenges. (2019 EYLÜL YDS)
 A) call off
 B) stem from
 C) bring down
@@ -7855,7 +8337,7 @@ C) incentives
 D) threats
 E) obligations
 
-103. Although empirical studies into the brain’s left and right hemispheric participation in language acquisition are ---- and differ from each other, some observational studies indicate that adults might benefit from right-brain-oriented activities in the foreign language classroom. (2019 NİSAN YDS)
+103. Although empirical studies into the brain's left and right hemispheric participation in language acquisition are ---- and differ from each other, some observational studies indicate that adults might benefit from right-brain-oriented activities in the foreign language classroom. (2019 NİSAN YDS)
 A) unavailable
 B) indispensable
 C) indestructible
@@ -7876,7 +8358,7 @@ C) reveals
 D) hinders
 E) boosts
 
-106. Parkinson’s disease is a movement disorder that ---- the death of neurons producing dopamine, a neurochemical that dispatches messages to parts of the brain that control motor skills and coordination. (2019 NİSAN YDS)
+106. Parkinson's disease is a movement disorder that ---- the death of neurons producing dopamine, a neurochemical that dispatches messages to parts of the brain that control motor skills and coordination. (2019 NİSAN YDS)
 A) takes over
 B) stems from
 C) makes up
@@ -7911,7 +8393,7 @@ C) precedes
 D) counters
 E) provides
 
-111. Although the game of baseball as it is known today is uniquely American, it ---- the popular English children’s bat-and-ball game called rounders. (2019 YDT)
+111. Although the game of baseball as it is known today is uniquely American, it ---- the popular English children's bat-and-ball game called rounders. (2019 YDT)
 A) gets along
 B) derives from
 C) accounts for
@@ -7925,7 +8407,7 @@ C) regulation
 D) clarity
 E) disruption
 
-113. Since the beginning of the Industrial Age, humankind’s ---- of the natural environment has taken a turn for the worse. (2018 ARALIK YDS)
+113. Since the beginning of the Industrial Age, humankind's ---- of the natural environment has taken a turn for the worse. (2018 ARALIK YDS)
 A) exploitation
 B) contradiction
 C) deprivation
@@ -7946,7 +8428,7 @@ C) reversed
 D) enforced
 E) protected
 
-116. The revolutions and wars of the 20th century ---- affected people’s views of these times and the histories they wrote. (2018 ARALIK YDS)
+116. The revolutions and wars of the 20th century ---- affected people's views of these times and the histories they wrote. (2018 ARALIK YDS)
 A) decently
 B) recklessly
 C) offensively
@@ -7967,7 +8449,7 @@ C) purposes
 D) excuses
 E) features
 
-119. The primary ---- of an organisation’s accounting department are to process financial information and to prepare financial statements at the end of the accounting period. (2018 EYLÜL YDS)
+119. The primary ---- of an organisation's accounting department are to process financial information and to prepare financial statements at the end of the accounting period. (2018 EYLÜL YDS)
 A) advancements
 B) compensations
 C) obstacles
@@ -8065,14 +8547,14 @@ C) exactly
 D) consistently
 E) partially
 
-133. The continents are the major land masses of the Earth and ---- around 29 per cent of the planet’s surface. (2018 YDT)
+133. The continents are the major land masses of the Earth and ---- around 29 per cent of the planet's surface. (2018 YDT)
 A) threaten
 B) occupy
 C) maintain
 D) initiate
 E) provide
 
-134. The Hanseatic League, a confederation of North German cities founded in the late 1200’s, ---- special areas in cities across north Europe and controlled most trading routes. (2018 YDT)
+134. The Hanseatic League, a confederation of North German cities founded in the late 1200's, ---- special areas in cities across north Europe and controlled most trading routes. (2018 YDT)
 A) set up
 B) put aside
 C) turned down
@@ -8093,7 +8575,7 @@ C) distribution
 D) fluctuation
 E) reduction
 
-137. An important reason to re-evaluate how we are raising the next generation grows out of an incredibly exciting discovery about brain development: during adolescence, the brain’s potential to change through experience is ----. (2017 EYLÜL YDS)
+137. An important reason to re-evaluate how we are raising the next generation grows out of an incredibly exciting discovery about brain development: during adolescence, the brain's potential to change through experience is ----. (2017 EYLÜL YDS)
 A) tremendous
 B) frustrating
 C) debatable
@@ -8142,7 +8624,7 @@ C) entitled
 D) vulnerable
 E) accessible
 
-144. IQ tests are often faulted for ignoring cultural or social biases, particularly with regard to schoolchildren, and critics claim they cannot ---- predict a person’s future performance. (2017 NİSAN YDS)
+144. IQ tests are often faulted for ignoring cultural or social biases, particularly with regard to schoolchildren, and critics claim they cannot ---- predict a person's future performance. (2017 NİSAN YDS)
 A) initially
 B) accurately
 C) conventionally
@@ -8239,7 +8721,7 @@ C) necessities
 D) prospects
 E) permissions
 
-158. From the early 1800s scientists began to gather ---- amounts of data about marine life, paving the way for future knowledge about the importance of the planet’s oceans. (2016 NİSAN YDS)
+158. From the early 1800s scientists began to gather ---- amounts of data about marine life, paving the way for future knowledge about the importance of the planet's oceans. (2016 NİSAN YDS)
 A) immense
 B) predictable
 C) equivalent
@@ -8386,7 +8868,7 @@ C) putting off
 D) taking apart
 E) pulling up
 
-179. From the ancient pyramids to today’s hi-tech skyscrapers, powerful people have always ---- their status through impressive buildings. (2015 NİSAN YDS)
+179. From the ancient pyramids to today's hi-tech skyscrapers, powerful people have always ---- their status through impressive buildings. (2015 NİSAN YDS)
 A) put on
 B) laid out
 C) shown off
@@ -8407,7 +8889,7 @@ C) severe
 D) dependent
 E) consistent
 
-182. No one has to read a textbook to learn that children’s problem solving abilities improve ---- across childhood. (2015 YDT)
+182. No one has to read a textbook to learn that children's problem solving abilities improve ---- across childhood. (2015 YDT)
 A) deliberately
 B) dramatically
 C) approximately
@@ -8439,6 +8921,1062 @@ const rawExamVocabA = `1-C 2-D 3-A 4-A 5-E 6-B 7-E 8-E 9-B 10-A 11-C 12-D 13-C 1
     /* ================= SİSTEM DEĞİŞKENLERİ ================= */
     let allQuestions = [];
     let generatedQuestions = [];
+
+
+// --- KARMA DENEME (150 Soru) ---
+const rawKarmaQ = `1. The policy aims to <strong>alleviate</strong> poverty in rural areas.
+A) worsen
+B) intensify
+C) ignore
+D) ease
+E) conceal
+
+2. The findings do not necessarily imply a causal relationship.
+A) Bulgular mutlaka nedensel bir ilişkiyi ima eder.
+B) Bulgular, nedensel ilişkiyi kesin olarak kanıtlar.
+C) Bulgular, her zaman nedensel bir ilişki olduğunu göstermez.
+D) Bulgular, nedensel ilişkiyi reddeder.
+E) Bulgular, nedensel ilişkiyi açıklığa kavuşturur.
+
+3. The new evidence ---- doubts on the validity of the previous study.
+A) throws
+B) casts
+C) pushes
+D) drives
+E) drops
+
+4. The policy was introduced in response to growing public concern.
+A) Politika, artan kamu kaygısına tepki olarak yürürlükten kaldırıldı.
+B) Politika, kamu kaygısı azaldığı için ertelendi.
+C) Politika, kamu kaygısını artırmak için tasarlandı.
+D) Politika, kamu kaygısıyla ilgisiz şekilde uygulandı.
+E) Politika, artan kamu kaygısına yanıt olarak devreye sokuldu.
+
+5. The policy was expected to ---- immediate results, but it didn’t.
+A) yield
+B) earn
+C) gain
+D) win
+E) save
+
+6. The results were <strong>inconclusive</strong>, so further research is needed.
+A) decisive
+B) uncertain
+C) irrelevant
+D) sufficient
+E) accurate
+
+7. The city’s water supply is <strong>scarce</strong> during summer.
+A) abundant
+B) stable
+C) pure
+D) accessible
+E) limited
+
+8. The findings have <strong>significant</strong> implications for education.
+A) minor
+B) considerable
+C) trivial
+D) optional
+E) accidental
+
+9. Although the method is efficient, it is not suitable for every context.
+A) Yöntem verimli olsa da her bağlam için uygun değildir.
+B) Yöntem verimli olduğu için her bağlam için uygundur.
+C) Yöntem verimli değildir ama her bağlam için uygundur.
+D) Yöntem her bağlam için uygundur, bu yüzden verimlidir.
+E) Yöntem yalnızca belirli bağlamlarda verimli değildir.
+
+10. The authors ---- attention to the limitations of their research.
+A) pull
+B) take
+C) bring
+D) draw
+E) catch
+
+11. The disease poses a serious ---- to public health.
+A) hazard
+B) risk
+C) harm
+D) damage
+E) threat
+
+12. The author offers a <strong>plausible</strong> explanation.
+A) impossible
+B) unrelated
+C) artificial
+D) temporary
+E) credible
+
+13. The decision was made after careful <strong>scrutiny</strong>.
+A) celebration
+B) hesitation
+C) distraction
+D) assumption
+E) examination
+
+14. A substantial proportion of the participants reported sleep problems.
+A) Katılımcıların küçük bir kısmı uyku sorunları bildirdi.
+B) Katılımcıların tamamı uyku sorunu yaşamadığını söyledi.
+C) Katılımcıların yarısından azı uyku sorunu yaşamadığını belirtti.
+D) Katılımcıların önemli bir bölümü uyku sorunları bildirdi.
+E) Katılımcıların çoğu uyku sorunlarını inkâr etti.
+
+15. The new evidence <strong>contradicts</strong> earlier claims.
+A) supports
+B) repeats
+C) conflicts with
+D) confirms
+E) clarifies
+
+16. The findings may ---- implications for future research.
+A) take
+B) make
+C) do
+D) have
+E) hold
+
+17. The effect of stress on memory is <strong>detrimental</strong>.
+A) beneficial
+B) neutral
+C) predictable
+D) harmful
+E) reversible
+
+18. The new law will ---- into force next year.
+A) come
+B) go
+C) take
+D) put
+E) turn
+
+19. The report provides valuable ---- into consumer behavior.
+A) eyesight
+B) view
+C) insight
+D) scene
+E) outlook
+
+20. The report highlights the need for stricter regulation.
+A) Rapor, daha katı düzenleme ihtiyacını vurgular.
+B) Rapor, daha gevşek düzenleme ihtiyacını vurgular.
+C) Rapor, düzenleme ihtiyacının olmadığını savunur.
+D) Rapor, düzenlemenin etkisiz kaldığını kanıtlar.
+E) Rapor, düzenlemenin hemen kaldırılmasını önerir.
+
+21. The explanation is <strong>vague</strong>, lacking details.
+A) precise
+B) formal
+C) complete
+D) unclear
+E) complex
+
+22. The method is <strong>feasible</strong> in low-resource settings.
+A) impractical
+B) workable
+C) risky
+D) doubtful
+E) illegal
+
+23. The article ---- the question of whether AI can replace teachers.
+A) rises
+B) raises
+C) arouses
+D) grows
+E) lifts
+
+24. The results were consistent with earlier studies.
+A) Sonuçlar önceki çalışmalarla uyumluydu.
+B) Sonuçlar önceki çalışmalarla çelişiyordu.
+C) Sonuçlar önceki çalışmaları geçersiz kıldı.
+D) Sonuçlar önceki çalışmalardan bağımsızdı.
+E) Sonuçlar önceki çalışmaları gereksiz kıldı.
+
+25. The trend is <strong>ubiquitous</strong> across industries.
+A) rare
+B) widespread
+C) outdated
+D) hidden
+E) voluntary
+
+26. The outcome was <strong>unexpected</strong>, given the data.
+A) anticipated
+B) surprising
+C) stable
+D) ordinary
+E) inevitable
+
+27. The team failed to ---- a consensus on the final design.
+A) access
+B) arrive
+C) reach
+D) catch
+E) touch
+
+28. The policy aims to reduce inequality in access to education.
+A) Politika, eğitime erişimdeki eşitsizliği artırmayı amaçlar.
+B) Politika, eğitime erişimi gereksiz kılmayı amaçlar.
+C) Politika, eğitime erişimi sınırlandırmayı amaçlar.
+D) Politika, eğitime erişimi yalnızca belirli gruplara açmayı amaçlar.
+E) Politika, eğitime erişimdeki eşitsizliği azaltmayı amaçlar.
+
+29. The experiment was carried ---- under controlled conditions.
+A) out
+B) on
+C) over
+D) in
+E) up
+
+30. The new approach may ---- the burden on healthcare systems.
+A) loosen
+B) relax
+C) calm
+D) rest
+E) ease
+
+31. The program aims to ---- awareness of climate change.
+A) lift
+B) increase
+C) raise
+D) arise
+E) rise
+
+32. The committee decided to ---- the proposal due to safety concerns.
+A) refuse
+B) deny
+C) resist
+D) reject
+E) neglect
+
+33. The policy was <strong>implemented</strong> nationwide.
+A) abandoned
+B) delayed
+C) carried out
+D) debated
+E) questioned
+
+34. The argument is <strong>flawed</strong> due to bias.
+A) sound
+B) defective
+C) complete
+D) flexible
+E) famous
+
+35. The outcome depends largely on external factors.
+A) Sonuç tamamen iç etkenlerden bağımsızdır.
+B) Sonuç dış etkenleri ortadan kaldırır.
+C) Sonuç dış etkenleri reddeder.
+D) Sonuç büyük ölçüde dış etkenlere bağlıdır.
+E) Sonuç dış etkenleri kanıtlar.
+
+36. The study provides <strong>compelling</strong> evidence.
+A) weak
+B) uncertain
+C) outdated
+D) casual
+E) persuasive
+
+37. The argument is supported by a substantial body of ----.
+A) proof
+B) sign
+C) clue
+D) evidence
+E) mark
+
+38. The changes were <strong>gradual</strong>, not sudden.
+A) abrupt
+B) random
+C) complete
+D) final
+E) steady
+
+39. The plan was put ---- because of budget cuts.
+A) out
+B) down
+C) away
+D) up
+E) off
+
+40. The data were <strong>insufficient</strong> to reach a conclusion.
+A) adequate
+B) lacking
+C) clear
+D) relevant
+E) reliable
+
+41. The study ---- a link between stress and insomnia.
+A) offers
+B) means
+C) intends
+D) suggests
+E) proves
+
+42. The study challenges the assumption that all bacteria are harmful.
+A) Çalışma, tüm bakterilerin zararlı olduğu varsayımını destekler.
+B) Çalışma, tüm bakterilerin zararlı olduğu varsayımına meydan okur.
+C) Çalışma, bakterilerin tamamının zararsız olduğunu kanıtlar.
+D) Çalışma, bakterilerle ilgili varsayımları görmezden gelir.
+E) Çalışma, bakterilerin etkisini reddeder.
+
+43. The report was <strong>biased</strong> toward one viewpoint.
+A) objective
+B) accurate
+C) detailed
+D) partial
+E) polite
+
+44. The survey was conducted on a large ---- of participants.
+A) example
+B) pattern
+C) model
+D) case
+E) sample
+
+45. The device is designed to detect minor deviations.
+A) Cihaz, büyük sapmaları gizlemek üzere tasarlanmıştır.
+B) Cihaz, küçük sapmaları artırmak üzere tasarlanmıştır.
+C) Cihaz, küçük sapmaları tespit etmek üzere tasarlanmıştır.
+D) Cihaz, sapmaları tamamen ortadan kaldırmak üzere tasarlanmıştır.
+E) Cihaz, sapmaları açıklamak üzere tasarlanmıştır.
+
+46. The policy is designed to ---- fraud.
+A) prevent
+B) prohibit
+C) forbid
+D) stop
+E) block
+
+47. The scientists ---- data from multiple sources.
+A) selected
+B) elected
+C) reflected
+D) collected
+E) neglected
+
+48. The proposal was <strong>rejected</strong> by the committee.
+A) approved
+B) discussed
+C) improved
+D) revised
+E) declined
+
+49. The decision was made in ---- with the guidelines.
+A) acceptance
+B) access
+C) allowance
+D) accordance
+E) accuracy
+
+50. The author argues that technology does not guarantee learning.
+A) Yazar, teknolojinin öğrenmeyi garanti ettiğini savunur.
+B) Yazar, teknolojinin öğrenmeyi imkânsız kıldığını savunur.
+C) Yazar, öğrenmenin teknolojiye bağlı olmadığını inkâr eder.
+D) Yazar, teknolojinin öğrenmeyi garanti etmediğini savunur.
+E) Yazar, teknolojinin öğrenmeyi geciktirdiğini kanıtlar.
+
+51. The team will ---- the findings at the conference.
+A) prevent
+B) present
+C) preserve
+D) pretend
+E) predict
+
+52. The solution is <strong>temporary</strong> until funding arrives.
+A) permanent
+B) complex
+C) costly
+D) automatic
+E) short-term
+
+53. The decision was <strong>justified</strong> by the evidence.
+A) supported
+B) criticized
+C) concealed
+D) delayed
+E) simplified
+
+54. The results should be interpreted with caution.
+A) Sonuçlar dikkatle yorumlanmalıdır.
+B) Sonuçlar tereddütsüz yorumlanmalıdır.
+C) Sonuçlar kesinlikle yanlış yorumlanmalıdır.
+D) Sonuçlar yorumlanmadan kabul edilmelidir.
+E) Sonuçlar yorumlanamaz.
+
+55. The article puts forward a ---- explanation for the trend.
+A) plausible
+B) possible
+C) potential
+D) probable
+E) available
+
+56. The approach is <strong>innovative</strong>.
+A) traditional
+B) routine
+C) identical
+D) simple
+E) novel
+
+57. The findings were reviewed by independent experts before publication.
+A) Bulgular yayımlanmadan önce bağımsız uzmanlarca incelendi.
+B) Bulgular yayımlandıktan sonra bağımsız uzmanlarca görmezden gelindi.
+C) Bulgular yayımlanmadan önce bağımsız uzmanlarca reddedildi.
+D) Bulgular yayımlanmadan önce uzmanlara sunulmadı.
+E) Bulgular yayımlanmadan önce uzmanlarca değiştirilmedi.
+
+58. The analysis failed to ---- into account the role of age.
+A) bring
+B) keep
+C) get
+D) set
+E) take
+
+59. The findings were <strong>overlooked</strong> in earlier studies.
+A) emphasized
+B) measured
+C) repeated
+D) published
+E) ignored
+
+60. The proposal was rejected due to budget constraints.
+A) Öneri bütçe kısıtları nedeniyle reddedildi.
+B) Öneri bütçe kısıtları nedeniyle kabul edildi.
+C) Öneri bütçe kısıtları ortadan kalktığı için reddedildi.
+D) Öneri bütçe kısıtlarını artırmak için reddedildi.
+E) Öneri bütçeyle ilgisiz şekilde ertelendi.
+
+61. The researchers ---- data from multiple sources.
+A) selected
+B) elected
+C) reflected
+D) neglected
+E) collected
+
+62. The claim was <strong>refuted</strong> by new data.
+A) confirmed
+B) disproved
+C) explained
+D) repeated
+E) improved
+
+63. The results were <strong>robust</strong> across different samples.
+A) fragile
+B) random
+C) narrow
+D) brief
+E) strong
+
+64. The proposal was postponed until further data became available.
+A) Öneri, veri erişilebilir olduğu için iptal edildi.
+B) Öneri, veri eksikliği nedeniyle kabul edildi.
+C) Öneri, veri erişilebilir olmadan yürürlüğe girdi.
+D) Öneri, daha fazla veri erişilebilir olana kadar ertelendi.
+E) Öneri, veriler geldikten sonra reddedildi.
+
+65. The project will <strong>commence</strong> in March.
+A) begin
+B) postpone
+C) finish
+D) collapse
+E) interrupt
+
+66. The study was limited by a small sample size.
+A) Çalışma, büyük örneklem nedeniyle sınırlıydı.
+B) Çalışma, örneklem büyüklüğüyle ilgisizdi.
+C) Çalışma, küçük örneklem büyüklüğü nedeniyle sınırlıydı.
+D) Çalışma, örneklemi artırdığı için sınırlıydı.
+E) Çalışma, örneklem büyüklüğünü kanıtladı.
+
+67. The evidence is not sufficient to ---- an inference from the data.
+A) reach
+B) draw
+C) raise
+D) take
+E) keep
+
+68. The report gives a brief ---- of the key findings.
+A) overview
+B) overlook
+C) overture
+D) outline
+E) overrun
+
+69. The policy has had an adverse effect on small businesses.
+A) Politika, küçük işletmeler üzerinde olumsuz etki yaratmıştır.
+B) Politika, küçük işletmeler üzerinde olumlu etki yaratmıştır.
+C) Politika, küçük işletmeleri etkilememiştir.
+D) Politika, küçük işletmeleri korumuştur.
+E) Politika, küçük işletmeleri güçlendirmiştir.
+
+70. Sales began to <strong>diminish</strong> after the crisis.
+A) expand
+B) stabilize
+C) recover
+D) multiply
+E) decrease
+
+71. The measure is intended to ---- compliance with the new rules.
+A) ensure
+B) assure
+C) insure
+D) secure
+E) endure
+
+72. The results were unexpected, given the initial hypothesis.
+A) Başlangıç hipotezi nedeniyle sonuçlar beklenen gibiydi.
+B) Başlangıç hipotezi reddedildiği için sonuçlar beklenmedikti.
+C) Hipotez olmadığı için sonuçlar beklenmedi.
+D) Hipotez kanıtlandığı için sonuçlar beklenmedikti.
+E) Başlangıç hipotezi göz önüne alındığında sonuçlar beklenmedikti.
+
+73. The campaign seeks to ---- public support for the reform.
+A) gather
+B) gain
+C) generate
+D) grant
+E) garner
+
+74. The increase in demand is partly due to improved accessibility.
+A) Talepteki artış erişilebilirlikle ilgisizdir.
+B) Talepteki artış, erişilebilirliği ortadan kaldırmıştır.
+C) Talepteki artış yalnızca fiyat düşüşüyle açıklanır.
+D) Talepteki artış kısmen erişilebilirliğin artmasına bağlıdır.
+E) Talepteki artış tamamen erişilebilirliğin azalmasına bağlıdır.
+
+75. The new evidence tends to ---- confidence in the original claim.
+A) undermine
+B) underline
+C) underpay
+D) undertake
+E) undergo
+
+76. The team decided to ---- resources to the most urgent tasks.
+A) allocate
+B) locate
+C) separate
+D) estimate
+E) celebrate
+
+77. The study emphasizes the importance of early intervention.
+A) Çalışma, erken müdahalenin önemini vurgular.
+B) Çalışma, erken müdahalenin gereksiz olduğunu savunur.
+C) Çalışma, müdahalenin geciktirilmesini önerir.
+D) Çalışma, müdahalenin zararlarını kanıtlar.
+E) Çalışma, müdahalenin önemini reddeder.
+
+78. The new training is meant to <strong>enhance</strong> productivity.
+A) delay
+B) reduce
+C) replace
+D) improve
+E) monitor
+
+79. The lecturer ---- emphasis on critical thinking.
+A) lay
+B) take
+C) place
+D) make
+E) give
+
+80. The conclusion is based on assumptions rather than direct evidence.
+A) Sonuç, doğrudan kanıttan ziyade varsayımlara dayanır.
+B) Sonuç, varsayımları reddederek doğrudan kanıta dayanır.
+C) Sonuç, yalnızca doğrudan kanıta dayanır.
+D) Sonuç, varsayımları kanıt olarak kullanmaz.
+E) Sonuç, kanıtları varsayımlardan çıkarır.
+
+81. The findings ---- further investigation.
+A) invite
+B) warrant
+C) include
+D) predict
+E) reflect
+
+82. In light of recent findings, the theory needs to be revised.
+A) Son bulgulara rağmen kuram değiştirilemez.
+B) Son bulgular nedeniyle kuramın değişmesine gerek yoktur.
+C) Son bulgular ışığında, kuramın gözden geçirilmesi gerekir.
+D) Son bulgular sayesinde kuram kesin olarak kanıtlanmıştır.
+E) Son bulguların ardından kuram yürürlükten kaldırılmıştır.
+
+83. Researchers should <strong>refrain</strong> from making unsupported claims.
+A) avoid
+B) prefer
+C) insist
+D) benefit
+E) result
+
+84. The plan is likely to ---- resistance from local communities.
+A) encounter
+B) enter
+C) include
+D) enclose
+E) endorse
+
+85. The decline can be traced back to policy changes in the 1990s.
+A) Düşüşün kökeni, doksanlı yıllardaki politika değişikliklerine dayanır.
+B) Düşüş, doksanlı yıllarda politika değişikliklerinin reddedilmesiyle açıklanır.
+C) Düşüş, politika değişikliklerinden bağımsız olarak ortaya çıkmıştır.
+D) Düşüş, politika değişikliklerini tamamen ortadan kaldırmıştır.
+E) Düşüş, doksanlı yıllarda sona ermiştir.
+
+86. The proposal was accepted only after it ---- rigorous scrutiny.
+A) underwent
+B) undertook
+C) underlined
+D) understood
+E) underpaid
+
+87. The results are unlikely to be replicated under real-world conditions.
+A) Sonuçlar gerçek hayat koşullarında kesinlikle tekrarlanacaktır.
+B) Sonuçların gerçek hayat koşullarında tekrarlanması zorunludur.
+C) Sonuçlar yalnızca gerçek hayat koşullarında ortaya çıkar.
+D) Sonuçların gerçek hayat koşullarında tekrarlanması pek olası değildir.
+E) Sonuçların gerçek hayat koşullarında tekrarlanması önem taşımaz.
+
+88. The initiative is expected to ---- a positive impact on literacy.
+A) have
+B) do
+C) make
+D) take
+E) give
+
+89. Several experts <strong>advocate</strong> stricter controls.
+A) oppose
+B) ignore
+C) predict
+D) delay
+E) support
+
+90. Far from solving the problem, the new rule created additional complications.
+A) Yeni kural, sorunu çözmek bir yana, ek karmaşalar yarattı.
+B) Yeni kural sorunu tamamen çözdü ve karmaşayı azalttı.
+C) Yeni kural, sorunu çözmese de hiçbir ek sorun yaratmadı.
+D) Yeni kural yalnızca eski karmaşaları ortadan kaldırdı.
+E) Yeni kuralın amacı, ek karmaşaları önlemekti.
+
+91. The new framework aims to ---- the reliability of the assessment.
+A) enhance
+B) enlarge
+C) encircle
+D) enforce
+E) engage
+
+92. The program suggests that early exposure may influence later preferences.
+A) Çalışma, erken maruz kalmanın ilerideki tercihleri etkileyebileceğini öne sürer.
+B) Çalışma, erken maruz kalmanın tercihleri asla etkilemeyeceğini kanıtlar.
+C) Çalışma, tercihlerin yalnızca genetikle belirlendiğini savunur.
+D) Çalışma, erken maruz kalmanın tercihleri tamamen ortadan kaldırdığını söyler.
+E) Çalışma, erken maruz kalmanın yalnızca kısa vadede etkili olduğunu belirtir.
+
+93. The new method ---- a significant improvement over the old one.
+A) presents
+B) reports
+C) repeats
+D) represents
+E) results
+
+94. The policy was criticized on the grounds that it lacked transparency.
+A) Politika, şeffaf olduğu gerekçesiyle övüldü.
+B) Politika, şeffaflık sağladığı için kabul edildi.
+C) Politika, eleştirilerden bağımsız olarak yürürlüğe girdi.
+D) Politika, şeffaflıktan yoksun olduğu gerekçesiyle eleştirildi.
+E) Politika, şeffaflık nedeniyle iptal edildi.
+
+95. The company must ---- with safety regulations.
+A) comply
+B) complete
+C) compile
+D) compel
+E) compare
+
+96. Wearing a helmet is <strong>mandatory</strong> in the laboratory.
+A) compulsory
+B) optional
+C) risky
+D) unusual
+E) temporary
+
+97. The team will ---- the findings at the conference.
+A) present
+B) prevent
+C) preserve
+D) pretend
+E) predict
+
+98. The change had only a <strong>marginal</strong> effect on outcomes.
+A) dramatic
+B) central
+C) minor
+D) essential
+E) obvious
+
+99. The software became <strong>obsolete</strong> within two years.
+A) outdated
+B) reliable
+C) flexible
+D) efficient
+E) legal
+
+100. The device is bound to fail if it is not properly maintained.
+A) Cihaz uygun şekilde bakımı yapılmazsa kesinlikle arızalanacaktır.
+B) Cihaz uygun şekilde bakımı yapılmasa bile arızalanmayabilir.
+C) Cihazın bakımı yapılmadığı için başarısı artacaktır.
+D) Cihaz yalnızca düzgün bakım yapıldığında arızalanur.
+E) Cihazın bakımı arızayla hiçbir şekilde ilişkili değildir.
+
+101. The article ---- the question of whether AI can replace teachers.
+A) raises
+B) rises
+C) arouses
+D) grows
+E) lifts
+
+102. Notwithstanding its benefits, the program has several drawbacks.
+A) Programın faydaları dezavantajlarından daha azdır.
+B) Programın yalnızca dezavantajları vardır, faydası yoktur.
+C) Programın dezavantajları tamamen giderilmiştir.
+D) Faydalarına rağmen, programın çeşitli dezavantajları vardır.
+E) Faydaları sayesinde programın dezavantajı yoktur.
+
+103. The conclusion is <strong>tentative</strong> and may change.
+A) provisional
+B) final
+C) certain
+D) obvious
+E) stable
+
+104. The instructions were <strong>explicit</strong>, leaving no ambiguity.
+A) vague
+B) clear
+C) random
+D) careless
+E) brief
+
+105. It is assumed that the sample represents the general population.
+A) Örneklemin genel nüfusu temsil ettiği varsayılmaktadır.
+B) Örneklemin genel nüfusu temsil etmediği kanıtlanmıştır.
+C) Örneklemin genel nüfusu temsil ettiği kesin olarak bilinmektedir.
+D) Örneklemin yalnızca belirli bir grubu temsil ettiği reddedilmektedir.
+E) Örneklemin temsiliyeti araştırma için önemsizdir.
+
+106. The researchers ---- data from multiple sources.
+A) collected
+B) selected
+C) elected
+D) reflected
+E) neglected
+
+107. The report contains <strong>substantial</strong> evidence.
+A) tiny
+B) vague
+C) missing
+D) biased
+E) considerable
+
+108. The new policy could <strong>exacerbate</strong> inequality.
+A) worsen
+B) reduce
+C) clarify
+D) balance
+E) prevent
+
+109. To the extent that funding is available, the project will continue.
+A) Fon bulunduğu ölçüde proje devam edecektir.
+B) Fon bulunsa bile proje devam etmeyecektir.
+C) Fon bulunmadığı için proje kesinlikle devam edecektir.
+D) Fon bulunması, projenin iptal edilmesini gerektirir.
+E) Fonun proje üzerinde hiçbir etkisi yoktur.
+
+110. New measures were introduced to <strong>mitigate</strong> the risks.
+A) increase
+B) reduce
+C) deny
+D) create
+E) expose
+
+111. The rise in temperatures <strong>coincided</strong> with a decline in rainfall.
+A) occurred simultaneously
+B) ended abruptly
+C) was predicted
+D) was prevented
+E) was measured
+
+112. The approach is effective, but only under specific circumstances.
+A) Yaklaşım her koşulda etkilidir ve şartlara bağlı değildir.
+B) Yaklaşım yalnızca koşullar olmadığında etkilidir.
+C) Yaklaşım etkilidir, ancak yalnızca belirli koşullar altında.
+D) Yaklaşımın etkisi koşullardan bağımsız olarak azalır.
+E) Yaklaşım her koşulda etkili değildir, bu yüzden işe yaramaz.
+
+113. The influence of social media is <strong>pervasive</strong>.
+A) widespread
+B) minor
+C) uncertain
+D) temporary
+E) hidden
+
+114. The evidence was dismissed as it relied on self-reported data.
+A) Kanıt, öz-bildirime dayandığı için geçersiz sayıldı.
+B) Kanıt, öz-bildirime dayandığı için güçlü kabul edildi.
+C) Kanıt, öz-bildirimi ortadan kaldırdığı için reddedilmedi.
+D) Kanıtın kaynağı bilinmediği için kesin olarak kabul edildi.
+E) Kanıt, öz-bildirime dayanmadığı için eleştirildi.
+
+115. The findings are consistent with the notion that practice improves performance.
+A) Bulgular, alıştırmanın performansı artırdığı düşüncesiyle uyumludur.
+B) Bulgular, alıştırmanın performansı düşürdüğü düşüncesiyle uyumludur.
+C) Bulgular, alıştırmanın performansla ilgisiz olduğunu kanıtlar.
+D) Bulgular, alıştırmanın etkisini reddeder.
+E) Bulgular, performansın alıştırmayla değişmediğini savunur.
+
+116. The findings ---- further investigation.
+A) invite
+B) include
+C) warrant
+D) predict
+E) reflect
+
+117. The intervention had little effect, if any, on the final outcome.
+A) Müdahalenin nihai sonuç üzerinde büyük bir etkisi oldu.
+B) Müdahalenin nihai sonuç üzerinde, varsa bile, çok az etkisi oldu.
+C) Müdahalenin nihai sonuç üzerinde kesinlikle hiçbir etkisi olmadı.
+D) Müdahale nihai sonucu tamamen değiştirdi.
+E) Müdahale sonuçları iyileştirdiği için etkisiz sayılmadı.
+
+118. The policy aims to <strong>alleviate</strong> poverty in rural areas.
+A) worsen
+B) intensify
+C) ignore
+D) conceal
+E) ease
+
+119. The program was implemented nationwide.
+A) Program ülke genelinde uygulandı.
+B) Program yalnızca küçük bir bölgede iptal edildi.
+C) Program ülke genelinde ertelendi.
+D) Program ülke genelinde reddedildi.
+E) Program ülke genelinde tartışıldı ama uygulanmadı.
+
+120. The results were <strong>inconclusive</strong>, so further research is needed.
+A) decisive
+B) uncertain
+C) irrelevant
+D) sufficient
+E) accurate
+
+121. The conclusion is based on assumptions rather than direct evidence.
+A) Sonuç, varsayımları reddederek doğrudan kanıta dayanır.
+B) Sonuç, yalnızca doğrudan kanıta dayanır.
+C) Sonuç, doğrudan kanıttan ziyade varsayımlara dayanır.
+D) Sonuç, varsayımları kanıt olarak kullanmaz.
+E) Sonuç, kanıtları varsayımlardan çıkarır.
+
+122. The researchers ---- a distinction between correlation and causation.
+A) draw
+B) make
+C) take
+D) do
+E) set
+
+123. The evidence remains <strong>ambiguous</strong>, leaving room for multiple interpretations.
+A) obvious
+B) decisive
+C) detailed
+D) consistent
+E) unclear
+
+124. It remains to be seen whether the new policy will achieve its goals.
+A) Yeni politikanın hedeflerine ulaştığı kesinleşmiştir.
+B) Yeni politikanın hedeflerine ulaşıp ulaşmayacağı henüz belli değildir.
+C) Yeni politikanın hedeflerine ulaşması imkânsızdır.
+D) Yeni politikanın hedefleri zaten değiştirilmiştir.
+E) Yeni politika hedeflerine ulaştığı için iptal edilmiştir.
+
+125. The committee decided to ---- the manuscript for major revisions.
+A) submit
+B) transmit
+C) commit
+D) request
+E) suggest
+
+126. The results are <strong>notable</strong> for their consistency across different groups.
+A) remarkable
+B) minor
+C) accidental
+D) rare
+E) unclear
+
+127. By no means should these findings be taken as final.
+A) Bu bulgular kesinlikle nihai kabul edilmelidir.
+B) Bu bulgular yalnızca nihai kabul edilirse anlamlıdır.
+C) Bu bulguların nihai olduğu kanıtlanmıştır.
+D) Bu bulgular hiçbir şekilde nihai kabul edilmemelidir.
+E) Bu bulgular nihai kabul edilmediği için geçersizdir.
+
+128. The new measures were introduced to ---- the spread of misinformation.
+A) make
+B) curb
+C) cast
+D) compile
+E) trigger
+
+129. The policy has sparked <strong>controversial</strong> debates among experts.
+A) predictable
+B) harmless
+C) outdated
+D) minor
+E) disputable
+
+130. Provided that sufficient funding is secured, the project will continue.
+A) Yeterli fon bulunmadığı için proje devam edecektir.
+B) Proje, fon bulunsa bile devam etmeyecektir.
+C) Yeterli fon sağlanması koşuluyla proje devam edecektir.
+D) Proje, fon sağlandığı için kesinlikle iptal edilmiştir.
+E) Projenin devamı fonla hiçbir şekilde ilgili değildir.
+
+131. The data do not fully ---- for the sharp decline in performance.
+A) count
+B) account
+C) amount
+D) discount
+E) recount
+
+132. The outcomes are <strong>inevitable</strong> given the current trajectory.
+A) avoidable
+B) uncertain
+C) reversible
+D) optional
+E) unavoidable
+
+133. The study was limited by the absence of a control group.
+A) Çalışma, kontrol grubunun olmaması nedeniyle sınırlıydı.
+B) Çalışma, kontrol grubu olduğu için sınırlı değildi.
+C) Çalışma, kontrol grubunu reddettiği için güçlendi.
+D) Çalışma, kontrol grubunu oluşturduğu için sınırlı kaldı.
+E) Çalışma, kontrol grubunun gereksiz olduğunu kanıtladı.
+
+134. The article aims to ---- light on the mechanisms behind learning.
+A) put
+B) set
+C) shed
+D) take
+E) keep
+
+135. The conclusion is <strong>preliminary</strong> and requires further validation.
+A) final
+B) permanent
+C) exhaustive
+D) tentative
+E) obvious
+
+136. Insofar as the data are reliable, the results can be trusted.
+A) Veriler güvenilir olmadığı sürece sonuçlara güvenilir.
+B) Veriler güvenilir olduğu için sonuçlar asla güvenilmez.
+C) Veriler güvenilir olmasa da sonuçlar güvenilirdir.
+D) Verilerin güvenilirliği sonuçlarla ilgisizdir.
+E) Veriler güvenilir olduğu ölçüde sonuçlara güvenilebilir.
+
+137. The policy is intended to ---- public confidence in institutions.
+A) gather
+B) gain
+C) restore
+D) generate
+E) grant
+
+138. The researcher adopted a <strong>meticulous</strong> approach to data collection.
+A) careless
+B) rapid
+C) flexible
+D) thorough
+E) random
+
+139. The study ---- the role of socioeconomic factors in academic success.
+A) highlights
+B) heightens
+C) hides
+D) hits
+E) holds
+
+140. Whereas the first model is simple, the second is more accurate.
+A) İlk model karmaşıkken ikinci model daha basittir.
+B) İlk model basitken ikinci model daha doğrudur.
+C) İkinci model basit olduğu için daha az doğrudur.
+D) İlk model basit olduğu için ikinci modele gerek yoktur.
+E) Modellerin doğrulukları aynıdır.
+
+141. The two events occurred <strong>concurrently</strong>, making causality hard to establish.
+A) separately
+B) randomly
+C) sequentially
+D) simultaneously
+E) rarely
+
+142. The government decided to ---- resources to the most urgent needs.
+A) allocate
+B) locate
+C) duplicate
+D) imitate
+E) circulate
+
+143. The findings call into question the assumption that intelligence is fixed.
+A) Bulgular, zekânın sabit olduğu varsayımını destekler.
+B) Bulgular, zekânın sabit olmadığını kesin olarak kanıtlar.
+C) Bulgular, zekânın sabit olduğu varsayımını sorgulatır.
+D) Bulgular, zekânın sabit olduğunu reddetmez.
+E) Bulgular, zekâ kavramını gereksiz kılar.
+
+144. The intervention had a <strong>negligible</strong> effect on the overall outcome.
+A) dramatic
+B) central
+C) lasting
+D) measurable
+E) trivial
+
+145. The new framework must ---- the criteria set by the accrediting body.
+A) do
+B) meet
+C) hit
+D) fill
+E) suit
+
+146. The evidence was dismissed because it relied on self-reported data.
+A) Kanıt, öz-bildirime dayandığı için geçersiz sayıldı.
+B) Kanıt, öz-bildirime dayanmadığı için eleştirildi.
+C) Kanıt, öz-bildirimi ortadan kaldırdığı için reddedilmedi.
+D) Kanıt, kaynağı bilinmediği için kesin kabul edildi.
+E) Kanıt, öz-bildirime dayandığı için güçlü kabul edildi.
+
+147. The effect is <strong>subtle</strong> and may not be noticed immediately.
+A) obvious
+B) extreme
+C) sudden
+D) temporary
+E) slight
+
+148. The method is effective only under specific conditions.
+A) Yöntem her koşulda etkilidir ve şartlara bağlı değildir.
+B) Yöntem yalnızca koşullar olmadığında etkilidir.
+C) Yöntem koşullardan bağımsız olarak her zaman etkisizdir.
+D) Yöntem yalnızca belirli koşullar altında etkilidir.
+E) Yöntem koşulları ortadan kaldırdığı için etkilidir.
+
+149. The researchers were unable to ---- a definitive conclusion from the data.
+A) do
+B) draw
+C) take
+D) make
+E) bring
+
+150. The regulation imposes <strong>stringent</strong> standards on manufacturers.
+A) optional
+B) flexible
+C) strict
+D) vague
+E) outdated
+
+---`;
+const rawKarmaA = `1-D 2-C 3-B 4-E 5-A 6-B 7-E 8-B 9-A 10-D 11-E 12-E 13-E 14-D 15-C 16-D 17-D 18-A 19-C 20-A 21-D 22-B 23-B 24-A 25-B 26-B 27-C 28-E 29-A 30-E 31-C 32-D 33-C 34-B 35-D 36-E 37-D 38-E 39-E 40-B 41-D 42-B 43-D 44-E 45-C 46-A 47-D 48-E 49-D 50-D 51-B 52-E 53-A 54-A 55-A 56-E 57-A 58-E 59-E 60-A 61-E 62-B 63-E 64-D 65-A 66-C 67-B 68-A 69-A 70-E 71-A 72-E 73-E 74-D 75-A 76-A 77-A 78-D 79-C 80-A 81-B 82-C 83-A 84-A 85-A 86-A 87-D 88-A 89-E 90-A 91-A 92-A 93-D 94-D 95-A 96-A 97-A 98-C 99-A 100-A 101-A 102-D 103-A 104-B 105-A 106-A 107-E 108-A 109-A 110-B 111-A 112-C 113-A 114-A 115-A 116-C 117-B 118-E 119-A 120-B 121-C 122-A 123-E 124-B 125-D 126-A 127-D 128-B 129-E 130-C 131-B 132-E 133-A 134-C 135-D 136-E 137-C 138-D 139-A 140-B 141-D 142-A 143-C 144-E 145-B 146-A 147-E 148-D 149-B 150-C`;
+
     let currentSectionKey = null;
     let wrongBank = [];
     let progressData = {}; 
@@ -8457,7 +9995,8 @@ const rawExamVocabA = `1-C 2-D 3-A 4-A 5-E 6-B 7-E 8-E 9-B 10-A 11-C 12-D 13-C 1
         { key: "secExamPrep", title: "Çıkmış Prepositions (Son 10 Yıl)", start: 3000, end: 3200 },
         { key: "secExamConj", title: "Çıkmış Bağlaçlar (Son 10 Yıl)", start: 3201, end: 3500 },
         { key: "secExamTense", title: "Çıkmış Tense/Modals (Son 10 Yıl)", start: 3501, end: 3800 },
-        { key: "secExamVocab", title: "Çıkmış Kelime (Son 10 Yıl)", start: 3801, end: 4200 }
+        { key: "secExamVocab", title: "Çıkmış Kelime (Son 10 Yıl)", start: 3801, end: 4200 },
+        { key: "secKarma", title: "Karma Deneme", start: 4201, end: 4400 }
     ];
 
     window.onload = function() {
@@ -8611,6 +10150,7 @@ function loadData() {
         if(typeof rawExamConjQ !== 'undefined') allQuestions = allQuestions.concat(parseRawData(rawExamConjQ, rawExamConjA, 3200, true));
         if(typeof rawExamTenseQ !== 'undefined') allQuestions = allQuestions.concat(parseRawData(rawExamTenseQ, rawExamTenseA, 3500, true));
         if(typeof rawExamVocabQ !== 'undefined') allQuestions = allQuestions.concat(parseRawData(rawExamVocabQ, rawExamVocabA, 3800, true));
+        if(typeof rawKarmaQ !== 'undefined') allQuestions = allQuestions.concat(parseRawData(rawKarmaQ, rawKarmaA, 4200, false));
 
         // 3. Kelime Havuzu
         const vocabQuestions = generateVocabQuestions();
@@ -8784,6 +10324,7 @@ function renderQuestions(qList) {
             else if (q.id >= 3201 && q.id <= 3500) { badgeText = "Çıkmış Bağlaçlar"; borderStyle = "border-left: 5px solid var(--exam-color);"; badgeColorStyle = "background-color: var(--exam-color)!important;"; }
             else if (q.id >= 3501 && q.id <= 3800) { badgeText = "Çıkmış Tense/Modals"; borderStyle = "border-left: 5px solid var(--exam-color);"; badgeColorStyle = "background-color: var(--exam-color)!important;"; }
             else if (q.id >= 3801 && q.id <= 4200) { badgeText = "Çıkmış Kelime"; borderStyle = "border-left: 5px solid var(--exam-color);"; badgeColorStyle = "background-color: var(--exam-color)!important;"; }
+            else if (q.id >= 4201 && q.id <= 4400) { badgeText = "Karma"; borderStyle = "border-left: 5px solid #6c757d;"; badgeColorStyle = "background-color: #6c757d!important;"; }
             else if (q.id >= 1 && q.id <= 70) { badgeText = "Prepositions"; borderStyle = "border-left: 5px solid #0d6efd;"; badgeColorStyle = "background-color: #0d6efd!important;"; }
             else if (q.id >= 71 && q.id <= 130) { badgeText = "Conjunctions"; borderStyle = "border-left: 5px solid #0d6efd;"; badgeColorStyle = "background-color: #0d6efd!important;"; }
             else if (q.id >= 131 && q.id <= 190) { badgeText = "Relative Clauses"; borderStyle = "border-left: 5px solid #0d6efd;"; badgeColorStyle = "background-color: #0d6efd!important;"; }
@@ -8908,7 +10449,8 @@ function renderQuestions(qList) {
             rel: 20,
             tense: 20,
             vocab: 50,
-            examVocab: 20
+            examVocab: 20,
+            karma: 20
         },
         current: {
             prep: 0,
@@ -8916,12 +10458,17 @@ function renderQuestions(qList) {
             rel: 0,
             tense: 0,
             vocab: 0,
-            examVocab: 0
+            examVocab: 0,
+            karma: 0
         },
         solvedIds: [] // Aynı gün aynı soruyu tekrar saymamak için
     };
 
     let dailyData = JSON.parse(localStorage.getItem('yds_daily_goals')) || JSON.parse(JSON.stringify(defaultGoals));
+
+    // Eski kullanıcılar için karma anahtarı yoksa ekle
+    if (dailyData.targets.karma === undefined) dailyData.targets.karma = 20;
+    if (dailyData.current.karma === undefined) dailyData.current.karma = 0;
 
     // Sayfa Yüklendiğinde Tarih Kontrolü
     function checkDateAndReset() {
@@ -8929,7 +10476,7 @@ function renderQuestions(qList) {
         if (dailyData.date !== today) {
             // Yeni gün! Sayaçları sıfırla ama hedefleri koru
             dailyData.date = today;
-            dailyData.current = { prep: 0, conj: 0, rel: 0, tense: 0, vocab: 0, examVocab: 0 };
+            dailyData.current = { prep: 0, conj: 0, rel: 0, tense: 0, vocab: 0, examVocab: 0, karma: 0 };
             dailyData.solvedIds = [];
             localStorage.setItem('yds_daily_goals', JSON.stringify(dailyData));
         }
@@ -8948,7 +10495,8 @@ function renderQuestions(qList) {
             { key: 'rel', title: 'Relative Clauses', color: 'warning' },
             { key: 'tense', title: 'Tense & Modals', color: 'danger' },
             { key: 'vocab', title: 'YDS Kelimeler', color: 'success' },
-            { key: 'examVocab', title: 'Çıkmış Kelime', color: 'primary' }
+            { key: 'examVocab', title: 'Çıkmış Kelime', color: 'primary' },
+            { key: 'karma', title: 'Karma Deneme', color: 'secondary' }
         ];
 
         categories.forEach(cat => {
@@ -8982,7 +10530,7 @@ function renderQuestions(qList) {
 
     // Kullanıcının Girdiği Hedefleri Kaydet
     function saveUserGoals() {
-        const keys = ['prep', 'conj', 'rel', 'tense', 'vocab', 'examVocab'];
+        const keys = ['prep', 'conj', 'rel', 'tense', 'vocab', 'examVocab', 'karma'];
         keys.forEach(key => {
             const val = parseInt(document.getElementById(`goal-input-${key}`).value);
             if (val > 0) dailyData.targets[key] = val;
@@ -8999,7 +10547,7 @@ function renderQuestions(qList) {
     // Manuel Sıfırlama
     function resetDailyProgressManual() {
         if(!confirm("Bugünkü ilerlemeniz sıfırlanacak. Onaylıyor musunuz?")) return;
-        dailyData.current = { prep: 0, conj: 0, rel: 0, tense: 0, vocab: 0, examVocab: 0 };
+        dailyData.current = { prep: 0, conj: 0, rel: 0, tense: 0, vocab: 0, examVocab: 0, karma: 0 };
         dailyData.solvedIds = [];
         localStorage.setItem('yds_daily_goals', JSON.stringify(dailyData));
         openDailyGoals(); // Ekranı yenile
@@ -9031,6 +10579,8 @@ function renderQuestions(qList) {
             category = 'vocab'; catTitle = "YDS Kelimeler";
         } else if ( qId >= 3801 && qId <= 4200 ) {
             category = 'examVocab'; catTitle = "Çıkmış Kelimeler";
+        } else if ( qId >= 4201 && qId <= 4400 ) {
+            category = 'karma'; catTitle = "Karma Deneme";
         }
 
         // Eğer geçerli bir kategoriyse artır
@@ -9047,7 +10597,7 @@ function renderQuestions(qList) {
         }
     }
 
-// --- 1. GÜNCELLENMİŞ HEDEF KUTLAMASI ---
+// --- 1. GÜNCELLENMİŞ HEDEF KUTLAMASI (KO EFEKTİ + SES) ---
 function showGoalCelebration(categoryTitle) {
     // Toast Bildirimi
     const toastEl = document.getElementById('goalToast');
@@ -9057,6 +10607,47 @@ function showGoalCelebration(categoryTitle) {
         const toast = new bootstrap.Toast(toastEl, { delay: 4000 });
         toast.show();
     }
+    
+    // KO Overlay efekti - güm diye vursun
+    showGoalKoOverlay();
+    
+    // KO ses efekti
+    try {
+        var koSound = new Audio('ko.mp3');
+        koSound.volume = 0.8;
+        koSound.play().catch(function(e) { console.log('KO ses çalamadı:', e); });
+    } catch(e) { console.log('Ses hatası:', e); }
+    
+    // Konfeti efekti de ekle
+    if(typeof confetti === 'function') {
+        setTimeout(function() {
+            confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
+        }, 300);
+    }
+}
+
+// Hedef KO Overlay (tam ekran ortasında güm diye vurma efekti)
+function showGoalKoOverlay() {
+    var overlay = document.getElementById('goal-ko-overlay');
+    if(!overlay) {
+        // İlk seferde oluştur
+        overlay = document.createElement('div');
+        overlay.id = 'goal-ko-overlay';
+        overlay.innerHTML = '<img src="ko55.png" alt="K.O.">';
+        document.body.appendChild(overlay);
+    }
+    
+    // Animasyonu sıfırla ve başlat
+    overlay.classList.remove('d-none', 'goal-ko-anim');
+    overlay.style.display = 'flex';
+    void overlay.offsetWidth; // Force reflow
+    overlay.classList.add('goal-ko-anim');
+    
+    // 4 saniye sonra kaybol
+    setTimeout(function() {
+        overlay.style.display = 'none';
+        overlay.classList.remove('goal-ko-anim');
+    }, 4000);
 }
 
 /* ================= CEVAP KONTROLÜ (TEKRAR TIKLAMA ENGELLİ) ================= */
@@ -9768,10 +11359,12 @@ function handleVsData(data) {
         case 'OPP_ANSWER':
             oppAnswer = data.ans;
             oppAnswerTime = data.time;
+            clearTimeout(vsAnswerSafetyTimer);
             checkRoundEnd();
             break;
         case 'OPP_READY':
             oppReady = true;
+            clearTimeout(vsReadySafetyTimer);
             checkBothReady();
             break;
         case 'NEXT_QUESTION':
@@ -9808,6 +11401,10 @@ function startGameUI() {
     document.getElementById('vs-lobby').classList.add('d-none');
     document.getElementById('vs-gameplay').classList.remove('d-none');
     
+    // "Lütfen soldan bir bölüm seçin" metnini gizle
+    document.getElementById('questions-area').innerHTML = '';
+    document.getElementById('questions-area').style.display = 'none';
+    
     // P1 = host, P2 = guest
     var p1Name = amIHost ? vsMyName : vsOppName;
     var p2Name = amIHost ? vsOppName : vsMyName;
@@ -9817,22 +11414,69 @@ function startGameUI() {
     currentVsIndex = 0;
     p1HP = 100;
     p2HP = 100;
+    prevP1HP = 100;
+    prevP2HP = 100;
     vsMatchEnded = false;
     updateHPBars();
     loadVsQuestion();
 }
 
-// HP BAR UPDATE
+// HP BAR UPDATE (with ghost damage animation)
+var prevP1HP = 100;
+var prevP2HP = 100;
+
 function updateHPBars() {
     var bar1 = document.getElementById('vs-p1-hp-bar');
     var bar2 = document.getElementById('vs-p2-hp-bar');
+    var ghost1 = document.getElementById('vs-p1-hp-ghost');
+    var ghost2 = document.getElementById('vs-p2-hp-ghost');
     var text1 = document.getElementById('vs-p1-hp-text');
     var text2 = document.getElementById('vs-p2-hp-text');
+    var wrap1 = document.getElementById('vs-p1-hp-wrap');
+    var wrap2 = document.getElementById('vs-p2-hp-wrap');
+    
+    var newP1 = Math.max(0, p1HP);
+    var newP2 = Math.max(0, p2HP);
+    
+    // P1 hasar aldiysa
+    if(newP1 < prevP1HP) {
+        // Ghost'u eski seviyede birak, sonra yavasca cek
+        ghost1.style.transition = 'none';
+        ghost1.style.width = prevP1HP + '%';
+        // Actual bar hemen guncelle
+        bar1.style.width = newP1 + '%';
+        // Shake efekti
+        if(wrap1) { wrap1.classList.remove('hp-shake'); void wrap1.offsetWidth; wrap1.classList.add('hp-shake'); }
+        // Ghost'u gecikmeyle cek
+        setTimeout(function() {
+            ghost1.style.transition = 'width 1.8s ease-out';
+            ghost1.style.width = newP1 + '%';
+        }, 400);
+    } else {
+        bar1.style.width = newP1 + '%';
+        ghost1.style.width = newP1 + '%';
+    }
+    
+    // P2 hasar aldiysa
+    if(newP2 < prevP2HP) {
+        ghost2.style.transition = 'none';
+        ghost2.style.width = prevP2HP + '%';
+        bar2.style.width = newP2 + '%';
+        if(wrap2) { wrap2.classList.remove('hp-shake'); void wrap2.offsetWidth; wrap2.classList.add('hp-shake'); }
+        setTimeout(function() {
+            ghost2.style.transition = 'width 1.8s ease-out';
+            ghost2.style.width = newP2 + '%';
+        }, 400);
+    } else {
+        bar2.style.width = newP2 + '%';
+        ghost2.style.width = newP2 + '%';
+    }
+    
+    prevP1HP = newP1;
+    prevP2HP = newP2;
 
-    bar1.style.width = Math.max(0, p1HP) + '%';
-    bar2.style.width = Math.max(0, p2HP) + '%';
-    text1.innerText = Math.max(0, p1HP);
-    text2.innerText = Math.max(0, p2HP);
+    text1.innerText = newP1;
+    text2.innerText = newP2;
 
     [bar1, bar2].forEach(function(bar, i) {
         var hp = i === 0 ? p1HP : p2HP;
@@ -9859,8 +11503,19 @@ function loadVsQuestion() {
     oppReady = false;
     hintRequested = false;
     hintShown = false;
+    clearTimeout(vsAnswerSafetyTimer);
+    clearTimeout(vsReadySafetyTimer);
     
-    document.getElementById('vs-ready-screen').classList.add('d-none');
+    document.getElementById('vs-round-result-text').innerHTML = '';
+    document.getElementById('vs-ready-wait').classList.add('d-none');
+    
+    // Ready button ghost moduna al
+    var readyBtn = document.getElementById('vs-ready-btn');
+    readyBtn.classList.remove('vs-ready-active', 'done');
+    readyBtn.classList.add('vs-ready-ghost');
+    readyBtn.disabled = true;
+    readyBtn.innerHTML = '<i class="bi bi-check-circle-fill"></i> HAZIRIM';
+    
     document.getElementById('vs-hint-area').classList.add('d-none');
     document.getElementById('vs-hint-content').classList.add('d-none');
     document.getElementById('vs-hint-content').innerHTML = '';
@@ -9910,28 +11565,41 @@ function startVsTimer(seconds) {
 }
 
 // CEVAP VERME
+var vsAnswerSafetyTimer = null;
+
 function submitVsAnswer(ans, btnElement) {
     if (myAnswer) return;
     
     myAnswer = ans;
     myAnswerTime = Date.now() - vsTimerStart;
     
+    // Sadece butonları devre dışı bırak, renklendirme YAPMA (ikisi de cevapladıktan sonra gösterilecek)
     document.querySelectorAll('.vs-opt-btn').forEach(function(btn) {
         btn.style.pointerEvents = 'none';
-        btn.style.opacity = '0.7';
     });
+    // Seçilen butonu hafif işaretle (gri ton, rakibe gösterme)
     if(btnElement) {
-        btnElement.style.opacity = '1';
-        btnElement.style.background = '#3498db';
-        btnElement.style.color = '#fff';
-        btnElement.style.borderColor = '#2980b9';
+        btnElement.style.outline = '2px solid rgba(255,255,255,0.4)';
+        btnElement.style.outlineOffset = '-2px';
     }
 
     conn.send({ type: 'OPP_ANSWER', ans: ans, time: myAnswerTime });
     
     if (!oppAnswer) {
         document.getElementById('vs-status-msg').innerHTML = '<span style="color:#f39c12;"><i class="bi bi-hourglass-split"></i> Rakip bekleniyor...</span>';
+        
+        // SAFETY TIMEOUT: Rakibin cevabi 8 saniye icinde gelmezse otomatik coz
+        clearTimeout(vsAnswerSafetyTimer);
+        vsAnswerSafetyTimer = setTimeout(function() {
+            if(myAnswer && !oppAnswer) {
+                console.log("Safety timeout: opponent answer not received, auto-resolving...");
+                oppAnswer = 'X'; // Timeout olarak isaretle
+                oppAnswerTime = 99999; // En yavas sure
+                checkRoundEnd();
+            }
+        }, 8000);
     } else {
+        clearTimeout(vsAnswerSafetyTimer);
         checkRoundEnd();
     }
 }
@@ -9941,6 +11609,7 @@ function checkRoundEnd() {
     if (!myAnswer || !oppAnswer) return;
     
     clearInterval(vsTimerInterval);
+    clearTimeout(vsAnswerSafetyTimer);
     
     var q = vsQuestions[currentVsIndex];
     var correct = q.correctAnswer;
@@ -10035,69 +11704,103 @@ function flashDamage(player) {
     }
 }
 
-// Fetih-style button coloring: blue=P1(host), red=P2(guest), green glow=correct
+// Button coloring: Doğru cevap yeşil glow, yanlış yapanın şıkkı mavi/kırmızı glow
 function colorVsButtons(p1Ans, p2Ans, correct) {
     var optButtons = document.querySelectorAll('.vs-opt-btn');
+    var p1Wrong = (p1Ans !== correct); // Host yanlış mı yaptı?
+    var p2Wrong = (p2Ans !== correct); // Guest yanlış mı yaptı?
+    
     optButtons.forEach(function(btn) {
         var btnKey = btn.innerText.trim().charAt(0);
         btn.style.pointerEvents = 'none';
+        btn.style.outline = 'none';
         
-        // Remove previous inline styles
-        btn.style.removeProperty('background');
-        btn.style.removeProperty('color');
-        btn.style.removeProperty('opacity');
-        btn.style.removeProperty('border-color');
+        var isCorrect = (btnKey === correct);
+        var isP1Pick = (btnKey === p1Ans);
+        var isP2Pick = (btnKey === p2Ans);
         
-        var isP1 = (btnKey === p1Ans);
-        var isP2 = (btnKey === p2Ans);
-        
-        // Apply player colors
-        if(isP1 && isP2) {
-            btn.classList.add('ans-both');
-        } else if(isP1) {
-            btn.classList.add('ans-p1');
-        } else if(isP2) {
-            btn.classList.add('ans-p2');
+        // 1. Doğru cevap → yeşil parlak çerçeve
+        if(isCorrect) {
+            btn.style.border = '3px solid #2ecc71';
+            btn.style.boxShadow = '0 0 12px #2ecc71, 0 0 24px rgba(46,204,113,0.3)';
+            btn.style.opacity = '1';
         }
         
-        // Green glow on correct answer
-        if(btnKey === correct) {
-            btn.classList.add('ans-correct');
+        // 2. Yanlış yapanların şıkları → sadece yanlış yaptılarsa göster
+        // İkisi de aynı YANLIŞ şıkkı seçtiyse → yarı mavi yarı kırmızı glow
+        if(!isCorrect && isP1Pick && isP2Pick && p1Wrong && p2Wrong) {
+            btn.style.border = '3px solid #8e44ad';
+            btn.style.boxShadow = '-6px 0 12px rgba(41,128,185,0.7), 6px 0 12px rgba(192,57,43,0.7), 0 0 20px rgba(142,68,177,0.4)';
+            btn.style.opacity = '1';
+        }
+        // Host yanlış yaptı ve bu onun seçtiği şık
+        else if(!isCorrect && isP1Pick && p1Wrong) {
+            btn.style.border = '3px solid #3498db';
+            btn.style.boxShadow = '0 0 12px #3498db, 0 0 24px rgba(52,152,219,0.4)';
+            btn.style.opacity = '1';
+        }
+        // Guest yanlış yaptı ve bu onun seçtiği şık
+        else if(!isCorrect && isP2Pick && p2Wrong) {
+            btn.style.border = '3px solid #e74c3c';
+            btn.style.boxShadow = '0 0 12px #e74c3c, 0 0 24px rgba(231,76,60,0.4)';
+            btn.style.opacity = '1';
+        }
+        
+        // Seçilmemiş ve doğru olmayan → soluk
+        if(!isCorrect && !isP1Pick && !isP2Pick) {
+            btn.style.opacity = '0.4';
         }
     });
 }
 
 // READY SYSTEM
 function showReadyScreen(resultMsg) {
-    var readyScreen = document.getElementById('vs-ready-screen');
     var readyBtn = document.getElementById('vs-ready-btn');
     var readyWait = document.getElementById('vs-ready-wait');
     var resultText = document.getElementById('vs-round-result-text');
     
     resultText.innerHTML = resultMsg;
-    readyBtn.classList.remove('done');
+    
+    // Ghost'tan aktif moda geçir
+    readyBtn.classList.remove('vs-ready-ghost', 'done');
+    readyBtn.classList.add('vs-ready-active');
+    readyBtn.disabled = false;
     readyBtn.innerHTML = '<i class="bi bi-check-circle-fill"></i> HAZIRIM';
     readyWait.classList.add('d-none');
-    readyScreen.classList.remove('d-none');
     
     myReady = false;
 }
+
+var vsReadySafetyTimer = null;
 
 function pressReady() {
     if(myReady) return;
     myReady = true;
     
     var readyBtn = document.getElementById('vs-ready-btn');
+    readyBtn.classList.remove('vs-ready-active');
     readyBtn.classList.add('done');
+    readyBtn.disabled = true;
     readyBtn.innerHTML = '<i class="bi bi-check-circle-fill"></i> HAZIR &#10004;';
     document.getElementById('vs-ready-wait').classList.remove('d-none');
     
     conn.send({ type: 'OPP_READY' });
     checkBothReady();
+    
+    // Safety: 12 saniye icerisinde rakip hazir olmazsa otomatik ileri gec
+    clearTimeout(vsReadySafetyTimer);
+    vsReadySafetyTimer = setTimeout(function() {
+        if(myReady && !oppReady) {
+            console.log("Ready safety timeout: auto-advancing...");
+            oppReady = true;
+            checkBothReady();
+        }
+    }, 12000);
 }
 
 function checkBothReady() {
     if(myReady && oppReady) {
+        clearTimeout(vsReadySafetyTimer);
         if(amIHost) {
             currentVsIndex++;
             conn.send({ type: 'NEXT_QUESTION' });
@@ -10383,7 +12086,7 @@ async function getAiTip(questionId) {
     <i class="bi bi-arrow-up"></i>
 </button>
     <!-- K.O. EFEKTİ İÇİN ELEMENTLER -->
-<div id="ko-overlay" class="d-none"><img src="ko.png" alt="K.O."></div>
+<div id="ko-overlay" class="d-none"><img src="ko55.png" alt="K.O."></div>
     
 </body>
 </html>
