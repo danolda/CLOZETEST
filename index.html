@@ -1242,7 +1242,7 @@ const manifest = {
     "theme_color": "#0f172a",
     "start_url": ".",
     "icons":
-};
+}
 const manifestBlob = new Blob(, {type: 'application/json'});
 document.head.insertAdjacentHTML('beforeend', `<link rel="manifest" href="${URL.createObjectURL(manifestBlob)}">`);
 
