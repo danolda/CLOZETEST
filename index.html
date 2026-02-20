@@ -1421,6 +1421,14 @@ function addScorePoints(amount) {
     localStorage.setItem('yds_daily_score_v2', JSON.stringify(dailyScoreData));
     showScoreToast(`+${amount} PUAN!`);
     syncScoreToCloud(amount);
+
+    // ═══ YDS WARS ALTIN SİSTEMİ ═══
+    // Her doğru cevap = oyunda altın kazanma
+    var goldEarned = Math.max(1, Math.floor(amount / 2)); // Her 2 puan = 1 altın
+    var currentGold = parseInt(localStorage.getItem('yds_game_gold')) || 0;
+    currentGold += goldEarned;
+    localStorage.setItem('yds_game_gold', currentGold);
+    showScoreToast(`+${goldEarned} 🪙 Oyun Altını!`);
 }
 
 // 6. BULUT SENKRONİZASYON (avatar + ntfy channel dahil)
