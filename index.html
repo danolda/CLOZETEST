@@ -1188,33 +1188,18 @@
                     </div>
                 </div>
 
-                <!-- BİLDİRİM AYARI -->
+                <!-- BİLDİRİM AYARI (YENİ NATIVE PUSH SİSTEMİ) -->
                 <div class="card border-0 shadow-sm mb-3">
-                    <div class="card-body py-2">
-                        <div class="d-flex align-items-center justify-content-between mb-1">
-                            <span class="fw-bold small"><i class="bi bi-bell-fill text-danger"></i> Otomatik Bildirim</span>
-                            <div class="form-check form-switch mb-0">
-                                <input class="form-check-input" type="checkbox" id="notif-toggle" onchange="toggleNotifSetup()">
-                            </div>
-                        </div>
-                        <div id="notif-setup" style="display:none;">
-                            <div class="alert alert-info py-2 px-2 small mb-2" style="font-size:0.72rem;">
-                                <strong>Nasıl çalışır?</strong> Biri seni geçtiğinde telefonuna anında bildirim gelir (site kapalıyken bile!)<br>
-                                <strong>1.</strong> Telefonuna <a href="https://play.google.com/store/apps/details?id=io.heckel.ntfy" target="_blank" class="fw-bold">ntfy uygulamasını</a> yükle (iOS: App Store'da "ntfy")<br>
-                                <strong>2.</strong> Uygulamada <strong>"+"</strong> bas → aşağıdaki kanal adını yapıştır → Subscribe
-                            </div>
-                            <div class="input-group input-group-sm mb-1">
-                                <span class="input-group-text bg-danger text-white fw-bold" style="font-size:0.7rem;">📢 Kanal:</span>
-                                <input type="text" id="notif-channel" class="form-control fw-bold" readonly style="font-size:0.85rem;letter-spacing:0.5px;">
-                                <button class="btn btn-outline-secondary btn-sm" onclick="copyNotifChannel()" title="Kopyala"><i class="bi bi-clipboard"></i></button>
-                            </div>
-                            <small class="text-muted" style="font-size:0.6rem;">Bu kanalı ntfy uygulamasında subscribe et. Biri seni geçtiğinde otomatik bildirim alırsın.</small>
-                            
-                            <div class="mt-2">
-                                <button class="btn btn-sm btn-outline-primary w-100" onclick="testNotification()">
-                                    <i class="bi bi-send-fill"></i> Test Bildirimi Gönder
-                                </button>
-                            </div>
+                    <div class="card-body py-2 text-center">
+                        <h6 class="fw-bold small mb-2"><i class="bi bi-bell-fill text-danger"></i> Anlık Bildirimler</h6>
+                        <p class="text-muted" style="font-size:0.75rem;">Biri seni liderlik tablosunda geçtiğinde telefonuna doğrudan bildirim gelsin.</p>
+                        <button id="native-notif-btn" class="btn btn-sm btn-primary w-100 fw-bold" onclick="requestNativeNotifications()">
+                            <i class="bi bi-app-indicator"></i> Bildirimlere İzin Ver
+                        </button>
+                        <div id="install-app-container" class="mt-2 d-none">
+                            <button class="btn btn-sm btn-success w-100 fw-bold" onclick="installPWA()">
+                                <i class="bi bi-download"></i> Uygulama Olarak İndir
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -1247,7 +1232,48 @@
     
 <script>
     
-/* ================= ONLINE LEADERBOARD & PUAN SİSTEMİ (V2 - MOGGER) ================= */
+/* ================= PWA & NATIVE NOTIFICATION KURULUMU ================= */
+// 1. Dinamik Manifest (Uygulama olarak indirebilmek için)
+const manifest = {
+    "name": "YDS Mega Test",
+    "short_name": "YDS Mega",
+    "display": "standalone",
+    "background_color": "#0f172a",
+    "theme_color": "#0f172a",
+    "start_url": ".",
+    "icons":
+};
+const manifestBlob = new Blob(, {type: 'application/json'});
+document.head.insertAdjacentHTML('beforeend', `<link rel="manifest" href="${URL.createObjectURL(manifestBlob)}">`);
+
+// Uygulama yükleme (Install) butonu tetikleyicisi
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    const installBtn = document.getElementById('install-app-container');
+    if(installBtn) installBtn.classList.remove('d-none');
+});
+
+function installPWA() {
+    if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then((choiceResult) => {
+            if (choiceResult.outcome === 'accepted') {
+                document.getElementById('install-app-container').classList.add('d-none');
+            }
+            deferredPrompt = null;
+        });
+    }
+}
+
+/* ================= ONLINE LEADERBOARD & PUAN SİSTEMİ (V3 - BUG FIX & NATIVE PUSH) ================= */
+
+// Sabit Tarih Fonksiyonu (Farklı telefonlardaki saat/tarih bug'ını çözer)
+function getTodayStr() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
 
 // --- PANTRY API ---
 const PANTRY_ID = "41e0725c-beab-4cea-9de2-ed320c7b115a"; 
@@ -1263,22 +1289,23 @@ let notifEnabled = localStorage.getItem('yds_notif_enabled') === 'true';
 let previousLeader = localStorage.getItem('yds_prev_leader') || "";
 
 // 1. GÜNLÜK SKORU YERELDEN YÜKLE
-let dailyScoreData = JSON.parse(localStorage.getItem('yds_daily_score_v2')) || { date: new Date().toLocaleDateString(), score: 0 };
+let dailyScoreData = JSON.parse(localStorage.getItem('yds_daily_score_v3')) || { date: getTodayStr(), score: 0 };
 
 // Gün değiştiyse → gün birincisini kaydet, sonra sıfırla
 (async function checkDayReset() {
-    const today = new Date().toLocaleDateString();
+    const today = getTodayStr();
     if (dailyScoreData.date !== today) {
-        // Eski günün birincisini haftalık tabloya yaz
-        await recordDailyWinner();
+        // Eski günün birincisini haftalık tabloya yaz (SADECE BİR KERE!)
+        await recordDailyWinner(dailyScoreData.date);
+        
         dailyScoreData = { date: today, score: 0 };
-        localStorage.setItem('yds_daily_score_v2', JSON.stringify(dailyScoreData));
+        localStorage.setItem('yds_daily_score_v3', JSON.stringify(dailyScoreData));
         previousLeader = "";
         localStorage.setItem('yds_prev_leader', "");
     }
     myLocalScore = dailyScoreData.score;
 })();
-
+    
 // 2. AVATAR SİSTEMİ
 function handleAvatarUpload(event) {
     const file = event.target.files[0];
@@ -1323,76 +1350,78 @@ function updateMyAvatarDisplay() {
     if (el) el.innerHTML = getAvatarHTML(currentUser, myAvatar, 52);
 }
 
-// 3. NTFY BİLDİRİM SİSTEMİ
+// 3. NATIVE BİLDİRİM SİSTEMİ (NTFY SSE ÜZERİNDEN ARKA PLAN BAĞLANTISI)
+let sseListener = null;
+
 function generateNotifChannel(username) {
-    // Kullanıcı adından benzersiz kanal oluştur
-    const clean = username.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const clean = username.toLowerCase().replace(//g, '');
     const hash = Math.abs(username.split('').reduce((a, c) => ((a << 5) - a) + c.charCodeAt(0), 0)).toString(36).substring(0, 4);
-    return `yds-lider-${clean}-${hash}`;
+    return `ydsmega-${clean}-${hash}`;
 }
 
-function toggleNotifSetup() {
-    const toggle = document.getElementById('notif-toggle');
-    const setup = document.getElementById('notif-setup');
-    notifEnabled = toggle.checked;
-    localStorage.setItem('yds_notif_enabled', notifEnabled);
-    setup.style.display = notifEnabled ? '' : 'none';
-    
-    if (notifEnabled && !myNotifChannel) {
-        myNotifChannel = generateNotifChannel(currentUser);
-        localStorage.setItem('yds_notif_channel', myNotifChannel);
-    }
-    document.getElementById('notif-channel').value = myNotifChannel;
-    syncScoreToCloud(0); // Kanalı buluta kaydet
-}
-
-function copyNotifChannel() {
-    const ch = document.getElementById('notif-channel').value;
-    navigator.clipboard.writeText(ch).then(() => {
-        alert("Kanal kopyalandı! ntfy uygulamasında yapıştır.");
-    }).catch(() => {
-        // Fallback
-        const input = document.getElementById('notif-channel');
-        input.select();
-        document.execCommand('copy');
-        alert("Kanal kopyalandı!");
-    });
-}
-
-async function testNotification() {
-    if (!myNotifChannel) {
-        alert("Önce bildirim kanalı oluştur!");
+async function requestNativeNotifications() {
+    if (!("Notification" in window)) {
+        alert("Tarayıcınız bildirimleri desteklemiyor.");
         return;
     }
-    try {
-        await fetch(`https://ntfy.sh/${myNotifChannel}`, {
-            method: 'POST',
-            headers: { 'Title': 'YDS Liderlik Test', 'Tags': 'trophy' },
-            body: '🏆 Test bildirimi! Biri seni geçtiğinde böyle bir bildirim alacaksın. 💪'
+    const perm = await Notification.requestPermission();
+    if (perm === "granted") {
+        notifEnabled = true;
+        localStorage.setItem('yds_notif_enabled', 'true');
+        if (!myNotifChannel) {
+            myNotifChannel = generateNotifChannel(currentUser);
+            localStorage.setItem('yds_notif_channel', myNotifChannel);
+        }
+        setupNotificationListener();
+        
+        const btn = document.getElementById('native-notif-btn');
+        if(btn) {
+            btn.classList.replace('btn-primary', 'btn-success');
+            btn.innerHTML = '<i class="bi bi-check-circle"></i> Bildirimler Açık';
+            btn.disabled = true;
+        }
+        syncScoreToCloud(0);
+        
+        // Test Bildirimi
+        new Notification("YDS Mega Test", {
+            body: "Bildirimler başarıyla açıldı! Liderliği kaybedersen uyarılacaksın.",
+            icon: "https://cdn-icons-png.flaticon.com/512/201/201558.png"
         });
-        alert("Test bildirimi gönderildi! Telefonunu kontrol et.");
-    } catch(e) {
-        alert("Bildirim gönderilemedi. İnternet bağlantını kontrol et.\n" + e.message);
+    } else {
+        alert("Bildirim izni vermediniz. Uyarı alamayacaksınız.");
     }
 }
 
-// Rakibi geçtiğinde ona ntfy bildirimi gönder
+function setupNotificationListener() {
+    if (!notifEnabled || !myNotifChannel) return;
+    if (sseListener) sseListener.close();
+    
+    // Ntfy'nin Server-Sent Events (SSE) sistemini dinle
+    sseListener = new EventSource(`https://ntfy.sh/${myNotifChannel}/sse`);
+    sseListener.onmessage = (e) => {
+        const data = JSON.parse(e.data);
+        if (data.event === "message" && Notification.permission === "granted") {
+            new Notification("🚨 DİKKAT!", {
+                body: data.message,
+                icon: "https://cdn-icons-png.flaticon.com/512/201/201558.png",
+                vibrate:
+            });
+        }
+    };
+}
+
+// Sayfa yüklendiğinde listener'ı başlat
+setTimeout(setupNotificationListener, 2000);
+
+// Rakibi geçtiğinde bildirim atma isteği (Pantry değil ntfy üzerinden gönderiyoruz)
 async function sendOvertakeNotification(overtakenPlayerName, overtakenChannel, myName) {
     if (!overtakenChannel) return;
     try {
         await fetch(`https://ntfy.sh/${overtakenChannel}`, {
             method: 'POST',
-            headers: { 
-                'Title': '🚨 Liderliği Kaybettin!', 
-                'Tags': 'rotating_light,trophy',
-                'Priority': '4'
-            },
-            body: `${myName} seni geçti! 😤 Hadi geri al tahtını! 💪🔥`
+            body: `${myName} isimli komutan seni geçti! Liderliği geri al!`
         });
-        console.log("Bildirim gönderildi:", overtakenPlayerName);
-    } catch(e) {
-        console.log("Bildirim gönderilemedi:", e);
-    }
+    } catch(e) { console.log(e); }
 }
 
 // 4. KULLANICI ADINI KAYDETME
@@ -1414,24 +1443,24 @@ function saveUserName() {
     }
 }
 
-// 5. PUAN EKLEME
+// 5. PUAN EKLEME (Güncellendi)
 function addScorePoints(amount) {
-    if (dailyScoreData.date !== new Date().toLocaleDateString()) {
-        dailyScoreData = { date: new Date().toLocaleDateString(), score: 0 };
+    if (dailyScoreData.date !== getTodayStr()) {
+        dailyScoreData = { date: getTodayStr(), score: 0 };
     }
     dailyScoreData.score += amount;
     myLocalScore = dailyScoreData.score;
-    localStorage.setItem('yds_daily_score_v2', JSON.stringify(dailyScoreData));
+    localStorage.setItem('yds_daily_score_v3', JSON.stringify(dailyScoreData));
     showScoreToast(`+${amount} PUAN!`);
     syncScoreToCloud(amount);
 }
 
-// 6. BULUT SENKRONİZASYON (avatar + ntfy channel dahil)
+// 6. BULUT SENKRONİZASYON (Güncellendi)
 async function syncScoreToCloud(pointsToAdd) {
     const url = `https://getpantry.cloud/apiv1/pantry/${PANTRY_ID}/basket/${BUCKET_NAME}`;
-    const todayStr = new Date().toLocaleDateString("tr-TR");
+    const todayStr = getTodayStr();
     try {
-        let data = { date: todayStr, players: [] };
+        let data = { date: todayStr, players:[] };
         try {
             let resp = await fetch(url, { method: "GET", headers: { "Content-Type": "application/json" } });
             if (resp.ok) {
@@ -1440,11 +1469,10 @@ async function syncScoreToCloud(pointsToAdd) {
             }
         } catch(e) {}
 
+        // Geri kalan kodun aynı kalıyor...
         if (!data.players) data.players = [];
-
-        // Eski sıralamayı kaydet
-        let sortedBefore = [...data.players].sort((a,b) => b.score - a.score);
-        let oldLeader = sortedBefore.length > 0 ? sortedBefore[0].name : "";
+        let sortedBefore =.sort((a,b) => b.score - a.score);
+        let oldLeader = sortedBefore.length > 0 ? sortedBefore.name : "";
 
         let idx = data.players.findIndex(p => p.name === currentUser);
         const playerObj = { 
@@ -1454,26 +1482,19 @@ async function syncScoreToCloud(pointsToAdd) {
             ntfyChannel: (notifEnabled && myNotifChannel) ? myNotifChannel : ""
         };
 
-        if (idx > -1) {
-            data.players[idx] = playerObj;
-        } else {
-            data.players.push(playerObj);
-        }
+        if (idx > -1) data.players = playerObj;
+        else data.players.push(playerObj);
 
-        // Yeni sıralama
-        let sortedAfter = [...data.players].sort((a,b) => b.score - a.score);
-        let newLeader = sortedAfter[0]?.name || "";
+        let sortedAfter =.sort((a,b) => b.score - a.score);
+        let newLeader = sortedAfter?.name || "";
 
-        // BEN birini geçtiyse → o kişiye ntfy bildirimi gönder!
         if (pointsToAdd > 0 && newLeader === currentUser && oldLeader !== currentUser && oldLeader !== "") {
-            // Eski lideri bul, ntfy kanalı varsa bildirim at
             const overtakenPlayer = data.players.find(p => p.name === oldLeader);
             if (overtakenPlayer && overtakenPlayer.ntfyChannel) {
                 sendOvertakeNotification(oldLeader, overtakenPlayer.ntfyChannel, currentUser);
             }
         }
 
-        // BENİ biri geçtiyse → ekranda uyarı göster
         if (oldLeader === currentUser && newLeader !== currentUser && newLeader !== "") {
             checkOvertakeAlert(newLeader);
         }
@@ -1483,9 +1504,7 @@ async function syncScoreToCloud(pointsToAdd) {
 
         await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
 
-    } catch (error) {
-        console.error("Online skor hatası:", error);
-    }
+    } catch (error) { console.error("Online skor hatası:", error); }
 }
 
 // 7. GEÇİLME KONTROLÜ
@@ -1543,69 +1562,54 @@ setTimeout(checkLeadershipOnLoad, 3000);
 // Her 2 dakikada bir kontrol et
 setInterval(checkLeadershipOnLoad, 120000);
 
-// 8. HAFTALIK MOGGER SİSTEMİ
-function getWeekKey() {
-    const d = new Date();
-    const jan1 = new Date(d.getFullYear(), 0, 1);
-    const weekNum = Math.ceil(((d - jan1) / 86400000 + jan1.getDay() + 1) / 7);
-    return `${d.getFullYear()}-W${weekNum}`;
-}
-
-async function recordDailyWinner() {
-    // Eski günün verilerini çek ve birinciye +1 haftalık puan ver
+// 8. HAFTALIK MOGGER SİSTEMİ KESİN ÇÖZÜM (Bug giderildi)
+async function recordDailyWinner(targetDateStr) {
     const url = `https://getpantry.cloud/apiv1/pantry/${PANTRY_ID}/basket/${BUCKET_NAME}`;
     const weeklyUrl = `https://getpantry.cloud/apiv1/pantry/${PANTRY_ID}/basket/${WEEKLY_BUCKET}`;
     const weekKey = getWeekKey();
 
     try {
-        // Günlük veriyi oku
-        let resp = await fetch(url, { method: "GET", headers: { "Content-Type": "application/json" } });
-        if (!resp.ok) return;
-        let dailyData = await resp.json();
-        if (!dailyData.players || dailyData.players.length === 0) return;
-
-        // Birincisi
-        dailyData.players.sort((a,b) => b.score - a.score);
-        const winner = dailyData.players[0];
-        if (winner.score === 0) return; // 0 puanla birinci olmaz
-
-        // Haftalık veriyi oku/oluştur
-        let weeklyData = { week: weekKey, winners: [] };
+        // Haftalık veriyi oku
+        let weeklyData = { week: weekKey, winners:[], lastRecordedDate: "" };
         try {
-            let wr = await fetch(weeklyUrl, { method: "GET", headers: { "Content-Type": "application/json" } });
+            let wr = await fetch(weeklyUrl, { method: "GET" });
             if (wr.ok) {
                 let wj = await wr.json();
                 if (wj.week === weekKey) weeklyData = wj;
             }
         } catch(e) {}
 
-        if (!weeklyData.winners) weeklyData.winners = [];
+        // EĞER BU GÜNÜN PUANI ZATEN EKLENMİŞSE İŞLEM YAPMA ÇIK! (Bug'ı çözen satır)
+        if (weeklyData.lastRecordedDate === targetDateStr) return;
 
-        // Gün birincisine +1
+        // Günlük veriyi oku
+        let resp = await fetch(url, { method: "GET" });
+        if (!resp.ok) return;
+        let dailyData = await resp.json();
+        
+        // Eğer hedeflediğimiz eski günün verisi değilse çık
+        if (dailyData.date !== targetDateStr || !dailyData.players || dailyData.players.length === 0) return;
+
+        dailyData.players.sort((a,b) => b.score - a.score);
+        const winner = dailyData.players;
+        if (winner.score === 0) return; 
+
+        if (!weeklyData.winners) weeklyData.winners =[];
         let wIdx = weeklyData.winners.findIndex(w => w.name === winner.name);
         if (wIdx > -1) {
-            weeklyData.winners[wIdx].wins++;
-            weeklyData.winners[wIdx].avatar = winner.avatar || weeklyData.winners[wIdx].avatar || "";
+            weeklyData.winners.wins++;
+            weeklyData.winners.avatar = winner.avatar || weeklyData.winners.avatar || "";
         } else {
             weeklyData.winners.push({ name: winner.name, wins: 1, avatar: winner.avatar || "" });
         }
+
+        // Günü kaydedildi olarak işaretle
+        weeklyData.lastRecordedDate = targetDateStr;
 
         await fetch(weeklyUrl, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(weeklyData) });
     } catch(e) {
         console.error("Haftalık mogger kaydı hatası:", e);
     }
-}
-
-async function loadWeeklyMogger() {
-    const weeklyUrl = `https://getpantry.cloud/apiv1/pantry/${PANTRY_ID}/basket/${WEEKLY_BUCKET}`;
-    const weekKey = getWeekKey();
-    try {
-        let resp = await fetch(weeklyUrl, { method: "GET", headers: { "Content-Type": "application/json" } });
-        if (!resp.ok) return null;
-        let data = await resp.json();
-        if (data.week !== weekKey) return null;
-        return data;
-    } catch(e) { return null; }
 }
 
 // 9. LEADERBOARD AÇMA (MEGA UPDATE)
