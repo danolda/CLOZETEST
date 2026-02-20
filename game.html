@@ -3,2309 +3,2022 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>YDS Wars - Travian Tarzı Strateji</title>
+<title>YDS Wars - Travian Tarzı Strateji Oyunu</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=MedievalSharp&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=MedievalSharp&family=Cinzel:wght@400;600;700&family=IM+Fell+English:ital@0;1&display=swap');
-
+/* ═══════════════════════════════════════════════════════════════
+   YDS WARS - COMPLETE TRAVIAN-STYLE STRATEGY GAME
+   ═══════════════════════════════════════════════════════════════ */
 :root {
-  --gold: #c8960c;
-  --gold-light: #f0c040;
-  --brown-dark: #3d2b1f;
-  --brown: #6b4226;
-  --brown-light: #a0714f;
-  --parchment: #f4e4c1;
-  --parchment-dark: #ddc69a;
-  --green-dark: #2d5a1b;
-  --green: #4a7c2f;
-  --red: #8b1a1a;
-  --blue: #1a3a6b;
-  --shadow: rgba(0,0,0,0.5);
+  --wood:#4a7c29; --clay:#c45a1a; --iron:#5a5a5a; --crop:#d4a017;
+  --bg-dark:#1a1208; --bg-medium:#2d2011; --bg-light:#3d2e1a;
+  --gold:#ffd700; --silver:#c0c0c0; --text:#f0e6d2; --text-dim:#a89878;
+  --border:#6b5530; --accent:#c8a050; --danger:#c0392b; --success:#27ae60;
+  --panel-bg:linear-gradient(180deg,#3a2a18 0%,#2a1c10 100%);
+  --btn-green:linear-gradient(180deg,#5a9e2f 0%,#3d7a1a 100%);
+  --btn-gold:linear-gradient(180deg,#e8b830 0%,#c49020 100%);
+  --btn-red:linear-gradient(180deg,#c0392b 0%,#962d22 100%);
 }
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#0d0a05;color:var(--text);font-family:'Nunito',sans-serif;overflow-x:hidden;min-height:100vh;}
+::-webkit-scrollbar{width:8px;} ::-webkit-scrollbar-track{background:#1a1208;} ::-webkit-scrollbar-thumb{background:#6b5530;border-radius:4px;}
+.hidden{display:none!important;}
+button{cursor:pointer;font-family:inherit;}
+h1,h2,h3,h4{font-family:'Cinzel',serif;color:var(--accent);}
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
+/* ─── LOGIN SCREEN ─── */
+#loginScreen{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,#0a0705 0%,#1a1208 50%,#0d0a05 100%);}
+#loginScreen::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23c8a050' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") repeat;}
+.login-box{position:relative;z-index:1;background:var(--panel-bg);border:2px solid var(--border);border-radius:12px;padding:40px;width:420px;max-width:95vw;box-shadow:0 20px 60px rgba(0,0,0,0.8);}
+.login-box h1{text-align:center;font-size:2.2rem;margin-bottom:6px;color:var(--gold);text-shadow:0 2px 10px rgba(255,215,0,0.3);}
+.login-box .subtitle{text-align:center;color:var(--text-dim);margin-bottom:24px;font-size:0.9rem;}
+.login-box .emblem{text-align:center;font-size:3.5rem;margin-bottom:10px;}
+.form-group{margin-bottom:16px;}
+.form-group label{display:block;font-weight:700;margin-bottom:4px;color:var(--accent);font-size:0.85rem;text-transform:uppercase;letter-spacing:1px;}
+.form-group input{width:100%;padding:10px 14px;background:#1a1208;border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:1rem;outline:none;transition:border-color .2s;}
+.form-group input:focus{border-color:var(--gold);}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 20px;border:1px solid rgba(0,0,0,0.3);border-radius:6px;font-weight:700;font-size:0.95rem;transition:all .15s;text-shadow:0 1px 2px rgba(0,0,0,0.5);}
+.btn-green{background:var(--btn-green);color:#fff;border-bottom:2px solid #2d6010;}
+.btn-green:hover{filter:brightness(1.15);transform:translateY(-1px);}
+.btn-gold{background:var(--btn-gold);color:#1a1208;border-bottom:2px solid #9a7010;}
+.btn-gold:hover{filter:brightness(1.15);}
+.btn-red{background:var(--btn-red);color:#fff;border-bottom:2px solid #7a2018;}
+.btn-sm{padding:6px 12px;font-size:0.8rem;}
+.btn-block{width:100%;justify-content:center;}
+.login-tabs{display:flex;gap:0;margin-bottom:20px;border-bottom:2px solid var(--border);}
+.login-tabs button{flex:1;padding:10px;background:transparent;border:none;color:var(--text-dim);font-weight:700;font-size:0.95rem;transition:.2s;}
+.login-tabs button.active{color:var(--gold);border-bottom:2px solid var(--gold);margin-bottom:-2px;}
+.login-error{background:rgba(192,57,43,0.2);border:1px solid var(--danger);padding:8px 12px;border-radius:6px;color:#e74c3c;font-size:0.85rem;margin-bottom:12px;display:none;}
 
-body {
-  background: #2c1810;
-  font-family: 'IM Fell English', Georgia, serif;
-  color: #2c1810;
-  min-height: 100vh;
-}
+/* ─── TRIBE SELECTION ─── */
+#tribeScreen{position:fixed;inset:0;z-index:9998;display:flex;align-items:center;justify-content:center;flex-direction:column;
+  background:linear-gradient(135deg,#0a0705,#1a1208,#0d0a05);}
+.tribe-title{font-family:'Cinzel',serif;font-size:2.5rem;color:var(--gold);text-shadow:0 2px 20px rgba(255,215,0,0.3);margin-bottom:8px;}
+.tribe-subtitle{color:var(--text-dim);margin-bottom:30px;font-size:1rem;}
+.tribe-cards{display:flex;gap:20px;flex-wrap:wrap;justify-content:center;max-width:900px;}
+.tribe-card{width:260px;background:var(--panel-bg);border:2px solid var(--border);border-radius:12px;padding:24px;text-align:center;cursor:pointer;transition:all .25s;position:relative;overflow:hidden;}
+.tribe-card:hover{border-color:var(--gold);transform:translateY(-6px);box-shadow:0 12px 40px rgba(255,215,0,0.15);}
+.tribe-card .tribe-icon{font-size:4rem;margin-bottom:10px;display:block;}
+.tribe-card h3{font-size:1.4rem;margin-bottom:8px;}
+.tribe-card p{font-size:0.85rem;color:var(--text-dim);line-height:1.5;}
+.tribe-card .tribe-bonus{margin-top:12px;padding:8px;background:rgba(200,160,80,0.1);border:1px solid rgba(200,160,80,0.2);border-radius:6px;font-size:0.8rem;color:var(--accent);}
+.tribe-card.roman:hover{border-color:#e74c3c;} .tribe-card.roman h3{color:#e74c3c;}
+.tribe-card.teuton:hover{border-color:#27ae60;} .tribe-card.teuton h3{color:#27ae60;}
+.tribe-card.turk:hover{border-color:#3498db;} .tribe-card.turk h3{color:#3498db;}
 
-/* =================== LOGIN SCREEN =================== */
-#login-screen {
-  position: fixed; inset: 0;
-  background: radial-gradient(ellipse at center, #1a0f08 0%, #0d0604 100%);
-  display: flex; align-items: center; justify-content: center;
-  z-index: 9999;
-}
-.login-box {
-  background: linear-gradient(135deg, #2c1810, #4a2c1a);
-  border: 3px solid var(--gold);
-  border-radius: 12px;
-  padding: 40px;
-  width: 420px;
-  box-shadow: 0 0 60px rgba(200,150,12,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
-  text-align: center;
-}
-.login-box h1 {
-  font-family: 'Cinzel', serif;
-  color: var(--gold-light);
-  font-size: 2.2rem;
-  margin-bottom: 6px;
-  text-shadow: 0 0 20px rgba(240,192,64,0.5);
-}
-.login-box p { color: var(--parchment-dark); margin-bottom: 24px; font-style: italic; }
-.login-box input {
-  width: 100%; padding: 12px 16px;
-  background: rgba(0,0,0,0.4); border: 1px solid var(--gold);
-  border-radius: 6px; color: var(--parchment); font-size: 1rem;
-  margin-bottom: 12px; font-family: inherit;
-}
-.login-box input::placeholder { color: rgba(244,228,193,0.4); }
-.login-box input:focus { outline: none; border-color: var(--gold-light); box-shadow: 0 0 8px rgba(240,192,64,0.3); }
-.btn-gold {
-  width: 100%; padding: 13px;
-  background: linear-gradient(135deg, #c8960c, #f0c040, #c8960c);
-  border: none; border-radius: 6px;
-  font-family: 'Cinzel', serif; font-weight: 700; font-size: 1rem;
-  color: #2c1810; cursor: pointer; transition: all 0.2s;
-  box-shadow: 0 4px 15px rgba(200,150,12,0.4);
-  margin-bottom: 10px;
-}
-.btn-gold:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(200,150,12,0.6); }
-.btn-outline {
-  width: 100%; padding: 11px;
-  background: transparent; border: 2px solid var(--gold);
-  border-radius: 6px; font-family: 'Cinzel', serif; font-weight: 600;
-  color: var(--gold-light); cursor: pointer; transition: all 0.2s;
-}
-.btn-outline:hover { background: rgba(200,150,12,0.15); }
-.tribe-select { display: none; margin-top: 16px; }
-.tribe-btn {
-  display: block; width: 100%; padding: 14px; margin-bottom: 10px;
-  border: 2px solid; border-radius: 8px; cursor: pointer;
-  font-family: 'Cinzel', serif; font-size: 0.95rem; font-weight: 600;
-  transition: all 0.2s; background: rgba(0,0,0,0.3); text-align: left;
-}
-.tribe-btn.roman { border-color: #c0392b; color: #e74c3c; }
-.tribe-btn.roman:hover { background: rgba(192,57,43,0.2); }
-.tribe-btn.teuton { border-color: #7f8c8d; color: #95a5a6; }
-.tribe-btn.teuton:hover { background: rgba(127,140,141,0.2); }
-.tribe-btn.turk { border-color: #e67e22; color: #f39c12; }
-.tribe-btn.turk:hover { background: rgba(230,126,34,0.2); }
-.tribe-btn .tribe-name { font-size: 1.1rem; display: block; }
-.tribe-btn .tribe-desc { font-size: 0.78rem; font-family: 'IM Fell English', serif; font-style: italic; opacity: 0.8; margin-top: 4px; display: block; }
+/* ─── MAIN GAME LAYOUT ─── */
+#gameScreen{display:none;min-height:100vh;}
+.top-bar{background:linear-gradient(180deg,#2d2011 0%,#1a1208 100%);border-bottom:2px solid var(--border);padding:0;position:sticky;top:0;z-index:100;box-shadow:0 4px 15px rgba(0,0,0,0.5);}
+.top-bar-inner{display:flex;align-items:center;max-width:1300px;margin:0 auto;padding:0 10px;}
+.nav-icons{display:flex;gap:0;}
+.nav-icon{width:52px;height:48px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;color:var(--text-dim);cursor:pointer;transition:.15s;border-bottom:3px solid transparent;position:relative;}
+.nav-icon:hover,.nav-icon.active{color:var(--gold);background:rgba(200,160,80,0.1);border-bottom-color:var(--gold);}
+.nav-icon .badge{position:absolute;top:4px;right:4px;background:var(--danger);color:#fff;font-size:0.6rem;padding:1px 4px;border-radius:8px;font-weight:700;}
+.res-bar{display:flex;align-items:center;gap:2px;flex:1;justify-content:center;flex-wrap:wrap;}
+.res-item{display:flex;align-items:center;gap:4px;padding:4px 8px;border-radius:4px;font-size:0.85rem;font-weight:700;min-width:90px;}
+.res-dot{width:12px;height:12px;border-radius:50%;border:1px solid rgba(0,0,0,0.3);flex-shrink:0;}
+.res-dot.wood{background:var(--wood);} .res-dot.clay{background:var(--clay);} .res-dot.iron{background:var(--iron);} .res-dot.crop{background:var(--crop);}
+.res-val{color:var(--text);}
+.res-cap{color:var(--text-dim);font-size:0.7rem;font-weight:400;}
+.gold-display{display:flex;align-items:center;gap:6px;padding:4px 12px;color:var(--gold);font-weight:800;font-size:1rem;}
+.gold-icon{font-size:1.2rem;}
 
-/* =================== TOP BAR =================== */
-#game-screen { display: none; flex-direction: column; min-height: 100vh; }
+/* ─── GAME CONTENT AREA ─── */
+.game-body{display:flex;max-width:1300px;margin:0 auto;min-height:calc(100vh - 50px);}
+.sidebar-left{width:220px;flex-shrink:0;padding:10px;display:flex;flex-direction:column;gap:10px;}
+.sidebar-right{width:240px;flex-shrink:0;padding:10px;display:flex;flex-direction:column;gap:10px;}
+.main-content{flex:1;padding:10px;min-width:0;}
 
-#top-bar {
-  background: linear-gradient(to bottom, #3d2b1f, #2c1810);
-  border-bottom: 3px solid var(--gold);
-  padding: 8px 16px;
-  display: flex; align-items: center; justify-content: space-between;
-  flex-wrap: wrap; gap: 8px;
-  position: sticky; top: 0; z-index: 100;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.6);
-}
-.res-bar { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
-.res-item {
-  display: flex; align-items: center; gap: 6px;
-  background: rgba(0,0,0,0.3); border: 1px solid rgba(200,150,12,0.3);
-  border-radius: 4px; padding: 4px 10px;
-  color: var(--parchment); font-family: 'Cinzel', serif; font-size: 0.85rem;
-}
-.res-icon { width: 20px; height: 20px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
-.ico-wood { background: radial-gradient(circle, #5d8a3c, #2d5a1b); border: 1px solid #2d5a1b; }
-.ico-clay { background: radial-gradient(circle, #c0664a, #8b3a24); border: 1px solid #8b3a24; }
-.ico-iron { background: radial-gradient(circle, #7a8a9a, #3a4a5a); border: 1px solid #3a4a5a; }
-.ico-crop { background: radial-gradient(circle, #f0c040, #c8960c); border: 1px solid #c8960c; }
-.ico-gold { background: radial-gradient(circle, #ffd700, #b8860b); border: 2px solid #ffd700; }
-.ico-pop { background: radial-gradient(circle, #e8a0a0, #c06060); border: 1px solid #c06060; }
+.panel{background:var(--panel-bg);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+.panel-header{background:linear-gradient(180deg,#4a3620 0%,#3a2810 100%);padding:8px 12px;font-family:'Cinzel',serif;font-size:0.85rem;color:var(--accent);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px;}
+.panel-body{padding:10px;}
 
-.top-right { display: flex; align-items: center; gap: 12px; }
-.player-info {
-  color: var(--gold-light); font-family: 'Cinzel', serif; font-size: 0.85rem;
-  display: flex; align-items: center; gap: 8px;
-}
-.player-avatar {
-  width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--gold);
-  background: linear-gradient(135deg, #8b4513, #d2691e);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1rem;
-}
+/* ─── DORF1 - RESOURCE VIEW ─── */
+.village-view{position:relative;width:100%;padding-top:75%;background:radial-gradient(ellipse at center,#6aaa35 0%,#4a8a20 40%,#3a7015 70%,#2a5510 100%);border-radius:50%;border:4px solid #2a5510;box-shadow:inset 0 0 60px rgba(0,0,0,0.3),0 8px 30px rgba(0,0,0,0.5);overflow:visible;}
+.village-view.dorf2{background:radial-gradient(ellipse at center,#80b840 0%,#60a030 40%,#4a8020 70%,#3a6818 100%);}
+.village-slot{position:absolute;width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:0.95rem;cursor:pointer;transition:all .15s;z-index:10;box-shadow:2px 3px 8px rgba(0,0,0,0.4);border:2px solid;}
+.village-slot:hover{transform:scale(1.2);z-index:20;box-shadow:0 0 15px rgba(255,215,0,0.5);}
+.village-slot.empty{background:rgba(255,255,255,0.25);border-color:rgba(255,255,255,0.4);color:transparent;}
+.village-slot.empty:hover{background:rgba(255,215,0,0.3);border-color:var(--gold);}
+.village-slot.s-wood{background:#e8f5e9;border-color:#2e7d32;color:#2e7d32;}
+.village-slot.s-clay{background:#fbe9e7;border-color:#d84315;color:#d84315;}
+.village-slot.s-iron{background:#eeeeee;border-color:#424242;color:#424242;}
+.village-slot.s-crop{background:#fffde7;border-color:#f57f17;color:#f57f17;}
+.village-slot.s-building{background:#e3f2fd;border-color:#1565c0;color:#1565c0;}
+.village-slot.s-main{background:#f3e5f5;border-color:#6a1b9a;color:#6a1b9a;width:54px;height:54px;font-size:1.1rem;}
+.village-slot.s-rally{background:#ffebee;border-color:#c62828;color:#c62828;border-radius:8px;}
+.village-slot.s-wall{background:#fce4ec;border-color:#880e4f;color:#880e4f;border-radius:4px;width:120px;height:30px;font-size:0.75rem;}
+.village-center-img{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:2.5rem;z-index:5;pointer-events:none;filter:drop-shadow(2px 4px 6px rgba(0,0,0,0.4));}
+/* River decorations */
+.village-view::before{content:'';position:absolute;top:10%;left:-5%;width:110%;height:6px;background:linear-gradient(90deg,transparent,#4a90d9,#5aa0e9,#4a90d9,transparent);border-radius:50%;opacity:0.4;transform:rotate(-15deg);z-index:2;}
+.village-view::after{content:'';position:absolute;bottom:15%;left:-5%;width:110%;height:5px;background:linear-gradient(90deg,transparent,#4a90d9,#5aa0e9,transparent);border-radius:50%;opacity:0.3;transform:rotate(10deg);z-index:2;}
 
-/* =================== NAV TABS =================== */
-#nav-tabs {
-  background: linear-gradient(to bottom, #2c1810, #1a0f08);
-  border-bottom: 2px solid var(--gold);
-  display: flex; gap: 0;
-}
-.nav-tab {
-  padding: 10px 20px; cursor: pointer;
-  font-family: 'Cinzel', serif; font-size: 0.9rem; color: var(--parchment-dark);
-  border-right: 1px solid rgba(200,150,12,0.2);
-  transition: all 0.2s; user-select: none; position: relative;
-}
-.nav-tab:hover { background: rgba(200,150,12,0.1); color: var(--gold-light); }
-.nav-tab.active {
-  background: rgba(200,150,12,0.2); color: var(--gold-light);
-  border-bottom: 3px solid var(--gold);
-}
-.nav-tab .notif {
-  position: absolute; top: 6px; right: 6px;
-  background: #c0392b; color: white; border-radius: 50%;
-  width: 16px; height: 16px; font-size: 0.65rem; display: none;
-  align-items: center; justify-content: center; font-family: sans-serif;
-}
+/* ─── WORLD MAP ─── */
+.map-container{position:relative;width:100%;height:calc(100vh - 100px);overflow:hidden;background:#5a8a25;border:2px solid var(--border);border-radius:8px;}
+.map-grid{position:absolute;cursor:grab;}
+.map-grid:active{cursor:grabbing;}
+.map-cell{position:absolute;width:40px;height:40px;border:1px solid rgba(0,0,0,0.1);display:flex;align-items:center;justify-content:center;font-size:0.5rem;transition:background .1s;}
+.map-cell.has-village{cursor:pointer;}
+.map-cell.has-village:hover{z-index:10;box-shadow:0 0 10px rgba(255,215,0,0.5);}
+.map-village{width:28px;height:28px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:0.9rem;border:2px solid;box-shadow:1px 2px 4px rgba(0,0,0,0.3);}
+.map-village.player{background:#ffd700;border-color:#c49020;animation:pulse 2s infinite;}
+.map-village.bot-roman{background:#e8c0c0;border-color:#c0392b;}
+.map-village.bot-teuton{background:#c0e8c0;border-color:#27ae60;}
+.map-village.bot-turk{background:#c0d0e8;border-color:#2980b9;}
+.map-village.natar{background:#888;border-color:#555;}
+@keyframes pulse{0%,100%{box-shadow:0 0 5px rgba(255,215,0,0.3);}50%{box-shadow:0 0 15px rgba(255,215,0,0.6);}}
+.map-tooltip{position:absolute;background:var(--bg-dark);border:1px solid var(--border);padding:8px 12px;border-radius:6px;font-size:0.8rem;pointer-events:none;z-index:100;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,0.5);}
+.map-coords{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.7);padding:6px 16px;border-radius:20px;font-size:0.8rem;z-index:50;display:flex;gap:12px;}
 
-/* =================== MAIN LAYOUT =================== */
-#main-content { display: flex; flex: 1; min-height: 0; }
+/* ─── MODAL ─── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:500;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(2px);}
+.modal-box{background:var(--bg-dark);border:2px solid var(--border);border-radius:12px;width:600px;max-width:95vw;max-height:85vh;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.8);animation:modalIn .2s ease-out;}
+@keyframes modalIn{from{opacity:0;transform:scale(0.95);}to{opacity:1;transform:scale(1);}}
+.modal-header{background:linear-gradient(180deg,#4a3620,#3a2810);padding:14px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);}
+.modal-header h3{margin:0;font-size:1.1rem;}
+.modal-close{background:none;border:none;color:var(--text-dim);font-size:1.4rem;cursor:pointer;width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:.15s;}
+.modal-close:hover{background:rgba(255,255,255,0.1);color:var(--text);}
+.modal-body{padding:16px;overflow-y:auto;max-height:calc(85vh - 60px);}
 
-#sidebar-left {
-  width: 220px; flex-shrink: 0;
-  background: linear-gradient(to bottom, #2c1810, #1a0f08);
-  border-right: 2px solid rgba(200,150,12,0.3);
-  padding: 12px;
-  overflow-y: auto;
-}
-#game-area { flex: 1; min-width: 0; padding: 12px; overflow-y: auto; background: #1a0f08; }
-#sidebar-right {
-  width: 220px; flex-shrink: 0;
-  background: linear-gradient(to bottom, #2c1810, #1a0f08);
-  border-left: 2px solid rgba(200,150,12,0.3);
-  padding: 12px;
-  overflow-y: auto;
-}
+/* ─── BUILD LIST ─── */
+.build-item{display:flex;align-items:center;gap:12px;padding:10px;border:1px solid var(--border);border-radius:8px;margin-bottom:8px;background:rgba(255,255,255,0.02);transition:.15s;}
+.build-item:hover{background:rgba(200,160,80,0.05);border-color:var(--accent);}
+.build-item .b-icon{width:48px;height:48px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0;}
+.build-item .b-info{flex:1;min-width:0;}
+.build-item .b-name{font-weight:700;color:var(--accent);font-size:0.95rem;}
+.build-item .b-desc{font-size:0.78rem;color:var(--text-dim);margin-top:2px;}
+.build-item .b-costs{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;}
+.build-item .b-cost{display:flex;align-items:center;gap:3px;font-size:0.78rem;font-weight:600;}
+.build-item .b-cost.insufficient{color:#e74c3c;}
+.build-item .b-action{flex-shrink:0;}
+.build-item.disabled{opacity:0.5;}
+.build-item .req-text{font-size:0.75rem;color:#e74c3c;margin-top:4px;}
 
-.side-card {
-  background: linear-gradient(135deg, rgba(244,228,193,0.05), rgba(244,228,193,0.02));
-  border: 1px solid rgba(200,150,12,0.4);
-  border-radius: 6px; margin-bottom: 12px; overflow: hidden;
-}
-.side-card-header {
-  background: linear-gradient(to right, rgba(200,150,12,0.3), rgba(200,150,12,0.1));
-  padding: 7px 10px; font-family: 'Cinzel', serif; font-size: 0.8rem;
-  color: var(--gold-light); border-bottom: 1px solid rgba(200,150,12,0.2);
-}
-.side-card-body { padding: 8px 10px; }
+/* ─── BUILD QUEUE ─── */
+.queue-item{display:flex;justify-content:space-between;align-items:center;padding:8px;border-bottom:1px solid rgba(255,255,255,0.05);font-size:0.85rem;}
+.queue-item.active{background:rgba(200,160,80,0.1);border-left:3px solid var(--gold);}
+.queue-item .q-name{font-weight:600;}
+.queue-item .q-time{color:var(--gold);font-weight:700;font-variant-numeric:tabular-nums;}
+.queue-empty{text-align:center;padding:20px;color:var(--text-dim);font-size:0.85rem;}
 
-.prod-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
-.prod-row span:first-child { color: var(--parchment-dark); font-size: 0.82rem; display: flex; align-items: center; gap: 5px; }
-.prod-row span:last-child { color: var(--gold-light); font-family: 'Cinzel', serif; font-size: 0.82rem; }
+/* ─── PRODUCTION DISPLAY ─── */
+.prod-row{display:flex;justify-content:space-between;padding:4px 0;font-size:0.85rem;font-weight:600;}
+.prod-row .prod-label{display:flex;align-items:center;gap:4px;}
 
-.premium-btn-row {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 7px 8px; border-radius: 4px; margin-bottom: 5px;
-  background: rgba(0,0,0,0.2); border: 1px solid rgba(200,150,12,0.2);
-  cursor: pointer; transition: all 0.2s; font-size: 0.8rem; color: var(--parchment);
-}
-.premium-btn-row:hover { background: rgba(200,150,12,0.15); border-color: var(--gold); }
-.premium-btn-row .cost { background: var(--gold); color: #2c1810; border-radius: 3px; padding: 1px 5px; font-family: 'Cinzel', serif; font-size: 0.75rem; font-weight: 700; }
+/* ─── TROOP LIST ─── */
+.troop-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);}
+.troop-icon{font-size:1.2rem;}
+.troop-info{flex:1;}
+.troop-name{font-weight:700;font-size:0.85rem;}
+.troop-stats{font-size:0.72rem;color:var(--text-dim);}
+.troop-count{font-weight:800;font-size:1.1rem;color:var(--gold);min-width:40px;text-align:right;}
 
-/* =================== VILLAGE MAP =================== */
-.village-map {
-  position: relative; margin: 0 auto;
-  border-radius: 50%; overflow: hidden;
-  box-shadow: 0 0 40px rgba(0,0,0,0.8), inset 0 0 30px rgba(0,0,0,0.3);
-}
-.dorf1-bg { background: radial-gradient(ellipse at 60% 40%, #6a9a3a, #3a6a1a 50%, #2a5010 100%); }
-.dorf2-bg { background: radial-gradient(ellipse at 50% 50%, #8ab050, #5a8030 50%, #3a6020 100%); }
+/* ─── ALLIANCE ─── */
+.alliance-member{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:0.85rem;}
 
-.v-slot {
-  position: absolute; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-family: 'Cinzel', serif; font-weight: 700; font-size: 0.85rem;
-  cursor: pointer; transition: all 0.15s;
-  box-shadow: 2px 3px 8px rgba(0,0,0,0.7);
-  user-select: none;
-}
-.v-slot:hover { transform: scale(1.2); z-index: 20; }
-.v-slot.empty { background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.3); color: transparent; }
-.v-slot.empty:hover { background: rgba(240,192,64,0.4); border-color: var(--gold-light); }
-.v-slot.wood { background: radial-gradient(circle, #5a9a35, #2d5a1b); border: 2px solid #2d5a1b; color: #d4f0b0; }
-.v-slot.clay { background: radial-gradient(circle, #c0664a, #8b3a24); border: 2px solid #8b3a24; color: #ffd0c0; }
-.v-slot.iron { background: radial-gradient(circle, #6a7a8a, #3a4a5a); border: 2px solid #3a4a5a; color: #d0e0f0; }
-.v-slot.crop { background: radial-gradient(circle, #e0b030, #a07820); border: 2px solid #a07820; color: #fff0b0; }
-.v-slot.building { background: radial-gradient(circle, #6080b0, #304080); border: 2px solid #304080; color: #c0d8ff; }
-.v-slot.main-b { background: radial-gradient(circle, #8060b0, #503080); border: 3px solid #c080ff; color: #e0c0ff; width: 52px !important; height: 52px !important; font-size: 1rem; }
-.v-slot.rally-b { background: radial-gradient(circle, #b04030, #702010); border: 2px solid #ff4020; border-radius: 8px !important; color: #ffc0b0; }
-.v-slot.wall-b { background: radial-gradient(circle, #908070, #504030); border: 2px solid #b0a090; color: #e0d0c0; border-radius: 4px !important; }
-.v-slot.under-construction { animation: pulse-build 1.5s ease-in-out infinite; }
-@keyframes pulse-build { 0%,100%{box-shadow: 2px 3px 8px rgba(0,0,0,0.7);} 50%{box-shadow: 0 0 15px rgba(240,192,64,0.8), 2px 3px 8px rgba(0,0,0,0.7);} }
+/* ─── STATS TABLE ─── */
+.stats-table{width:100%;border-collapse:collapse;font-size:0.85rem;}
+.stats-table th{background:rgba(200,160,80,0.1);padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--accent);font-size:0.8rem;}
+.stats-table td{padding:6px 8px;border-bottom:1px solid rgba(255,255,255,0.05);}
+.stats-table tr:hover{background:rgba(255,255,255,0.02);}
 
-/* Village map river paths SVG */
-.village-paths { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; opacity: 0.15; }
+/* ─── REPORTS ─── */
+.report-item{padding:8px;border-bottom:1px solid rgba(255,255,255,0.05);cursor:pointer;transition:.1s;font-size:0.85rem;}
+.report-item:hover{background:rgba(200,160,80,0.05);}
+.report-item .r-result{font-weight:700;}
+.report-item .r-result.win{color:var(--success);}.report-item .r-result.loss{color:var(--danger);}
 
-/* =================== BUILD MODAL =================== */
-.modal-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.7);
-  display: none; align-items: center; justify-content: center; z-index: 500;
-}
-.modal-overlay.show { display: flex; }
-.modal-box {
-  background: linear-gradient(135deg, #2c1810, #3d2b1f);
-  border: 2px solid var(--gold); border-radius: 10px;
-  width: 90%; max-width: 560px; max-height: 80vh;
-  display: flex; flex-direction: column;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.8);
-}
-.modal-header {
-  background: linear-gradient(to right, rgba(200,150,12,0.4), rgba(200,150,12,0.1));
-  padding: 12px 16px; display: flex; align-items: center; justify-content: space-between;
-  border-bottom: 1px solid var(--gold);
-}
-.modal-header h3 { font-family: 'Cinzel', serif; color: var(--gold-light); font-size: 1.1rem; }
-.modal-close { background: none; border: none; color: var(--gold-light); font-size: 1.4rem; cursor: pointer; line-height: 1; }
-.modal-body { padding: 16px; overflow-y: auto; flex: 1; }
-.modal-body::-webkit-scrollbar { width: 6px; }
-.modal-body::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
-.modal-body::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 3px; }
+/* ─── TABS ─── */
+.tab-bar{display:flex;border-bottom:2px solid var(--border);margin-bottom:10px;}
+.tab-btn{padding:8px 16px;background:transparent;border:none;color:var(--text-dim);font-weight:700;font-size:0.9rem;border-bottom:3px solid transparent;margin-bottom:-2px;transition:.15s;}
+.tab-btn:hover{color:var(--text);}
+.tab-btn.active{color:var(--gold);border-bottom-color:var(--gold);}
 
-.build-item {
-  background: rgba(0,0,0,0.3); border: 1px solid rgba(200,150,12,0.2);
-  border-radius: 6px; padding: 10px 12px; margin-bottom: 8px;
-  display: flex; align-items: center; justify-content: space-between; gap: 10px;
-  transition: border-color 0.2s;
-}
-.build-item:hover { border-color: rgba(200,150,12,0.5); }
-.build-item.locked { opacity: 0.5; }
-.build-info h4 { font-family: 'Cinzel', serif; color: var(--gold-light); font-size: 0.9rem; margin-bottom: 3px; }
-.build-info small { color: var(--parchment-dark); font-style: italic; font-size: 0.78rem; }
-.cost-row { display: flex; gap: 8px; margin-top: 5px; flex-wrap: wrap; }
-.cost-chip {
-  display: flex; align-items: center; gap: 3px;
-  background: rgba(0,0,0,0.3); border-radius: 3px; padding: 2px 6px;
-  font-size: 0.75rem; font-family: 'Cinzel', serif;
-}
-.cost-chip.can-afford { color: #90ee90; }
-.cost-chip.cant-afford { color: #ff8080; }
-.time-chip { color: #a0c0e0; font-size: 0.75rem; }
+/* ─── MISC ─── */
+.server-time{font-size:0.75rem;color:var(--text-dim);padding:4px 10px;white-space:nowrap;}
+.speed-badge{background:var(--danger);color:#fff;padding:1px 6px;border-radius:10px;font-size:0.65rem;font-weight:800;}
+.divider{border:none;border-top:1px solid var(--border);margin:10px 0;}
+.text-gold{color:var(--gold);} .text-green{color:var(--success);} .text-red{color:var(--danger);}
+.text-center{text-align:center;} .text-right{text-align:right;}
+.mt-1{margin-top:4px;} .mt-2{margin-top:8px;} .mt-3{margin-top:16px;}
+.mb-1{margin-bottom:4px;} .mb-2{margin-bottom:8px;}
+.flex{display:flex;} .gap-1{gap:4px;} .gap-2{gap:8px;} .gap-3{gap:16px;}
+.flex-1{flex:1;} .items-center{align-items:center;} .justify-between{justify-content:space-between;}
+.fw-700{font-weight:700;} .fs-sm{font-size:0.8rem;}
+select{background:var(--bg-dark);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:4px;font-size:0.85rem;}
+input[type="number"]{background:var(--bg-dark);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:4px;font-size:0.85rem;width:80px;}
 
-.btn-build {
-  padding: 7px 14px; background: linear-gradient(135deg, #2d5a1b, #4a7c2f);
-  border: 1px solid #4a7c2f; border-radius: 4px;
-  color: #d4f0b0; font-family: 'Cinzel', serif; font-size: 0.8rem;
-  cursor: pointer; white-space: nowrap; transition: all 0.2s;
+@media(max-width:900px){
+  .sidebar-left,.sidebar-right{display:none;}
+  .game-body{flex-direction:column;}
+  .res-bar{gap:0;}
+  .res-item{min-width:70px;font-size:0.75rem;padding:2px 4px;}
 }
-.btn-build:hover { background: linear-gradient(135deg, #4a7c2f, #6a9a4f); }
-.btn-build:disabled { opacity: 0.4; cursor: not-allowed; }
-
-.upgrade-box {
-  background: rgba(0,0,0,0.3); border: 1px solid rgba(200,150,12,0.3);
-  border-radius: 8px; padding: 14px;
-}
-.upgrade-box h3 { font-family: 'Cinzel', serif; color: var(--gold-light); margin-bottom: 8px; }
-.upgrade-box .level-badge {
-  display: inline-block; background: var(--gold); color: #2c1810;
-  border-radius: 12px; padding: 2px 10px; font-family: 'Cinzel', serif;
-  font-size: 0.8rem; font-weight: 700; margin-left: 8px;
-}
-.upgrade-box p { color: var(--parchment-dark); font-style: italic; font-size: 0.85rem; margin-bottom: 12px; }
-
-/* =================== QUEUE PANEL =================== */
-.q-item {
-  background: rgba(0,0,0,0.3); border-left: 3px solid rgba(200,150,12,0.3);
-  border-radius: 4px; padding: 7px 10px; margin-bottom: 6px; font-size: 0.78rem;
-  color: var(--parchment);
-}
-.q-item.active-q {
-  border-left-color: var(--gold-light);
-  background: rgba(200,150,12,0.1);
-}
-.q-item .q-name { font-family: 'Cinzel', serif; color: var(--gold-light); font-size: 0.8rem; }
-.q-item .q-time { color: #90ee90; float: right; font-family: 'Cinzel', serif; }
-.q-item .q-paused { color: #888; float: right; }
-
-/* =================== WORLD MAP =================== */
-#world-map-container {
-  width: 100%; position: relative;
-}
-#world-canvas {
-  display: block; border: 2px solid var(--gold); border-radius: 4px;
-  cursor: crosshair; image-rendering: pixelated;
-}
-.map-controls {
-  display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; align-items: center;
-}
-.map-ctrl-btn {
-  padding: 6px 12px; background: rgba(200,150,12,0.2); border: 1px solid var(--gold);
-  border-radius: 4px; color: var(--gold-light); font-family: 'Cinzel', serif;
-  font-size: 0.8rem; cursor: pointer; transition: all 0.2s;
-}
-.map-ctrl-btn:hover { background: rgba(200,150,12,0.4); }
-#map-tooltip {
-  position: fixed; background: rgba(20,10,5,0.95); border: 1px solid var(--gold);
-  border-radius: 6px; padding: 8px 12px; pointer-events: none;
-  display: none; z-index: 200; font-size: 0.8rem;
-  color: var(--parchment); font-family: 'Cinzel', serif;
-  max-width: 200px;
-}
-
-/* =================== ALLIANCE PANEL =================== */
-.alliance-card {
-  background: rgba(0,0,0,0.3); border: 1px solid rgba(200,150,12,0.3);
-  border-radius: 6px; padding: 12px; margin-bottom: 10px;
-}
-.alliance-card h4 { font-family: 'Cinzel', serif; color: var(--gold-light); margin-bottom: 6px; }
-.alliance-member { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid rgba(200,150,12,0.1); font-size: 0.82rem; color: var(--parchment); }
-
-/* =================== MILITARY PANEL =================== */
-.troop-row {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 8px 10px; background: rgba(0,0,0,0.3); border: 1px solid rgba(200,150,12,0.2);
-  border-radius: 5px; margin-bottom: 6px;
-}
-.troop-row .troop-name { font-family: 'Cinzel', serif; color: var(--parchment); font-size: 0.85rem; }
-.troop-row .troop-count { color: var(--gold-light); font-family: 'Cinzel', serif; }
-.troop-row input[type=number] {
-  width: 70px; padding: 4px 8px; background: rgba(0,0,0,0.4);
-  border: 1px solid var(--gold); border-radius: 4px; color: var(--parchment);
-  font-family: 'Cinzel', serif; text-align: center;
-}
-
-/* =================== REPORT/MESSAGE PANEL =================== */
-.report-item {
-  padding: 10px 12px; border-bottom: 1px solid rgba(200,150,12,0.15);
-  cursor: pointer; transition: background 0.15s; font-size: 0.82rem;
-}
-.report-item:hover { background: rgba(200,150,12,0.05); }
-.report-item .report-title { color: var(--gold-light); font-family: 'Cinzel', serif; font-size: 0.85rem; }
-.report-item .report-time { color: #888; font-size: 0.75rem; float: right; }
-.report-win { border-left: 3px solid #4a7c2f; }
-.report-loss { border-left: 3px solid #8b1a1a; }
-
-/* =================== SERVER TIME =================== */
-#server-time { color: rgba(244,228,193,0.5); font-family: 'Cinzel', serif; font-size: 0.75rem; }
-
-/* =================== TABS CONTENT =================== */
-.tab-content { display: none; }
-.tab-content.active { display: block; }
-
-/* =================== MISC BUTTONS =================== */
-.btn-red {
-  padding: 7px 14px; background: linear-gradient(135deg, #8b1a1a, #b02020);
-  border: 1px solid #c03030; border-radius: 4px; color: #ffd0d0;
-  font-family: 'Cinzel', serif; font-size: 0.8rem; cursor: pointer; transition: all 0.2s;
-}
-.btn-red:hover { background: linear-gradient(135deg, #b02020, #d04040); }
-.btn-blue {
-  padding: 7px 14px; background: linear-gradient(135deg, #1a3a6b, #2a5090);
-  border: 1px solid #3060b0; border-radius: 4px; color: #c0d8ff;
-  font-family: 'Cinzel', serif; font-size: 0.8rem; cursor: pointer; transition: all 0.2s;
-}
-.btn-blue:hover { background: linear-gradient(135deg, #2a5090, #3a60b0); }
-
-.section-title {
-  font-family: 'Cinzel', serif; color: var(--gold-light); font-size: 1.1rem;
-  margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid rgba(200,150,12,0.3);
-}
-
-/* =================== NOTIFICATION =================== */
-#notification {
-  position: fixed; top: 70px; right: 20px; z-index: 1000;
-  background: linear-gradient(135deg, #2c1810, #4a2c1a);
-  border: 2px solid var(--gold); border-radius: 8px;
-  padding: 10px 16px; color: var(--parchment); font-family: 'Cinzel', serif;
-  font-size: 0.85rem; max-width: 280px; display: none;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.6);
-  animation: slideIn 0.3s ease;
-}
-@keyframes slideIn { from{transform:translateX(100%); opacity:0;} to{transform:translateX(0); opacity:1;} }
-
-/* Scrollbars */
-#sidebar-left::-webkit-scrollbar, #sidebar-right::-webkit-scrollbar, #game-area::-webkit-scrollbar { width: 5px; }
-#sidebar-left::-webkit-scrollbar-track, #sidebar-right::-webkit-scrollbar-track, #game-area::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
-#sidebar-left::-webkit-scrollbar-thumb, #sidebar-right::-webkit-scrollbar-thumb, #game-area::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 3px; }
-
-.text-gold { color: var(--gold-light); }
-.text-muted { color: var(--parchment-dark); font-style: italic; font-size: 0.82rem; }
-.mb-2 { margin-bottom: 8px; }
-.mb-3 { margin-bottom: 12px; }
-.flex-between { display: flex; justify-content: space-between; align-items: center; }
-.badge { display: inline-block; background: var(--gold); color: #2c1810; border-radius: 3px; padding: 1px 6px; font-size: 0.75rem; font-family: 'Cinzel', serif; font-weight: 700; }
-.badge-red { background: #8b1a1a; color: #ffd0d0; }
-.badge-blue { background: #1a3a6b; color: #c0d8ff; }
 </style>
 </head>
 <body>
 
-<!-- ========== LOGIN SCREEN ========== -->
-<div id="login-screen">
+<!-- ═══════════════ LOGIN SCREEN ═══════════════ -->
+<div id="loginScreen">
   <div class="login-box">
-    <h1>⚔ YDS Wars</h1>
-    <p>Travian Tarzı Strateji Oyunu<br><small style="color:#888">YDS Puanın = Altın</small></p>
-    <div id="auth-form">
-      <input type="text" id="inp-username" placeholder="Kullanıcı Adı" maxlength="20">
-      <input type="password" id="inp-password" placeholder="Şifre" maxlength="30">
-      <button class="btn-gold" onclick="tryLogin()">Giriş Yap</button>
-      <button class="btn-outline" onclick="showRegister()">Kayıt Ol</button>
+    <div class="emblem">⚔️</div>
+    <h1>YDS Wars</h1>
+    <p class="subtitle">Travian Tarzı Strateji Oyunu • 10x Hız</p>
+    <div class="login-tabs">
+      <button class="active" onclick="showLoginTab('login')">Giriş Yap</button>
+      <button onclick="showLoginTab('register')">Kayıt Ol</button>
     </div>
-    <div id="register-form" style="display:none">
-      <div class="tribe-select" id="tribe-select" style="display:block; margin-top:0; margin-bottom:12px">
-        <p style="color:var(--parchment-dark); font-size:0.85rem; margin-bottom:10px; font-style:italic">Halkını seç. Seçim kalıcıdır.</p>
-        <button class="tribe-btn roman" onclick="setTribe('Roman')">
-          <span class="tribe-name">🦅 Romalılar</span>
-          <span class="tribe-desc">Hem tarla hem bina inşaatını eş zamanlı yapabilir. Dengeli güçlü askerler.</span>
-        </button>
-        <button class="tribe-btn teuton" onclick="setTribe('Teuton')">
-          <span class="tribe-name">🪓 Cermenler</span>
-          <span class="tribe-desc">Ucuz ve çok sayıda piyade. Agresif yağmacı oyun tarzı.</span>
-        </button>
-        <button class="tribe-btn turk" onclick="setTribe('Turk')">
-          <span class="tribe-name">🐎 Türkler (Hunlar)</span>
-          <span class="tribe-desc">En hızlı süvari birlikler. Mükemmel yağmacı ve hızlı baskın.</span>
-        </button>
+    <div id="loginError" class="login-error"></div>
+    <div id="loginForm">
+      <div class="form-group">
+        <label>Kullanıcı Adı</label>
+        <input type="text" id="loginUser" placeholder="Adını yaz...">
       </div>
-      <input type="text" id="inp-reg-username" placeholder="Kullanıcı Adı" maxlength="20">
-      <input type="password" id="inp-reg-password" placeholder="Şifre" maxlength="30">
-      <input type="password" id="inp-reg-password2" placeholder="Şifre Tekrar" maxlength="30">
-      <button class="btn-gold" id="btn-register" onclick="tryRegister()" disabled style="opacity:0.5">Oyuna Başla (Irk Seç)</button>
-      <button class="btn-outline" onclick="showLogin()" style="margin-top:6px">← Geri</button>
+      <div class="form-group">
+        <label>Şifre</label>
+        <input type="password" id="loginPass" placeholder="••••••••">
+      </div>
+      <button class="btn btn-green btn-block" onclick="doLogin()">⚔️ Savaşa Gir</button>
     </div>
-    <div id="login-error" style="color:#ff8080; font-size:0.85rem; margin-top:10px; display:none"></div>
+    <div id="registerForm" class="hidden">
+      <div class="form-group">
+        <label>Kullanıcı Adı</label>
+        <input type="text" id="regUser" placeholder="Benzersiz isim seç...">
+      </div>
+      <div class="form-group">
+        <label>Şifre</label>
+        <input type="password" id="regPass" placeholder="En az 4 karakter">
+      </div>
+      <div class="form-group">
+        <label>Şifre (Tekrar)</label>
+        <input type="password" id="regPass2" placeholder="Şifreyi tekrarla">
+      </div>
+      <button class="btn btn-gold btn-block" onclick="doRegister()">📜 Hesap Oluştur</button>
+    </div>
   </div>
 </div>
 
-<!-- ========== GAME SCREEN ========== -->
-<div id="game-screen">
+<!-- ═══════════════ TRIBE SELECTION ═══════════════ -->
+<div id="tribeScreen" class="hidden">
+  <h1 class="tribe-title">⚔️ Kabileni Seç</h1>
+  <p class="tribe-subtitle">Bu karar geri alınamaz! Kabilene uygun strateji belirle.</p>
+  <div class="tribe-cards">
+    <div class="tribe-card roman" onclick="selectTribe('Roman')">
+      <span class="tribe-icon">🏛️</span>
+      <h3>Romalılar</h3>
+      <p>Dengeli güç. İyi saldırı, iyi savunma. Pahalı ama güçlü birimler.</p>
+      <div class="tribe-bonus">✦ Kaynak + Bina aynı anda inşa<br>✦ Güçlü surlar (+%100 savunma)<br>✦ Kahraman +100 güç/puan</div>
+    </div>
+    <div class="tribe-card teuton" onclick="selectTribe('Teuton')">
+      <span class="tribe-icon">🪓</span>
+      <h3>Cermenler</h3>
+      <p>Agresif oyun. Ucuz ve hızlı askerler. Yağma uzmanı.</p>
+      <div class="tribe-bonus">✦ Ucuz piyadeler, hızlı eğitim<br>✦ Bira Fabrikası (+saldırı)<br>✦ Kahraman %20 yağma bonusu</div>
+    </div>
+    <div class="tribe-card turk" onclick="selectTribe('Turk')">
+      <span class="tribe-icon">🏇</span>
+      <h3>Türkler</h3>
+      <p>Hızlı atlılar, mükemmel yağma. Göçebe taktikleri.</p>
+      <div class="tribe-bonus">✦ En hızlı süvari birimleri<br>✦ Büyük sığınaklar (1.5x)<br>✦ Kahraman +5 hız (atlı)</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ MAIN GAME SCREEN ═══════════════ -->
+<div id="gameScreen">
   <!-- TOP BAR -->
-  <div id="top-bar">
-    <div class="res-bar">
-      <div class="res-item"><span class="res-icon ico-wood"></span> <span id="res-wood">0</span></div>
-      <div class="res-item"><span class="res-icon ico-clay"></span> <span id="res-clay">0</span></div>
-      <div class="res-item"><span class="res-icon ico-iron"></span> <span id="res-iron">0</span></div>
-      <div class="res-item"><span class="res-icon ico-crop"></span> <span id="res-crop">0</span></div>
-      <div class="res-item"><span class="res-icon ico-pop"></span> <span id="res-pop">0</span></div>
-    </div>
-    <div class="top-right">
-      <div class="res-item"><span class="res-icon ico-gold"></span> <span id="gold-display">0</span> YDS</div>
-      <div id="server-time">00:00:00</div>
-      <div class="player-info">
-        <div class="player-avatar">⚔</div>
-        <span id="top-playername">-</span>
+  <div class="top-bar">
+    <div class="top-bar-inner">
+      <div class="nav-icons">
+        <div class="nav-icon active" onclick="showView('dorf1')" title="Kaynaklar" id="nav-dorf1">🏘️</div>
+        <div class="nav-icon" onclick="showView('dorf2')" title="Şehir Merkezi" id="nav-dorf2">🏰</div>
+        <div class="nav-icon" onclick="showView('map')" title="Harita" id="nav-map">🗺️</div>
+        <div class="nav-icon" onclick="showView('stats')" title="İstatistikler" id="nav-stats">📊</div>
+        <div class="nav-icon" onclick="showView('reports')" title="Raporlar" id="nav-reports">📜<span class="badge hidden" id="reportBadge">0</span></div>
+        <div class="nav-icon" onclick="showView('alliance')" title="İttifak" id="nav-alliance">🛡️</div>
       </div>
+      <div class="res-bar">
+        <div class="res-item" title="Odun">
+          <span class="res-dot wood"></span>
+          <span class="res-val" id="r-wood">0</span>
+          <span class="res-cap">/<span id="r-wood-cap">800</span></span>
+        </div>
+        <div class="res-item" title="Tuğla">
+          <span class="res-dot clay"></span>
+          <span class="res-val" id="r-clay">0</span>
+          <span class="res-cap">/<span id="r-clay-cap">800</span></span>
+        </div>
+        <div class="res-item" title="Demir">
+          <span class="res-dot iron"></span>
+          <span class="res-val" id="r-iron">0</span>
+          <span class="res-cap">/<span id="r-iron-cap">800</span></span>
+        </div>
+        <div class="res-item" title="Tahıl">
+          <span class="res-dot crop"></span>
+          <span class="res-val" id="r-crop">0</span>
+          <span class="res-cap">/<span id="r-crop-cap">800</span></span>
+        </div>
+        <div class="gold-display" title="YDS Altını">
+          <span class="gold-icon">🪙</span>
+          <span id="r-gold">0</span>
+        </div>
+      </div>
+      <div class="server-time">
+        <span class="speed-badge">10x</span>
+        <span id="serverTime">00:00:00</span>
+      </div>
+      <div class="nav-icon" onclick="doLogout()" title="Çıkış">🚪</div>
     </div>
   </div>
 
-  <!-- NAV TABS -->
-  <div id="nav-tabs">
-    <div class="nav-tab active" onclick="switchTab('dorf1')">🌾 Kaynaklar</div>
-    <div class="nav-tab" onclick="switchTab('dorf2')">🏰 Şehir</div>
-    <div class="nav-tab" onclick="switchTab('map')">🗺 Dünya Haritası</div>
-    <div class="nav-tab" onclick="switchTab('military')">⚔ Askerlik</div>
-    <div class="nav-tab" onclick="switchTab('alliance')">🤝 İttifak</div>
-    <div class="nav-tab" onclick="switchTab('reports')">📜 Raporlar <span class="notif" id="notif-reports">!</span></div>
-  </div>
-
-  <!-- MAIN CONTENT -->
-  <div id="main-content">
+  <!-- GAME BODY -->
+  <div class="game-body">
     <!-- LEFT SIDEBAR -->
-    <div id="sidebar-left">
-      <div class="side-card">
-        <div class="side-card-header">Köy Bilgisi</div>
-        <div class="side-card-body">
-          <div style="text-align:center; margin-bottom:8px">
-            <div style="font-family:'Cinzel',serif; color:var(--gold-light); font-size:0.9rem" id="sb-playername">-</div>
-            <div style="color:var(--parchment-dark); font-size:0.78rem" id="sb-tribe">-</div>
-            <div style="color:var(--parchment-dark); font-size:0.78rem">Koordinat: <span id="sb-coords" style="color:var(--gold-light)">0|0</span></div>
-          </div>
-          <div class="prod-row"><span>Depo:</span><span id="sb-warehouse">800</span></div>
-          <div class="prod-row"><span>Ambar:</span><span id="sb-granary">800</span></div>
+    <div class="sidebar-left">
+      <div class="panel">
+        <div class="panel-header">👤 Köy Profili</div>
+        <div class="panel-body text-center">
+          <div style="font-size:2rem;" id="tribeEmoji">🏛️</div>
+          <div class="fw-700 text-gold" id="tribeName">Romalılar</div>
+          <div class="fs-sm" style="color:var(--text-dim)">Nüfus: <b id="population">2</b></div>
+          <div class="fs-sm" style="color:var(--text-dim)">Köy: <b id="villageName">-</b></div>
         </div>
       </div>
-
-      <div class="side-card">
-        <div class="side-card-header">Saatlik Üretim (10x)</div>
-        <div class="side-card-body">
-          <div class="prod-row"><span><span class="res-icon ico-wood" style="width:14px;height:14px"></span> Odun:</span><span id="prod-wood">0</span></div>
-          <div class="prod-row"><span><span class="res-icon ico-clay" style="width:14px;height:14px"></span> Tuğla:</span><span id="prod-clay">0</span></div>
-          <div class="prod-row"><span><span class="res-icon ico-iron" style="width:14px;height:14px"></span> Demir:</span><span id="prod-iron">0</span></div>
-          <div class="prod-row"><span><span class="res-icon ico-crop" style="width:14px;height:14px"></span> Tahıl:</span><span id="prod-crop">0</span></div>
+      <div class="panel">
+        <div class="panel-header">📈 Saatlik Üretim</div>
+        <div class="panel-body">
+          <div class="prod-row"><span class="prod-label"><span class="res-dot wood"></span> Odun:</span><span id="p-wood">0</span></div>
+          <div class="prod-row"><span class="prod-label"><span class="res-dot clay"></span> Tuğla:</span><span id="p-clay">0</span></div>
+          <div class="prod-row"><span class="prod-label"><span class="res-dot iron"></span> Demir:</span><span id="p-iron">0</span></div>
+          <div class="prod-row"><span class="prod-label"><span class="res-dot crop"></span> Tahıl:</span><span id="p-crop">0</span></div>
         </div>
       </div>
-
-      <div class="side-card">
-        <div class="side-card-header">⭐ Plus / YDS Kulübü</div>
-        <div class="side-card-body">
-          <div class="premium-btn-row" onclick="premiumInstantFinish()">
-            ⚡ Anında Bitir <span class="cost">5 YDS</span>
-          </div>
-          <div class="premium-btn-row" onclick="premiumNPC()">
-            ↔ NPC Tüccar <span class="cost">3 YDS</span>
-          </div>
-          <div class="premium-btn-row" onclick="premiumBoost()">
-            📈 %25 Üretim (24s) <span class="cost">10 YDS</span>
-          </div>
-          <div class="premium-btn-row" onclick="premiumSecondVillage()">
-            🏘 Yeni Köy Kur <span class="cost">50 YDS</span>
-          </div>
-          <div style="margin-top:8px; font-size:0.75rem; color:var(--parchment-dark); font-style:italic; text-align:center">
-            YDS puanı testlerden kazanırsın
-          </div>
+      <div class="panel">
+        <div class="panel-header">🪙 Altın Dükkanı</div>
+        <div class="panel-body">
+          <button class="btn btn-gold btn-block btn-sm mb-2" onclick="goldAction('finish')">⚡ İnşaat Bitir (5🪙)</button>
+          <button class="btn btn-gold btn-block btn-sm mb-2" onclick="goldAction('npc')">🔄 NPC Tüccar (3🪙)</button>
+          <button class="btn btn-gold btn-block btn-sm" onclick="goldAction('boost')">📈 +%25 Üretim (10🪙)</button>
         </div>
       </div>
-
-      <div class="side-card">
-        <div class="side-card-header">🦸 Kahraman</div>
-        <div class="side-card-body">
-          <div class="prod-row"><span>Sağlık:</span><span id="hero-hp" style="color:#90ee90">100%</span></div>
-          <div class="prod-row"><span>Deneyim:</span><span id="hero-xp">0</span></div>
-          <div class="prod-row"><span>Köyde</span><span id="hero-status" style="color:var(--gold-light)">✓</span></div>
+      <div class="panel">
+        <div class="panel-header">⚔️ Askerler</div>
+        <div class="panel-body" id="troopSummary">
+          <div class="queue-empty">Kışla gerekli</div>
         </div>
       </div>
     </div>
 
-    <!-- GAME AREA -->
-    <div id="game-area">
-      <!-- DORF1 TAB -->
-      <div class="tab-content active" id="tab-dorf1">
-        <div style="text-align:center; margin-bottom:10px">
-          <span style="color:var(--gold-light); font-family:'Cinzel',serif">Kaynak Alanı — Slota tıkla, geliştir veya yap.</span>
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+      <!-- DORF1 VIEW -->
+      <div id="view-dorf1">
+        <div class="tab-bar">
+          <button class="tab-btn active">🏘️ Kaynak Alanları</button>
         </div>
-        <div class="village-map dorf1-bg" id="dorf1-map" style="width:560px;height:420px">
-          <svg class="village-paths" viewBox="0 0 560 420">
-            <path d="M280 210 Q200 150 100 120" stroke="white" stroke-width="6" fill="none"/>
-            <path d="M280 210 Q350 140 460 100" stroke="white" stroke-width="6" fill="none"/>
-            <path d="M280 210 Q230 280 100 300" stroke="white" stroke-width="6" fill="none"/>
-            <path d="M280 210 Q320 290 460 310" stroke="white" stroke-width="6" fill="none"/>
-            <circle cx="280" cy="210" r="40" stroke="white" stroke-width="4" fill="none" opacity="0.5"/>
-          </svg>
-        </div>
+        <div class="village-view" id="dorf1Map"></div>
       </div>
-
-      <!-- DORF2 TAB -->
-      <div class="tab-content" id="tab-dorf2">
-        <div style="text-align:center; margin-bottom:10px">
-          <span style="color:var(--gold-light); font-family:'Cinzel',serif">Şehir Merkezi — Binalara tıkla, inşa et veya geliştir.</span>
+      <!-- DORF2 VIEW -->
+      <div id="view-dorf2" class="hidden">
+        <div class="tab-bar">
+          <button class="tab-btn active">🏰 Şehir Merkezi</button>
         </div>
-        <div class="village-map dorf2-bg" id="dorf2-map" style="width:560px;height:420px">
-          <svg class="village-paths" viewBox="0 0 560 420">
-            <path d="M280 210 L280 30 M280 210 L280 390 M280 210 L40 210 M280 210 L520 210" stroke="white" stroke-width="5" fill="none"/>
-            <path d="M280 210 L100 80 M280 210 L460 80 M280 210 L100 340 M280 210 L460 340" stroke="white" stroke-width="3" fill="none"/>
-            <circle cx="280" cy="210" r="140" stroke="white" stroke-width="3" fill="none" opacity="0.3"/>
-          </svg>
-        </div>
+        <div class="village-view dorf2" id="dorf2Map"></div>
       </div>
-
-      <!-- MAP TAB -->
-      <div class="tab-content" id="tab-map">
-        <div class="section-title">🗺 Dünya Haritası</div>
-        <div class="map-controls">
-          <button class="map-ctrl-btn" onclick="mapZoom(1)">🔍 Yakınlaştır</button>
-          <button class="map-ctrl-btn" onclick="mapZoom(-1)">🔎 Uzaklaştır</button>
-          <button class="map-ctrl-btn" onclick="centerOnPlayer()">🎯 Köyüme Git</button>
-          <span style="color:var(--parchment-dark); font-size:0.8rem; margin-left:8px">Tıkla: Köy Bilgisi | Botlar her dakika gelişir</span>
-        </div>
-        <div id="world-map-container">
-          <canvas id="world-canvas" width="680" height="500"></canvas>
-        </div>
-        <div id="map-tooltip"></div>
-      </div>
-
-      <!-- MILITARY TAB -->
-      <div class="tab-content" id="tab-military">
-        <div class="section-title">⚔ Askerlik</div>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px">
-          <div>
-            <div class="side-card-header" style="border-radius:6px 6px 0 0">Asker Eğit</div>
-            <div id="troop-train-panel" style="background:rgba(0,0,0,0.2); border:1px solid rgba(200,150,12,0.3); border-top:none; border-radius:0 0 6px 6px; padding:12px">
-              <p class="text-muted">Kışla veya Ahır gerekli.</p>
-            </div>
-          </div>
-          <div>
-            <div class="side-card-header" style="border-radius:6px 6px 0 0">Ordum</div>
-            <div id="troop-count-panel" style="background:rgba(0,0,0,0.2); border:1px solid rgba(200,150,12,0.3); border-top:none; border-radius:0 0 6px 6px; padding:12px">
-              <p class="text-muted">Asker yok.</p>
-            </div>
+      <!-- MAP VIEW -->
+      <div id="view-map" class="hidden">
+        <div class="tab-bar">
+          <button class="tab-btn active">🗺️ Dünya Haritası</button>
+          <div style="flex:1"></div>
+          <div class="flex items-center gap-2" style="padding:4px;">
+            <span class="fs-sm">X:</span><input type="number" id="mapGotoX" value="0" style="width:60px;">
+            <span class="fs-sm">Y:</span><input type="number" id="mapGotoY" value="0" style="width:60px;">
+            <button class="btn btn-green btn-sm" onclick="mapGoto()">Git</button>
           </div>
         </div>
-        <div style="margin-top:16px">
-          <div class="side-card-header" style="border-radius:6px 6px 0 0">Saldırı Gönder</div>
-          <div style="background:rgba(0,0,0,0.2); border:1px solid rgba(200,150,12,0.3); border-top:none; border-radius:0 0 6px 6px; padding:12px">
-            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:10px">
-              <input type="number" id="attack-x" placeholder="X koordinat" style="width:110px; padding:6px; background:rgba(0,0,0,0.4); border:1px solid var(--gold); border-radius:4px; color:var(--parchment); font-family:'Cinzel',serif">
-              <input type="number" id="attack-y" placeholder="Y koordinat" style="width:110px; padding:6px; background:rgba(0,0,0,0.4); border:1px solid var(--gold); border-radius:4px; color:var(--parchment); font-family:'Cinzel',serif">
-              <span style="color:var(--parchment-dark); font-size:0.8rem">veya haritadan köy tıkla</span>
-            </div>
-            <div id="attack-troop-select"></div>
-            <button class="btn-red" onclick="sendAttack()" style="margin-top:10px">⚔ Saldır!</button>
-            <button class="btn-blue" onclick="sendReinforce()" style="margin-top:10px; margin-left:8px">🛡 Takviye Gönder</button>
-          </div>
-        </div>
-        <div style="margin-top:16px">
-          <div class="side-card-header" style="border-radius:6px 6px 0 0">Hareketteki Birlikler</div>
-          <div id="moving-troops" style="background:rgba(0,0,0,0.2); border:1px solid rgba(200,150,12,0.3); border-top:none; border-radius:0 0 6px 6px; padding:12px">
-            <p class="text-muted">Hareket eden birlik yok.</p>
-          </div>
+        <div class="map-container" id="mapContainer">
+          <div class="map-grid" id="mapGrid"></div>
+          <div class="map-coords"><span>X: <b id="mapCoordX">0</b></span><span>Y: <b id="mapCoordY">0</b></span></div>
         </div>
       </div>
-
-      <!-- ALLIANCE TAB -->
-      <div class="tab-content" id="tab-alliance">
-        <div class="section-title">🤝 İttifak</div>
-        <div id="alliance-panel">
-          <p class="text-muted">Yükleniyor...</p>
+      <!-- STATS VIEW -->
+      <div id="view-stats" class="hidden">
+        <div class="tab-bar">
+          <button class="tab-btn active" onclick="showStatTab('players')">🏆 Oyuncular</button>
+          <button class="tab-btn" onclick="showStatTab('alliances')">🛡️ İttifaklar</button>
+          <button class="tab-btn" onclick="showStatTab('attackers')">⚔️ Saldırganlar</button>
         </div>
+        <div id="statsContent"></div>
       </div>
-
-      <!-- REPORTS TAB -->
-      <div class="tab-content" id="tab-reports">
-        <div class="section-title">📜 Savaş Raporları</div>
-        <div id="reports-list">
-          <p class="text-muted">Henüz rapor yok.</p>
+      <!-- REPORTS VIEW -->
+      <div id="view-reports" class="hidden">
+        <div class="tab-bar">
+          <button class="tab-btn active">📜 Raporlar</button>
         </div>
+        <div id="reportsContent"></div>
+      </div>
+      <!-- ALLIANCE VIEW -->
+      <div id="view-alliance" class="hidden">
+        <div class="tab-bar">
+          <button class="tab-btn active">🛡️ İttifak</button>
+        </div>
+        <div id="allianceContent"></div>
       </div>
     </div>
 
     <!-- RIGHT SIDEBAR -->
-    <div id="sidebar-right">
-      <div class="side-card">
-        <div class="side-card-header">🔨 İnşaat Kuyruğu</div>
-        <div class="side-card-body" id="build-queue-panel">
-          <p class="text-muted" style="text-align:center; padding:10px 0">Kuyruk boş</p>
+    <div class="sidebar-right">
+      <div class="panel">
+        <div class="panel-header">🔨 İnşaat Kuyruğu</div>
+        <div class="panel-body" id="buildQueue">
+          <div class="queue-empty">İnşaat emri yok.</div>
         </div>
       </div>
-
-      <div class="side-card">
-        <div class="side-card-header">Asker Eğitim Kuyruğu</div>
-        <div class="side-card-body" id="train-queue-panel">
-          <p class="text-muted" style="text-align:center; padding:10px 0">Kuyruk boş</p>
+      <div class="panel">
+        <div class="panel-header">🗡️ Asker Hareketleri</div>
+        <div class="panel-body" id="troopMovements">
+          <div class="queue-empty">Hareket yok.</div>
         </div>
       </div>
-
-      <div class="side-card">
-        <div class="side-card-header">Üretim Artışı</div>
-        <div class="side-card-body">
-          <div id="boost-status" class="text-muted" style="font-size:0.78rem">Aktif değil</div>
-        </div>
-      </div>
-
-      <div class="side-card">
-        <div class="side-card-header">Sıralama</div>
-        <div class="side-card-body" id="leaderboard-mini">
-          <p class="text-muted">Yükleniyor...</p>
+      <div class="panel">
+        <div class="panel-header">📋 Bilgi Kutusu</div>
+        <div class="panel-body" id="infoBox">
+          <div class="fs-sm" style="color:var(--text-dim)">Hoş geldin! Köyünü geliştirmeye başla.</div>
         </div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- BUILD MODAL -->
-<div class="modal-overlay" id="build-modal">
+<!-- ═══════════════ MODAL ═══════════════ -->
+<div id="gameModal" class="modal-overlay hidden">
   <div class="modal-box">
     <div class="modal-header">
-      <h3 id="modal-title">İnşaat</h3>
-      <button class="modal-close" onclick="closeBuildModal()">✕</button>
+      <h3 id="modalTitle">-</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
     </div>
-    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-body" id="modalBody"></div>
   </div>
 </div>
-
-<!-- ATTACK CONFIRM MODAL -->
-<div class="modal-overlay" id="attack-modal">
-  <div class="modal-box">
-    <div class="modal-header">
-      <h3 id="attack-modal-title">Saldırıyı Onayla</h3>
-      <button class="modal-close" onclick="closeAttackModal()">✕</button>
-    </div>
-    <div class="modal-body" id="attack-modal-body"></div>
-  </div>
-</div>
-
-<!-- NOTIFICATION -->
-<div id="notification"></div>
 
 <script>
-/* ============================================================
-   GAME DATA
-   ============================================================ */
+/* ═══════════════════════════════════════════════════════════════
+   GAME ENGINE - COMPLETE TRAVIAN CLONE
+   ═══════════════════════════════════════════════════════════════ */
 
-// 10x SPEED multiplier
-const SPEED = 10;
-const MAP_SIZE = 100; // -50 to +50
+// ─── CONSTANTS & DATA ───
+const SPEED = 10; // 10x speed
+const MAP_SIZE = 200; // -100 to +100
+const BOT_COUNT = 1000;
+const TICK_MS = 1000;
 
-// Resource field production per level/hour (Travian standard * 10x speed)
-const FIELD_PRODUCTION = [0, 70, 130, 200, 280, 370, 470, 580, 700, 830, 970, 1120, 1280, 1450, 1630, 1820, 2020, 2230, 2450, 2680];
+// Dorf1 layout - 18 resource fields (percentages)
+const DORF1_LAYOUT = [
+  {id:1,type:'wood',x:28,y:12},{id:2,type:'wood',x:48,y:6},{id:3,type:'wood',x:68,y:10},
+  {id:4,type:'crop',x:15,y:28},{id:5,type:'iron',x:35,y:22},{id:6,type:'crop',x:55,y:20},{id:7,type:'iron',x:75,y:25},
+  {id:8,type:'clay',x:10,y:48},{id:9,type:'crop',x:30,y:42},{id:10,type:'crop',x:60,y:40},{id:11,type:'clay',x:85,y:46},
+  {id:12,type:'wood',x:15,y:65},{id:13,type:'iron',x:38,y:62},{id:14,type:'clay',x:58,y:60},{id:15,type:'wood',x:80,y:63},
+  {id:16,type:'crop',x:28,y:78},{id:17,type:'clay',x:50,y:82},{id:18,type:'crop',x:72,y:78}
+];
 
-// Build times in seconds for level 1 (original Travian / 10x speed)
-const BASE_FIELD_TIME = 100; // seconds at level 1, 10x
-const BASE_BUILD_TIME = 150;
+// Dorf2 layout - 22 building slots
+const DORF2_LAYOUT = [
+  {id:19,x:18,y:18},{id:20,x:38,y:10},{id:21,x:58,y:8},{id:22,x:76,y:15},
+  {id:23,x:8,y:35},{id:24,x:28,y:28},{id:25,x:68,y:26},{id:26,x:88,y:33},
+  {id:27,x:15,y:52},{id:28,x:82,y:50},
+  {id:29,x:45,y:42,isMain:true}, // Main Building
+  {id:30,x:25,y:68},{id:31,x:42,y:60},{id:32,x:58,y:58},{id:33,x:75,y:65},
+  {id:34,x:35,y:78},{id:35,x:55,y:76},{id:36,x:72,y:80},
+  {id:37,x:10,y:82},{id:38,x:88,y:78},
+  {id:39,x:50,y:25,isRally:true}, // Rally Point
+  {id:40,x:50,y:95,isWall:true}   // Wall
+];
 
-// Storage capacities
-const WAREHOUSE_CAP = [800, 1200, 1800, 2600, 3600, 5000, 6800, 9000, 11600, 14800, 18800, 23800, 29800, 37000, 45600, 56000, 68400, 83200, 100800, 120000];
-const GRANARY_CAP = [800, 1200, 1800, 2600, 3600, 5000, 6800, 9000, 11600, 14800, 18800, 23800, 29800, 37000, 45600, 56000, 68400, 83200, 100800, 120000];
-
-// Building data
+// Building definitions
 const BUILDINGS = {
-  center:     { name:'Merkez Bina',       desc:'İnşaat sürelerini kısaltır.',        cost:[70,40,60,15],     timeBase:180, maxLvl:20, icon:'🏛', req:[] },
-  warehouse:  { name:'Depo',              desc:'Odun, tuğla ve demir saklar.',        cost:[130,160,90,40],   timeBase:200, maxLvl:20, icon:'📦', req:[] },
-  granary:    { name:'Tahıl Ambarı',      desc:'Tahıl saklar.',                       cost:[80,100,70,20],    timeBase:180, maxLvl:20, icon:'🌾', req:[] },
-  cranny:     { name:'Sığınak',           desc:'%20 kaynağı yağmadan korur.',         cost:[40,50,30,10],     timeBase:80,  maxLvl:10, icon:'🪨', req:[] },
-  embassy:    { name:'Elçilik',           desc:'İttifak kurmanı sağlar.',             cost:[180,130,150,80],  timeBase:250, maxLvl:20, icon:'🤝', req:[{b:'center',l:3}] },
-  rally:      { name:'Askeri Üs',         desc:'Saldırıları buradan gönderirsin.',    cost:[110,160,90,70],   timeBase:120, maxLvl:1,  icon:'⚔', req:[] },
-  barracks:   { name:'Kışla',             desc:'Piyade asker eğitir.',                cost:[210,140,260,120], timeBase:300, maxLvl:20, icon:'🏟', req:[{b:'center',l:3},{b:'rally',l:1}] },
-  stable:     { name:'Ahır',              desc:'Süvari birlikleri eğitir.',           cost:[260,140,220,100], timeBase:350, maxLvl:20, icon:'🐎', req:[{b:'center',l:5},{b:'barracks',l:3}] },
-  workshop:   { name:'Atölye',            desc:'Kuşatma makineleri üretir.',          cost:[460,510,360,320], timeBase:500, maxLvl:20, icon:'⚙', req:[{b:'center',l:10},{b:'stable',l:5}] },
-  academy:    { name:'Akademi',           desc:'Yeni askerleri araştırır.',           cost:[220,160,90,40],   timeBase:350, maxLvl:20, icon:'📚', req:[{b:'center',l:5},{b:'barracks',l:3}] },
-  smithy:     { name:'Zırh Dökümhanesi', desc:'Askerlerin savaş gücünü artırır.',    cost:[180,170,70,40],   timeBase:400, maxLvl:20, icon:'🔨', req:[{b:'center',l:5},{b:'academy',l:3}] },
-  market:     { name:'Pazar Yeri',        desc:'Hammadde ticareti yapılır.',          cost:[80,70,120,70],    timeBase:250, maxLvl:20, icon:'🏪', req:[{b:'warehouse',l:1}] },
-  tavern:     { name:'Meyhane',           desc:'Kahraman deneyimi artırır.',          cost:[100,90,60,40],    timeBase:200, maxLvl:5,  icon:'🍺', req:[{b:'center',l:5}] },
-  wall:       { name:'Sur / Çit',         desc:'Savunmayı güçlendirir.',              cost:[70,90,170,70],    timeBase:250, maxLvl:20, icon:'🏰', req:[] },
+  wood:{name:'Oduncu',icon:'🪵',desc:'Odun üretimini artırır.',cat:'field',
+    cost:[40,100,50,60],time:26,prodBase:100},
+  clay:{name:'Tuğla Ocağı',icon:'🧱',desc:'Tuğla üretimini artırır.',cat:'field',
+    cost:[80,40,80,50],time:26,prodBase:100},
+  iron:{name:'Demir Madeni',icon:'⛏️',desc:'Demir üretimini artırır.',cat:'field',
+    cost:[100,80,30,60],time:26,prodBase:100},
+  crop:{name:'Tarla',icon:'🌾',desc:'Tahıl üretimini artırır.',cat:'field',
+    cost:[70,90,70,20],time:26,prodBase:100},
+  center:{name:'Merkez Bina',icon:'🏛️',desc:'İnşaat sürelerini kısaltır. Her seviye -%3.',cat:'infra',
+    cost:[70,40,60,20],time:40,req:[]},
+  warehouse:{name:'Depo',icon:'📦',desc:'Odun, tuğla ve demir kapasitesini artırır.',cat:'infra',
+    cost:[130,160,90,40],time:40,req:[{b:'center',lvl:1}],capBase:800},
+  granary:{name:'Tahıl Ambarı',icon:'🏺',desc:'Tahıl kapasitesini artırır.',cat:'infra',
+    cost:[80,100,70,20],time:35,req:[{b:'center',lvl:1}],capBase:800},
+  cranny:{name:'Sığınak',icon:'🕳️',desc:'Kaynaklarını yağmadan korur.',cat:'infra',
+    cost:[40,50,30,10],time:20,req:[]},
+  embassy:{name:'Elçilik',icon:'🏴',desc:'İttifak kurmanı sağlar.',cat:'infra',
+    cost:[180,130,150,80],time:60,req:[{b:'center',lvl:1}]},
+  rally:{name:'Askeri Üs',icon:'🚩',desc:'Askerlerin toplandığı alan.',cat:'military',
+    cost:[110,160,90,70],time:35,req:[]},
+  barracks:{name:'Kışla',icon:'⚔️',desc:'Piyade eğitilir.',cat:'military',
+    cost:[210,140,260,120],time:60,req:[{b:'center',lvl:3},{b:'rally',lvl:1}]},
+  stable:{name:'Ahır',icon:'🐴',desc:'Süvari eğitilir.',cat:'military',
+    cost:[260,140,220,100],time:80,req:[{b:'center',lvl:5},{b:'barracks',lvl:3}]},
+  academy:{name:'Akademi',icon:'📚',desc:'Yeni birlikleri araştırır.',cat:'military',
+    cost:[220,160,90,40],time:90,req:[{b:'center',lvl:3},{b:'barracks',lvl:3}]},
+  blacksmith:{name:'Zırh Dökümhanesi',icon:'🔨',desc:'Asker zırhını geliştirir.',cat:'military',
+    cost:[170,200,380,130],time:100,req:[{b:'center',lvl:3},{b:'academy',lvl:1}]},
+  market:{name:'Pazar Yeri',icon:'🏪',desc:'Kaynak takası ve ticareti.',cat:'infra',
+    cost:[80,70,120,70],time:50,req:[{b:'center',lvl:1},{b:'warehouse',lvl:1}]},
+  wall:{name:'Sur',icon:'🧱',desc:'Köy savunmasını artırır.',cat:'defense',
+    cost:[70,90,170,70],time:40,req:[]}
 };
 
-// Troop data per tribe
+// Troop definitions per tribe
 const TROOPS = {
-  Roman: [
-    {id:'legionnaire',  name:'Lejyoner',         icon:'🛡', wood:120, clay:100, iron:150, crop:30, pop:1, time:80,  atk:40, def1:35, def2:50, speed:6, cap:50},
-    {id:'praetorian',   name:'Pratoryalı',        icon:'🔱', wood:100, clay:130, iron:160, crop:30, pop:1, time:100, atk:30, def1:65, def2:35, speed:5, cap:20},
-    {id:'imperian',     name:'İmperian',          icon:'⚔', wood:150, clay:160, iron:210, crop:80, pop:1, time:120, atk:70, def1:40, def2:25, speed:7, cap:100},
-    {id:'eqlegati',     name:'Equites Legati',    icon:'🐴', wood:140, clay:160, iron:20,  crop:40, pop:2, time:130, atk:16, def1:35, def2:20, speed:16, cap:0, isCav:true},
-    {id:'eqimperator',  name:'Equites Imper.',    icon:'🐎', wood:550, clay:440, iron:320, crop:100,pop:3, time:160, atk:120,def1:65, def2:50, speed:14, cap:100, isCav:true},
-  ],
-  Teuton: [
-    {id:'clubswinger',  name:'Gürzlü Savaşçı',   icon:'🪓', wood:95,  clay:75,  iron:40,  crop:40, pop:1, time:50,  atk:40, def1:20, def2:5,  speed:7, cap:60},
-    {id:'spearfighter', name:'Mızraklı Savaşçı', icon:'🗡', wood:145, clay:70,  iron:85,  crop:40, pop:1, time:80,  atk:10, def1:35, def2:60, speed:7, cap:45},
-    {id:'axefighter',   name:'Baltacı',           icon:'🪓', wood:130, clay:120, iron:170, crop:70, pop:1, time:100, atk:60, def1:30, def2:30, speed:6, cap:50},
-    {id:'paladin',      name:'Paladin',            icon:'🛡', wood:450, clay:515, iron:480, crop:80, pop:2, time:160, atk:55, def1:100,def2:40, speed:10, cap:110, isCav:true},
-    {id:'tktnight',     name:'Töton Şövalyesi',   icon:'⚔', wood:595, clay:765, iron:780, crop:150,pop:3, time:200, atk:150,def1:50, def2:75, speed:9, cap:80, isCav:true},
-  ],
-  Turk: [
-    {id:'mercenary',    name:'Paralı Asker',      icon:'🗡', wood:130, clay:80,  iron:40,  crop:40, pop:1, time:60,  atk:35, def1:20, def2:25, speed:9, cap:45},
-    {id:'slave',        name:'Köle Askeri',        icon:'🪖', wood:60,  clay:30,  iron:80,  crop:50, pop:2, time:60,  atk:10, def1:15, def2:40, speed:9, cap:25},
-    {id:'haeduan',      name:'Haeduanlı Atlı',    icon:'🐴', wood:360, clay:330, iron:280, crop:80, pop:2, time:140, atk:140,def1:50, def2:165,speed:18, cap:110, isCav:true},
-    {id:'stepperider',  name:'Bozkır Atlısı',     icon:'🐎', wood:140, clay:150, iron:185, crop:70, pop:2, time:110, atk:45, def1:50, def2:80, speed:19, cap:75, isCav:true},
-    {id:'theutates',    name:'Türk Komutanı',     icon:'👑', wood:800, clay:600, iron:700, crop:200,pop:4, time:300, atk:200,def1:80, def2:80, speed:22, cap:150, isCav:true},
-  ]
+  Roman:{
+    t1:{name:'Lejyoner',icon:'🗡️',att:40,defI:35,defC:50,speed:6,carry:50,crop:1,
+      cost:[120,100,150,30],time:30},
+    t2:{name:'Praetorian',icon:'🛡️',att:30,defI:65,defC:35,speed:5,carry:20,crop:1,
+      cost:[100,130,160,70],time:35},
+    t3:{name:'İmperian',icon:'⚔️',att:70,defI:40,defC:25,speed:7,carry:50,crop:1,
+      cost:[150,160,210,80],time:40},
+    t4:{name:'Equites Legati',icon:'🐎',att:0,defI:20,defC:10,speed:16,carry:0,crop:2,
+      cost:[140,160,20,40],time:25},
+    t5:{name:'Equites Imperatoris',icon:'🏇',att:120,defI:65,defC:50,speed:14,carry:100,crop:3,
+      cost:[550,440,320,100],time:70},
+    ram:{name:'Koçbaşı',icon:'🪵',att:60,defI:30,defC:75,speed:4,carry:0,crop:3,
+      cost:[900,360,500,70],time:120},
+    senator:{name:'Senatör',icon:'👑',att:50,defI:40,defC:30,speed:4,carry:0,crop:5,
+      cost:[5800,5300,5500,400],time:600}
+  },
+  Teuton:{
+    t1:{name:'Savaşçı',icon:'🪓',att:40,defI:20,defC:5,speed:7,carry:60,crop:1,
+      cost:[95,75,40,40],time:22},
+    t2:{name:'Mızrakçı',icon:'🔱',att:10,defI:35,defC:60,speed:7,carry:40,crop:1,
+      cost:[145,70,85,40],time:28},
+    t3:{name:'Baltacı',icon:'⚔️',att:60,defI:30,defC:30,speed:6,carry:50,crop:1,
+      cost:[130,120,170,70],time:35},
+    t4:{name:'Teutonic Atlı',icon:'🐎',att:55,defI:100,defC:40,speed:10,carry:110,crop:2,
+      cost:[350,450,230,60],time:50},
+    t5:{name:'Paladin',icon:'🏇',att:150,defI:50,defC:75,speed:9,carry:80,crop:3,
+      cost:[550,640,800,180],time:80},
+    ram:{name:'Koçbaşı',icon:'🪵',att:65,defI:30,defC:80,speed:4,carry:0,crop:3,
+      cost:[1000,300,350,70],time:120},
+    chief:{name:'Şef',icon:'👑',att:40,defI:60,defC:40,speed:4,carry:0,crop:4,
+      cost:[35500,26600,25000,27200],time:600}
+  },
+  Turk:{
+    t1:{name:'Akıncı',icon:'🏹',att:15,defI:40,defC:50,speed:7,carry:35,crop:1,
+      cost:[100,130,55,30],time:25},
+    t2:{name:'Kılıç Ustası',icon:'🗡️',att:45,defI:35,defC:20,speed:6,carry:45,crop:1,
+      cost:[140,150,185,60],time:30},
+    t3:{name:'Sipahi',icon:'🐎',att:90,defI:25,defC:40,speed:19,carry:75,crop:2,
+      cost:[350,450,230,60],time:45},
+    t4:{name:'Deli Atlı',icon:'🏇',att:120,defI:65,defC:50,speed:16,carry:35,crop:2,
+      cost:[360,330,280,120],time:55},
+    t5:{name:'Yeniçeri',icon:'⚔️',att:155,defI:80,defC:60,speed:5,carry:50,crop:3,
+      cost:[950,555,330,75],time:80},
+    ram:{name:'Koçbaşı',icon:'🪵',att:50,defI:30,defC:105,speed:4,carry:0,crop:3,
+      cost:[950,555,330,75],time:120},
+    bey:{name:'Bey',icon:'👑',att:40,defI:60,defC:40,speed:5,carry:0,crop:4,
+      cost:[30750,27200,24500,25200],time:600}
+  }
 };
 
-// Resource field slot positions (dorf1, 18 fields) - x%, y% as % of 560x420
-const DORF1_SLOTS = [
-  {id:1,  x:22, y:13}, {id:2,  x:39, y:9},  {id:3,  x:57, y:9},
-  {id:4,  x:73, y:13}, {id:5,  x:84, y:23},
-  {id:6,  x:13, y:28}, {id:7,  x:27, y:23},
-  {id:8,  x:86, y:39}, {id:9,  x:91, y:54},
-  {id:10, x:8,  y:42}, {id:11, x:7,  y:58},
-  {id:12, x:87, y:68}, {id:13, x:84, y:80},
-  {id:14, x:14, y:73}, {id:15, x:24, y:82},
-  {id:16, x:40, y:88}, {id:17, x:58, y:88}, {id:18, x:73, y:83}
-];
-
-// Default resource field type layout (4-4-6-4: wood-clay-iron-crop typical)
-const DEFAULT_FIELD_TYPES = ['wood','clay','iron','crop','wood','clay','iron','crop','crop','wood','clay','iron','crop','wood','clay','iron','crop','crop'];
-
-// Dorf2 building slot positions
-const DORF2_SLOTS = [
-  {id:19, x:50, y:48, isMain:true},
-  {id:20, x:50, y:92, isWall:true},
-  {id:21, x:50, y:73, isRally:true},
-  {id:22, x:50, y:24},
-  {id:23, x:27, y:32},
-  {id:24, x:73, y:32},
-  {id:25, x:20, y:50},
-  {id:26, x:80, y:50},
-  {id:27, x:24, y:68},
-  {id:28, x:76, y:68},
-  {id:29, x:38, y:22},
-  {id:30, x:62, y:22},
-  {id:31, x:16, y:35},
-  {id:32, x:84, y:35},
-  {id:33, x:10, y:60},
-  {id:34, x:90, y:60},
-  {id:35, x:33, y:80},
-  {id:36, x:67, y:80},
-  {id:37, x:36, y:37},
-  {id:38, x:64, y:37},
-  {id:39, x:36, y:63},
-  {id:40, x:64, y:63},
-];
-
-/* ============================================================
-   GAME STATE
-   ============================================================ */
-
-let GS = null; // game state
-let WORLD = null; // world state (bots etc.)
+// ─── STATE MANAGEMENT ───
+let GS = null; // Game State
 let currentUser = null;
 let gameInterval = null;
-let botInterval = null;
-let currentModal = null;
-let mapZoomLevel = 3;
-let mapOffsetX = 0, mapOffsetY = 0;
-let mapDragging = false, mapDragStart = {x:0,y:0}, mapDragOffset = {x:0,y:0};
-let pendingAttack = null;
-let currentTab = 'dorf1';
-let allUsers = {};
+let mapDragState = {dragging:false,startX:0,startY:0,scrollX:0,scrollY:0};
 
-/* ============================================================
-   AUTH
-   ============================================================ */
-let selectedTribe = null;
-
-function setTribe(t) {
-  selectedTribe = t;
-  document.querySelectorAll('.tribe-btn').forEach(b => b.style.outline = 'none');
-  document.querySelector('.tribe-btn.'+t.toLowerCase()+(t==='Roman'?'':'').replace('Roman','roman').replace('Teuton','teuton').replace('Turk','turk')).style.outline = '3px solid var(--gold)';
-  const btn = document.getElementById('btn-register');
-  btn.disabled = false;
-  btn.style.opacity = '1';
-  btn.textContent = 'Oyuna Başla — ' + (t==='Roman'?'🦅 Romalı':t==='Teuton'?'🪓 Cermen':'🐎 Türk');
+// ─── LOGIN / REGISTER ───
+function showLoginTab(tab) {
+  document.getElementById('loginForm').classList.toggle('hidden', tab!=='login');
+  document.getElementById('registerForm').classList.toggle('hidden', tab!=='register');
+  document.querySelectorAll('.login-tabs button').forEach((b,i)=> b.classList.toggle('active',(tab==='login'?i===0:i===1)));
+  document.getElementById('loginError').style.display='none';
 }
 
-function showRegister() {
-  document.getElementById('auth-form').style.display = 'none';
-  document.getElementById('register-form').style.display = 'block';
-}
-function showLogin() {
-  document.getElementById('auth-form').style.display = 'block';
-  document.getElementById('register-form').style.display = 'none';
+function showError(msg){
+  const el=document.getElementById('loginError');
+  el.textContent=msg; el.style.display='block';
 }
 
-function tryLogin() {
-  const u = document.getElementById('inp-username').value.trim();
-  const p = document.getElementById('inp-password').value;
-  const users = JSON.parse(localStorage.getItem('yds_wars_users') || '{}');
-  if (users[u] && users[u].password === p) {
-    currentUser = u;
-    loadGame();
+function getUsers(){return JSON.parse(localStorage.getItem('yds_users')||'{}');}
+function saveUsers(u){localStorage.setItem('yds_users',JSON.stringify(u));}
+
+function doRegister(){
+  const user=document.getElementById('regUser').value.trim();
+  const pass=document.getElementById('regPass').value;
+  const pass2=document.getElementById('regPass2').value;
+  if(!user||user.length<2)return showError('Kullanıcı adı en az 2 karakter olmalı.');
+  if(pass.length<4)return showError('Şifre en az 4 karakter olmalı.');
+  if(pass!==pass2)return showError('Şifreler eşleşmiyor.');
+  const users=getUsers();
+  if(users[user])return showError('Bu kullanıcı adı zaten alınmış.');
+  users[user]={pass:pass,created:Date.now()};
+  saveUsers(users);
+  currentUser=user;
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('tribeScreen').classList.remove('hidden');
+}
+
+function doLogin(){
+  const user=document.getElementById('loginUser').value.trim();
+  const pass=document.getElementById('loginPass').value;
+  if(!user||!pass)return showError('Kullanıcı adı ve şifreyi gir.');
+  const users=getUsers();
+  if(!users[user]||users[user].pass!==pass)return showError('Hatalı kullanıcı adı veya şifre.');
+  currentUser=user;
+  const state=localStorage.getItem('yds_gs_'+user);
+  if(!state){
+    document.getElementById('loginScreen').classList.add('hidden');
+    document.getElementById('tribeScreen').classList.remove('hidden');
   } else {
-    showLoginError('Kullanıcı adı veya şifre hatalı!');
+    GS=JSON.parse(state);
+    document.getElementById('loginScreen').classList.add('hidden');
+    startGame();
   }
 }
 
-function tryRegister() {
-  const u = document.getElementById('inp-reg-username').value.trim();
-  const p = document.getElementById('inp-reg-password').value;
-  const p2 = document.getElementById('inp-reg-password2').value;
-  if (!u || u.length < 3) return showLoginError('En az 3 karakter kullanıcı adı gir!');
-  if (!p || p.length < 4) return showLoginError('En az 4 karakter şifre gir!');
-  if (p !== p2) return showLoginError('Şifreler eşleşmiyor!');
-  if (!selectedTribe) return showLoginError('Bir halk seç!');
-  const users = JSON.parse(localStorage.getItem('yds_wars_users') || '{}');
-  if (users[u]) return showLoginError('Bu kullanıcı adı zaten alınmış!');
-  users[u] = { password: p, tribe: selectedTribe, registered: Date.now() };
-  localStorage.setItem('yds_wars_users', JSON.stringify(users));
-  currentUser = u;
-  createNewGameState(u, selectedTribe);
-  loadGame();
+function doLogout(){
+  if(gameInterval)clearInterval(gameInterval);
+  saveGame();
+  currentUser=null; GS=null;
+  document.getElementById('gameScreen').style.display='none';
+  document.getElementById('loginScreen').classList.remove('hidden');
+  document.getElementById('loginUser').value='';
+  document.getElementById('loginPass').value='';
 }
 
-function showLoginError(msg) {
-  const el = document.getElementById('login-error');
-  el.textContent = msg;
-  el.style.display = 'block';
+// ─── TRIBE SELECTION ───
+function selectTribe(tribe){
+  initNewGame(tribe);
+  document.getElementById('tribeScreen').classList.add('hidden');
+  startGame();
 }
 
-/* ============================================================
-   GAME INIT
-   ============================================================ */
+// ─── INITIALIZE NEW GAME STATE ───
+function initNewGame(tribe){
+  // Generate world with bots
+  const bots = generateBots();
+  // Player position near center
+  const px = Math.floor(Math.random()*11)-5;
+  const py = Math.floor(Math.random()*11)-5;
 
-function createNewGameState(username, tribe) {
-  // Assign random position on map
-  const wx = Math.floor(Math.random() * 80) - 40;
-  const wy = Math.floor(Math.random() * 80) - 40;
-
-  const fields = DORF1_SLOTS.map((s, i) => ({ id: s.id, type: DEFAULT_FIELD_TYPES[i], level: 0 }));
-  const buildings = DORF2_SLOTS.map(s => ({
-    id: s.id, type: s.isMain ? 'center' : null, level: s.isMain ? 1 : 0
-  }));
-
-  const gs = {
-    username, tribe,
-    wx, wy,
-    resources: { wood: 800, clay: 800, iron: 800, crop: 800 },
-    prodBoostUntil: 0,
-    fields,
-    buildings,
-    buildQueue: [],
-    trainQueue: [],
-    troops: {},
-    movingTroops: [],
+  GS = {
+    tribe: tribe,
+    playerName: currentUser,
+    gold: parseInt(localStorage.getItem('yds_game_gold'))||50,
+    villages: [{
+      id: 1,
+      name: currentUser+"'s Köyü",
+      x: px, y: py,
+      resources: {wood:500,clay:500,iron:500,crop:500},
+      warehouse: 800,
+      granary: 800,
+      fields: DORF1_LAYOUT.map(f=>({id:f.id,type:f.type,level:0})),
+      buildings: DORF2_LAYOUT.map(b=>{
+        if(b.isMain)return{id:b.id,type:'center',level:1};
+        if(b.isRally)return{id:b.id,type:'empty',level:0,isRally:true};
+        if(b.isWall)return{id:b.id,type:'empty',level:0,isWall:true};
+        return{id:b.id,type:'empty',level:0};
+      }),
+      troops:{},
+      buildQueue:[],
+      troopQueue:[]
+    }],
+    activeVillage: 0,
+    population: 2,
     alliance: null,
     reports: [],
-    hero: { hp: 100, xp: 0 },
-    population: 2,
+    prodBoostUntil: 0,
+    bots: bots,
+    botAlliances: generateBotAlliances(bots),
     lastUpdate: Date.now(),
-    ydsGold: 0
+    troopMovements: [],
+    gameStarted: Date.now()
   };
-  // Init troop counts
-  TROOPS[tribe].forEach(t => { gs.troops[t.id] = 0; });
-  saveUserGS(username, gs);
-  return gs;
+  saveGame();
 }
 
-function loadGame() {
-  const users = JSON.parse(localStorage.getItem('yds_wars_users') || '{}');
-  allUsers = users;
+function generateBots(){
+  const bots=[];
+  const tribes=['Roman','Teuton','Turk'];
+  const prefixes=['Kara','Ak','Gök','Ateş','Buz','Kızıl','Demir','Altın','Gümüş','Yıldız'];
+  const suffixes=['Han','Bey','Paşa','Kurt','Arslan','Kartal','Şahin','Barut','Kılıç','Kalkan'];
+  const names2=['Maximus','Brutus','Caesar','Alaric','Wotan','Attila','Genghis','Timur','Mehmed','Osman','Ertuğrul','Suleiman','Hannibal','Spartacus','Vercingetorix','Boudicca','Arminius','Thor','Ragnar','Bjorn','Ivar','Floki','Erik','Leif','Sigurd','Harald','Olaf','Magnus','Sven','Gunnar','Rurik','Igor','Svyatoslav','Murat','Yavuz','Fatih','Selim','Bayezid','Orhan','Alp'];
+  const usedCoords=new Set();
 
-  // Load or init world
-  WORLD = JSON.parse(localStorage.getItem('yds_wars_world') || 'null');
-  if (!WORLD) {
-    WORLD = generateWorld();
-    saveWorld();
-  }
+  for(let i=0;i<BOT_COUNT;i++){
+    let x,y;
+    do{
+      x=Math.floor(Math.random()*181)-90;
+      y=Math.floor(Math.random()*181)-90;
+    }while(usedCoords.has(x+','+y)||(Math.abs(x)<3&&Math.abs(y)<3));
+    usedCoords.add(x+','+y);
 
-  // Load player GS
-  GS = JSON.parse(localStorage.getItem('yds_gs_' + currentUser) || 'null');
-  if (!GS) {
-    const tribe = users[currentUser]?.tribe || 'Roman';
-    GS = createNewGameState(currentUser, tribe);
-  }
-
-  // Offline production
-  const elapsed = Math.floor((Date.now() - GS.lastUpdate) / 1000);
-  if (elapsed > 0) applyOfflineProduction(elapsed);
-
-  // Save session
-  sessionStorage.setItem('yds_current_user', currentUser);
-
-  // Load YDS gold from external system
-  GS.ydsGold = parseInt(localStorage.getItem('yds_game_gold') || '0');
-
-  // Show game
-  document.getElementById('login-screen').style.display = 'none';
-  document.getElementById('game-screen').style.display = 'flex';
-  document.getElementById('game-screen').style.flexDirection = 'column';
-
-  // Update UI
-  document.getElementById('top-playername').textContent = currentUser;
-  document.getElementById('sb-playername').textContent = currentUser;
-  document.getElementById('sb-tribe').textContent = '🏅 ' + (GS.tribe==='Roman'?'Romalı':GS.tribe==='Teuton'?'Cermen':'Türk');
-  document.getElementById('sb-coords').textContent = GS.wx + '|' + GS.wy;
-
-  drawDorf1();
-  drawDorf2();
-  initWorldMap();
-  updateUI();
-  renderAlliancePanel();
-  renderMilitaryPanel();
-
-  // Start game loops
-  if (gameInterval) clearInterval(gameInterval);
-  gameInterval = setInterval(gameTick, 1000);
-
-  if (botInterval) clearInterval(botInterval);
-  botInterval = setInterval(botTick, 60000); // Bots tick every minute
-
-  // Initialize world map offset to player position
-  const canvas = document.getElementById('world-canvas');
-  mapData.offsetX = (GS.wx + 50) * mapData.zoom - canvas.width/2;
-  mapData.offsetY = (GS.wy + 50) * mapData.zoom - canvas.height/2;
-}
-
-/* ============================================================
-   WORLD GENERATION (1000 bots)
-   ============================================================ */
-
-function generateWorld() {
-  const world = { bots: [], alliances: [] };
-
-  // Generate 20 AI alliances
-  const allianceNames = ['Leyenda','İronFist','DawnBreaker','Wolfpack','ThunderClan','DragonCrest','SilverEdge','BlackRose','NightHawks','GoldTribe',
-    'StormRiders','AshBlade','RedDawn','BlueMoon','CrimsonPeak','VoidWalkers','EagleClaw','BronzeFist','IronWall','ShadowLeague'];
-  for (let i = 0; i < 20; i++) {
-    world.alliances.push({ id: 'ai_'+i, name: allianceNames[i], tag: allianceNames[i].substring(0,3).toUpperCase(), members: [] });
-  }
-
-  // Generate 1000 bots
-  const usedPos = new Set();
-  const tribeList = ['Roman','Teuton','Turk'];
-
-  for (let i = 0; i < 1000; i++) {
-    let wx, wy, key;
-    do {
-      wx = Math.floor(Math.random() * 101) - 50;
-      wy = Math.floor(Math.random() * 101) - 50;
-      key = wx + ',' + wy;
-    } while (usedPos.has(key));
-    usedPos.add(key);
-
-    const tribe = tribeList[i % 3];
-    const allianceId = i < 960 ? 'ai_' + (i % 20) : null;
-    const power = Math.floor(Math.random() * 2000) + 100;
-    const bot = {
-      id: 'bot_' + i,
-      name: generateBotName(),
-      tribe,
-      wx, wy,
-      power,
-      alliance: allianceId,
-      fieldLevel: Math.floor(power / 400) + 1,
-      buildingLevel: Math.floor(power / 500) + 1,
-      troops: Math.floor(power / 10),
-      lastBotTick: Date.now()
-    };
-    world.bots.push(bot);
-    if (allianceId) world.alliances[parseInt(allianceId.split('_')[1])].members.push(bot.id);
-  }
-  return world;
-}
-
-function generateBotName() {
-  const first = ['Kara','Demir','Altın','Gümüş','Fırtına','Ateş','Buz','Taş','Işık','Gölge','Şimşek','Rüzgar','Toprak','Su','Dağ'];
-  const second = ['Kılıç','Kalkan','Savaşçı','Lider','Kral','Aslan','Kartal','Kurt','Kaplan','Ejder','Kaya','Tepe','Vadi','Nehir','Göl'];
-  return first[Math.floor(Math.random()*first.length)] + second[Math.floor(Math.random()*second.length)] + Math.floor(Math.random()*99+1);
-}
-
-function saveWorld() {
-  localStorage.setItem('yds_wars_world', JSON.stringify(WORLD));
-}
-function saveUserGS(username, gs) {
-  localStorage.setItem('yds_gs_' + username, JSON.stringify(gs));
-}
-function saveGS() {
-  GS.lastUpdate = Date.now();
-  saveUserGS(currentUser, GS);
-}
-
-/* ============================================================
-   PRODUCTION ENGINE
-   ============================================================ */
-
-function getFieldProduction() {
-  let prod = { wood: 500, clay: 500, iron: 500, crop: 500 };
-  GS.fields.forEach(f => {
-    if (f.level > 0) {
-      const p = FIELD_PRODUCTION[Math.min(f.level, FIELD_PRODUCTION.length-1)];
-      prod[f.type] = (prod[f.type] || 0) + p;
+    const tribe=tribes[Math.floor(Math.random()*3)];
+    let name;
+    if(Math.random()<0.5){
+      name=prefixes[Math.floor(Math.random()*prefixes.length)]+suffixes[Math.floor(Math.random()*suffixes.length)];
+    } else {
+      name=names2[Math.floor(Math.random()*names2.length)]+(Math.floor(Math.random()*99)+1);
     }
-  });
-  // Crop consumption from troops and buildings
-  const totalTroops = Object.values(GS.troops).reduce((s,n)=>s+n, 0);
-  prod.crop -= totalTroops;
-  return prod;
-}
 
-function getWarehouseCap() {
-  let wCap = WAREHOUSE_CAP[0], gCap = GRANARY_CAP[0];
-  GS.buildings.forEach(b => {
-    if (b.type === 'warehouse' && b.level > 0) wCap = WAREHOUSE_CAP[Math.min(b.level, WAREHOUSE_CAP.length-1)];
-    if (b.type === 'granary' && b.level > 0) gCap = GRANARY_CAP[Math.min(b.level, GRANARY_CAP.length-1)];
-  });
-  return { wCap, gCap };
-}
-
-function getMainBuildingLevel() {
-  const mb = GS.buildings.find(b => b.type === 'center');
-  return mb ? mb.level : 0;
-}
-
-function getBuildingByType(type) {
-  return GS.buildings.find(b => b.type === type);
-}
-
-function hasBuildingAtLevel(type, minLevel) {
-  const b = getBuildingByType(type);
-  return b && b.level >= minLevel;
-}
-
-function applyOfflineProduction(seconds) {
-  const boost = GS.prodBoostUntil > Date.now() ? 1.25 : 1;
-  const prod = getFieldProduction();
-  const { wCap, gCap } = getWarehouseCap();
-  ['wood','clay','iron'].forEach(r => {
-    GS.resources[r] = Math.min(wCap, GS.resources[r] + (prod[r] * boost / 3600) * seconds);
-  });
-  GS.resources.crop = Math.min(gCap, Math.max(0, GS.resources.crop + (prod.crop * boost / 3600) * seconds));
-}
-
-/* ============================================================
-   GAME TICK (every second)
-   ============================================================ */
-
-function gameTick() {
-  const now = Date.now();
-  const boost = GS.prodBoostUntil > now ? 1.25 : 1;
-  const prod = getFieldProduction();
-  const { wCap, gCap } = getWarehouseCap();
-
-  ['wood','clay','iron'].forEach(r => {
-    GS.resources[r] = Math.min(wCap, GS.resources[r] + (prod[r] * boost / 3600));
-  });
-  GS.resources.crop = Math.min(gCap, Math.max(0, GS.resources.crop + (prod.crop * boost / 3600)));
-
-  // Process build queue
-  let hasChange = false;
-  const fieldBuildTypes = ['wood','clay','iron','crop'];
-
-  if (GS.tribe === 'Roman') {
-    // Roman: first field task + first building task run simultaneously
-    const ft = GS.buildQueue.find(t => fieldBuildTypes.includes(t.type));
-    const bt = GS.buildQueue.find(t => !fieldBuildTypes.includes(t.type));
-    [ft, bt].forEach(t => {
-      if (t) {
-        t.timeLeft--;
-        if (t.timeLeft <= 0) { completeTask(t); hasChange = true; }
-      }
+    const baseLevel=Math.max(1,Math.floor(Math.random()*5)+1);
+    bots.push({
+      id:i+100,
+      name:name,
+      tribe:tribe,
+      x:x, y:y,
+      pop: baseLevel*20+Math.floor(Math.random()*50),
+      level: baseLevel,
+      troops: generateBotTroops(tribe,baseLevel),
+      alliance: null,
+      lastGrow: Date.now()
     });
-  } else {
-    // Others: only first task
-    if (GS.buildQueue.length > 0) {
-      GS.buildQueue[0].timeLeft--;
-      if (GS.buildQueue[0].timeLeft <= 0) { completeTask(GS.buildQueue[0]); hasChange = true; }
+  }
+  return bots;
+}
+
+function generateBotTroops(tribe,level){
+  const t={};
+  const types=Object.keys(TROOPS[tribe]);
+  const count=Math.min(3,types.length);
+  for(let i=0;i<count;i++){
+    t[types[i]]=Math.floor(Math.random()*level*15)+level*5;
+  }
+  return t;
+}
+
+function generateBotAlliances(bots){
+  const alliances=[];
+  const allianceNames=['Wolfpack','Iron Legion','Storm Riders','Dark Order','Golden Horde','Blood Eagles','Thunder Clan','Fire Nation','Ice Bears','Shadow Guild',
+    'Kurtlar Vadisi','Osmanlı Torunları','Bozkurt İttifakı','Kızıl Elma','Turan Birliği','Roma İmparatorluğu','Cermen Kardeşliği','Akdeniz Birliği','Vikingler','Şövalyeler'];
+
+  for(let i=0;i<20;i++){
+    const members=[];
+    const start=Math.floor(Math.random()*bots.length);
+    const size=Math.floor(Math.random()*40)+10;
+    for(let j=0;j<size&&members.length<60;j++){
+      const idx=(start+j)%bots.length;
+      if(!bots[idx].alliance){
+        bots[idx].alliance=i;
+        members.push(bots[idx].id);
+      }
+    }
+    if(members.length>0){
+      alliances.push({id:i,name:allianceNames[i]||('İttifak-'+(i+1)),leader:members[0],members:members});
     }
   }
+  return alliances;
+}
 
-  // Process training queue
-  if (GS.trainQueue.length > 0) {
-    GS.trainQueue[0].timeLeft--;
-    if (GS.trainQueue[0].timeLeft <= 0) {
-      const tq = GS.trainQueue.shift();
-      GS.troops[tq.troopId] = (GS.troops[tq.troopId] || 0) + 1;
-      showNotification('🗡 ' + tq.troopName + ' eğitildi!');
-      renderMilitaryPanel();
-      hasChange = true;
-    }
-  }
+// ─── SAVE / LOAD ───
+function saveGame(){
+  if(GS&&currentUser) localStorage.setItem('yds_gs_'+currentUser,JSON.stringify(GS));
+}
 
-  // Process moving troops
-  GS.movingTroops.forEach(mt => {
-    mt.timeLeft--;
-    if (mt.timeLeft <= 0) resolveCombat(mt);
-  });
-  GS.movingTroops = GS.movingTroops.filter(mt => mt.timeLeft > 0);
+// ─── START GAME ───
+function startGame(){
+  document.getElementById('gameScreen').style.display='block';
+  // Calculate offline progress
+  const now=Date.now();
+  const offlineSec=Math.floor((now-GS.lastUpdate)/1000);
+  if(offlineSec>0) processOffline(offlineSec);
+  GS.lastUpdate=now;
 
-  GS.lastUpdate = now;
-  GS.ydsGold = parseInt(localStorage.getItem('yds_game_gold') || '0');
+  // Refresh gold from quiz system
+  const quizGold=parseInt(localStorage.getItem('yds_game_gold'))||0;
+  if(quizGold>GS.gold) GS.gold=quizGold;
 
+  updateTribeDisplay();
+  renderDorf1();
+  renderDorf2();
   updateUI();
-  if (hasChange) {
-    drawDorf1(); drawDorf2();
-    renderMilitaryPanel();
-  }
-  saveGS();
+  initMap();
+
+  if(gameInterval)clearInterval(gameInterval);
+  gameInterval=setInterval(gameTick,TICK_MS);
 }
 
-function completeTask(task) {
-  const fieldTypes = ['wood','clay','iron','crop'];
-  if (fieldTypes.includes(task.type)) {
-    const f = GS.fields.find(x => x.id === task.targetId);
-    if (f) { f.level++; showNotification('✅ ' + task.name + ' Seviye ' + f.level + ' tamamlandı!'); }
+// ─── MAIN GAME TICK (every second) ───
+function gameTick(){
+  const now=Date.now();
+  const v=GS.villages[GS.activeVillage];
+
+  // 1. Resource Production
+  const prod=calcProduction(v);
+  const boost=(GS.prodBoostUntil>now)?1.25:1;
+  v.resources.wood=Math.min(v.warehouse, v.resources.wood+(prod.wood*boost)/3600);
+  v.resources.clay=Math.min(v.warehouse, v.resources.clay+(prod.clay*boost)/3600);
+  v.resources.iron=Math.min(v.warehouse, v.resources.iron+(prod.iron*boost)/3600);
+  v.resources.crop=Math.min(v.granary, v.resources.crop+(prod.crop*boost)/3600);
+
+  // 2. Process Build Queue
+  processBuildQueue(v);
+
+  // 3. Process Troop Queue
+  processTroopQueue(v);
+
+  // 4. Process Troop Movements
+  processTroopMovements();
+
+  // 5. Bot AI (every 30 seconds)
+  if(now%30000<1100) botAI();
+
+  // 6. Update UI
+  GS.lastUpdate=now;
+  updateUI();
+
+  // Auto-save every 30 seconds
+  if(now%30000<1100) saveGame();
+}
+
+function calcProduction(v){
+  let wood=20*SPEED, clay=20*SPEED, iron=20*SPEED, crop=20*SPEED; // base
+  v.fields.forEach(f=>{
+    if(f.level>0){
+      const base=BUILDINGS[f.type].prodBase||100;
+      const prod=Math.floor(base*Math.pow(1.25,f.level-1)*SPEED/10);
+      if(f.type==='wood') wood+=prod;
+      if(f.type==='clay') clay+=prod;
+      if(f.type==='iron') iron+=prod;
+      if(f.type==='crop') crop+=prod;
+    }
+  });
+  // Troop crop consumption
+  let troopCrop=0;
+  const troops=v.troops;
+  const tribeTroops=TROOPS[GS.tribe];
+  Object.entries(troops).forEach(([k,count])=>{
+    if(tribeTroops[k]) troopCrop+=tribeTroops[k].crop*count;
+  });
+  crop-=troopCrop*SPEED;
+  return{wood,clay,iron,crop};
+}
+
+function processBuildQueue(v){
+  if(v.buildQueue.length===0) return;
+
+  let activeTasks=[];
+  if(GS.tribe==='Roman'){
+    // Romans: 1 field + 1 building simultaneously
+    const fTask=v.buildQueue.find(t=>t.isField);
+    const bTask=v.buildQueue.find(t=>!t.isField);
+    if(fTask) activeTasks.push(fTask);
+    if(bTask) activeTasks.push(bTask);
   } else {
-    const b = GS.buildings.find(x => x.id === task.targetId);
-    if (b) {
-      if (!b.type) b.type = task.type;
+    // Others: All tasks process (unlimited queue)
+    activeTasks.push(v.buildQueue[0]);
+  }
+
+  activeTasks.forEach(task=>{
+    task.timeLeft-=SPEED;
+    if(task.timeLeft<=0) completeConstruction(v,task);
+  });
+}
+
+function completeConstruction(v,task){
+  if(task.isField){
+    const f=v.fields.find(x=>x.id===task.targetId);
+    if(f) f.level++;
+  } else {
+    const b=v.buildings.find(x=>x.id===task.targetId);
+    if(b){
+      if(b.type==='empty') b.type=task.type;
       b.level++;
-      showNotification('🏗 ' + task.name + ' Seviye ' + b.level + ' tamamlandı!');
+      // Update capacities
+      if(task.type==='warehouse') v.warehouse=800+b.level*400;
+      if(task.type==='granary') v.granary=800+b.level*400;
     }
   }
-  GS.population += Math.floor(Math.random() * 2) + 1;
-  GS.buildQueue = GS.buildQueue.filter(t => t.qId !== task.qId);
+  GS.population+=Math.floor(Math.random()*3)+1;
+  v.buildQueue=v.buildQueue.filter(t=>t.qId!==task.qId);
+  addInfo(task.name+' tamamlandı!','✅');
+  renderDorf1(); renderDorf2();
 }
 
-/* ============================================================
-   BOT TICK (every minute)
-   ============================================================ */
+function processTroopQueue(v){
+  if(!v.troopQueue||v.troopQueue.length===0) return;
+  v.troopQueue.forEach(tq=>{
+    tq.timeLeft-=SPEED;
+    if(tq.timeLeft<=0){
+      v.troops[tq.type]=(v.troops[tq.type]||0)+tq.count;
+      addInfo(tq.count+' '+TROOPS[GS.tribe][tq.type].name+' eğitildi!','⚔️');
+    }
+  });
+  v.troopQueue=v.troopQueue.filter(t=>t.timeLeft>0);
+}
 
-function botTick() {
-  // Advance a batch of bots
-  const batch = Math.min(100, WORLD.bots.length);
-  for (let i = 0; i < batch; i++) {
-    const bot = WORLD.bots[Math.floor(Math.random() * WORLD.bots.length)];
-    bot.power += Math.floor(Math.random() * 20) + 5;
-    bot.fieldLevel = Math.min(20, Math.floor(bot.power / 400) + 1);
-    bot.buildingLevel = Math.min(20, Math.floor(bot.power / 500) + 1);
-    bot.troops = Math.floor(bot.power / 10);
+function processTroopMovements(){
+  if(!GS.troopMovements||GS.troopMovements.length===0) return;
+  GS.troopMovements.forEach(mv=>{
+    mv.timeLeft-=SPEED;
+    if(mv.timeLeft<=0){
+      if(mv.type==='attack') resolveAttack(mv);
+      else if(mv.type==='return') resolveReturn(mv);
+    }
+  });
+  GS.troopMovements=GS.troopMovements.filter(m=>m.timeLeft>0);
+}
+
+function resolveAttack(mv){
+  const target=GS.bots.find(b=>b.id===mv.targetId);
+  if(!target)return;
+
+  let attPower=0;
+  const tribeTroops=TROOPS[GS.tribe];
+  Object.entries(mv.troops).forEach(([k,count])=>{
+    if(tribeTroops[k]) attPower+=tribeTroops[k].att*count;
+  });
+
+  let defPower=0;
+  const defTribe=TROOPS[target.tribe];
+  Object.entries(target.troops).forEach(([k,count])=>{
+    if(defTribe[k]) defPower+=(defTribe[k].defI+defTribe[k].defC)/2*count;
+  });
+
+  // Wall bonus
+  defPower*=1.02;
+
+  const attRatio=attPower/(attPower+defPower+1);
+  const won=attRatio>0.5;
+
+  let loot={wood:0,clay:0,iron:0,crop:0};
+  let attLosses={}, defLosses={};
+
+  if(won){
+    // Attacker wins
+    const lossRatio=1-attRatio;
+    Object.entries(mv.troops).forEach(([k,count])=>{
+      attLosses[k]=Math.floor(count*lossRatio*0.8);
+      mv.troops[k]=count-attLosses[k];
+    });
+    // Destroy all defenders
+    Object.entries(target.troops).forEach(([k,count])=>{
+      defLosses[k]=count;
+    });
+    target.troops={};
+    // Loot
+    let carryTotal=0;
+    Object.entries(mv.troops).forEach(([k,count])=>{
+      if(tribeTroops[k]) carryTotal+=tribeTroops[k].carry*count;
+    });
+    const baseLoot=Math.min(carryTotal/4, target.pop*10);
+    loot={wood:Math.floor(baseLoot),clay:Math.floor(baseLoot),iron:Math.floor(baseLoot),crop:Math.floor(baseLoot)};
+    target.pop=Math.max(5,target.pop-5);
+  } else {
+    // Defender wins
+    const lossRatio=attRatio;
+    Object.entries(mv.troops).forEach(([k,count])=>{
+      attLosses[k]=Math.floor(count*0.9);
+      mv.troops[k]=count-attLosses[k];
+    });
+    Object.entries(target.troops).forEach(([k,count])=>{
+      defLosses[k]=Math.floor(count*(1-lossRatio)*0.3);
+      target.troops[k]=count-defLosses[k];
+    });
   }
-  saveWorld();
-  if (currentTab === 'map') drawWorldMap();
-  renderLeaderboard();
+
+  // Add report
+  GS.reports.unshift({
+    time:Date.now(),
+    type:'attack',
+    target:target.name,
+    targetCoord:{x:target.x,y:target.y},
+    won:won,
+    attLosses:attLosses,
+    defLosses:defLosses,
+    loot:loot
+  });
+
+  // Send surviving troops back with loot
+  if(Object.values(mv.troops).some(c=>c>0)){
+    const dist=Math.sqrt(Math.pow(mv.fromX-target.x,2)+Math.pow(mv.fromY-target.y,2));
+    const returnTime=Math.max(10,Math.floor(dist*100/SPEED));
+    GS.troopMovements.push({
+      type:'return',
+      troops:{...mv.troops},
+      loot:loot,
+      villageId:mv.villageId,
+      timeLeft:returnTime,
+      totalTime:returnTime,
+      fromName:target.name
+    });
+  }
+  addInfo(won?'Saldırı zaferle sonuçlandı!':'Saldırı başarısız oldu.', won?'⚔️':'💀');
 }
 
-/* ============================================================
-   UI UPDATE
-   ============================================================ */
+function resolveReturn(mv){
+  const v=GS.villages.find(vl=>vl.id===mv.villageId);
+  if(!v)return;
+  // Return troops
+  Object.entries(mv.troops).forEach(([k,count])=>{
+    v.troops[k]=(v.troops[k]||0)+count;
+  });
+  // Add loot
+  if(mv.loot){
+    v.resources.wood=Math.min(v.warehouse,v.resources.wood+mv.loot.wood);
+    v.resources.clay=Math.min(v.warehouse,v.resources.clay+mv.loot.clay);
+    v.resources.iron=Math.min(v.warehouse,v.resources.iron+mv.loot.iron);
+    v.resources.crop=Math.min(v.granary,v.resources.crop+mv.loot.crop);
+  }
+  addInfo('Askerler '+mv.loot.wood+' yağma ile döndü!','🏠');
+}
 
-function updateUI() {
+function processOffline(seconds){
+  const v=GS.villages[GS.activeVillage];
+  const prod=calcProduction(v);
+  v.resources.wood=Math.min(v.warehouse,v.resources.wood+(prod.wood/3600)*seconds);
+  v.resources.clay=Math.min(v.warehouse,v.resources.clay+(prod.clay/3600)*seconds);
+  v.resources.iron=Math.min(v.warehouse,v.resources.iron+(prod.iron/3600)*seconds);
+  v.resources.crop=Math.min(v.granary,v.resources.crop+(prod.crop/3600)*seconds);
+  // Process queues
+  const ticks=Math.floor(seconds);
+  for(let i=0;i<Math.min(ticks,3600);i++){
+    processBuildQueue(v);
+    processTroopQueue(v);
+  }
+}
+
+// ─── BOT AI ───
+function botAI(){
+  const now=Date.now();
+  GS.bots.forEach(bot=>{
+    // Grow every ~60 seconds
+    if(now-bot.lastGrow>60000){
+      bot.level=Math.min(20,bot.level+0.1);
+      bot.pop+=Math.floor(Math.random()*3)+1;
+      // Regenerate some troops
+      const types=Object.keys(TROOPS[bot.tribe]);
+      const rType=types[Math.floor(Math.random()*Math.min(3,types.length))];
+      bot.troops[rType]=(bot.troops[rType]||0)+Math.floor(Math.random()*3)+1;
+      bot.lastGrow=now;
+    }
+  });
+}
+
+// ─── UI UPDATE ───
+function updateUI(){
+  const v=GS.villages[GS.activeVillage];
+  const prod=calcProduction(v);
+  const boost=(GS.prodBoostUntil>Date.now())?1.25:1;
+
   // Resources
-  document.getElementById('res-wood').textContent = fmt(GS.resources.wood);
-  document.getElementById('res-clay').textContent = fmt(GS.resources.clay);
-  document.getElementById('res-iron').textContent = fmt(GS.resources.iron);
-  document.getElementById('res-crop').textContent = fmt(GS.resources.crop);
-  document.getElementById('res-pop').textContent = GS.population;
-  document.getElementById('gold-display').textContent = GS.ydsGold;
+  document.getElementById('r-wood').textContent=formatNum(Math.floor(v.resources.wood));
+  document.getElementById('r-clay').textContent=formatNum(Math.floor(v.resources.clay));
+  document.getElementById('r-iron').textContent=formatNum(Math.floor(v.resources.iron));
+  document.getElementById('r-crop').textContent=formatNum(Math.floor(v.resources.crop));
+  document.getElementById('r-wood-cap').textContent=formatNum(v.warehouse);
+  document.getElementById('r-clay-cap').textContent=formatNum(v.warehouse);
+  document.getElementById('r-iron-cap').textContent=formatNum(v.warehouse);
+  document.getElementById('r-crop-cap').textContent=formatNum(v.granary);
+
+  // Gold
+  document.getElementById('r-gold').textContent=GS.gold;
 
   // Production
-  const prod = getFieldProduction();
-  const boost = GS.prodBoostUntil > Date.now() ? 1.25 : 1;
-  document.getElementById('prod-wood').textContent = fmt(prod.wood * boost);
-  document.getElementById('prod-clay').textContent = fmt(prod.clay * boost);
-  document.getElementById('prod-iron').textContent = fmt(prod.iron * boost);
-  document.getElementById('prod-crop').textContent = fmt(prod.crop * boost);
+  document.getElementById('p-wood').textContent=formatNum(Math.floor(prod.wood*boost));
+  document.getElementById('p-clay').textContent=formatNum(Math.floor(prod.clay*boost));
+  document.getElementById('p-iron').textContent=formatNum(Math.floor(prod.iron*boost));
+  document.getElementById('p-crop').textContent=formatNum(Math.floor(prod.crop*boost));
 
-  // Storage
-  const {wCap, gCap} = getWarehouseCap();
-  document.getElementById('sb-warehouse').textContent = fmt(wCap);
-  document.getElementById('sb-granary').textContent = fmt(gCap);
+  // Population
+  document.getElementById('population').textContent=GS.population;
+  document.getElementById('villageName').textContent=v.name;
 
   // Build queue
-  renderBuildQueue();
+  renderBuildQueue(v);
 
-  // Training queue
-  renderTrainQueue();
+  // Troop summary
+  renderTroopSummary(v);
 
-  // Hero
-  document.getElementById('hero-hp').textContent = GS.hero.hp + '%';
-  document.getElementById('hero-xp').textContent = GS.hero.xp;
-
-  // Boost status
-  const boostEl = document.getElementById('boost-status');
-  if (GS.prodBoostUntil > Date.now()) {
-    const rem = Math.floor((GS.prodBoostUntil - Date.now()) / 1000);
-    boostEl.textContent = '+25% | ' + formatTime(rem);
-    boostEl.style.color = '#90ee90';
-  } else {
-    boostEl.textContent = 'Aktif değil';
-    boostEl.style.color = '';
-  }
+  // Troop movements
+  renderTroopMovements();
 
   // Server time
-  document.getElementById('server-time').textContent = new Date().toLocaleTimeString('tr-TR');
-
-  // Leaderboard mini
-  renderLeaderboard();
+  const d=new Date();
+  document.getElementById('serverTime').textContent=
+    String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0');
 }
 
-function fmt(n) {
-  n = Math.floor(n);
-  if (n >= 1000000) return (n/1000000).toFixed(1) + 'M';
-  if (n >= 1000) return (n/1000).toFixed(1) + 'K';
-  return n.toString();
+function updateTribeDisplay(){
+  const icons={Roman:'🏛️',Teuton:'🪓',Turk:'🏇'};
+  const names={Roman:'Romalılar',Teuton:'Cermenler',Turk:'Türkler'};
+  document.getElementById('tribeEmoji').textContent=icons[GS.tribe]||'⚔️';
+  document.getElementById('tribeName').textContent=names[GS.tribe]||GS.tribe;
 }
 
-function formatTime(sec) {
-  sec = Math.max(0, Math.floor(sec));
-  const h = Math.floor(sec / 3600);
-  const m = Math.floor((sec % 3600) / 60);
-  const s = sec % 60;
-  if (h > 0) return `${h}:${m<10?'0'+m:m}:${s<10?'0'+s:s}`;
-  return `${m<10?'0'+m:m}:${s<10?'0'+s:s}`;
-}
-
-function renderBuildQueue() {
-  const panel = document.getElementById('build-queue-panel');
-  if (GS.buildQueue.length === 0) {
-    panel.innerHTML = '<p class="text-muted" style="text-align:center; padding:10px 0">Kuyruk boş</p>';
+function renderBuildQueue(v){
+  const el=document.getElementById('buildQueue');
+  if(v.buildQueue.length===0){
+    el.innerHTML='<div class="queue-empty">İnşaat emri yok.</div>';
     return;
   }
-  const fieldTypes = ['wood','clay','iron','crop'];
-  let html = '';
-  GS.buildQueue.forEach((t, i) => {
-    let isActive = false;
-    if (GS.tribe === 'Roman') {
-      const ft = GS.buildQueue.find(x => fieldTypes.includes(x.type));
-      const bt = GS.buildQueue.find(x => !fieldTypes.includes(x.type));
-      if (t === ft || t === bt) isActive = true;
-    } else { if (i === 0) isActive = true; }
-
-    const targetItem = fieldTypes.includes(t.type)
-      ? GS.fields.find(f => f.id === t.targetId)
-      : GS.buildings.find(b => b.id === t.targetId);
-    const nextLvl = targetItem ? targetItem.level + 1 : '?';
-
-    html += `<div class="q-item ${isActive?'active-q':''}">
-      <div class="q-name">${t.name} <span style="font-size:0.75rem">(Seviye ${nextLvl})</span></div>
-      ${isActive
-        ? `<div class="q-time">${formatTime(t.timeLeft)}</div>`
-        : `<div class="q-paused">⏸ Bekliyor</div>`
-      }
-    </div>`;
-  });
-  panel.innerHTML = html;
-}
-
-function renderTrainQueue() {
-  const panel = document.getElementById('train-queue-panel');
-  if (GS.trainQueue.length === 0) {
-    panel.innerHTML = '<p class="text-muted" style="text-align:center; padding:10px 0">Kuyruk boş</p>';
-    return;
-  }
-  let html = '';
-  GS.trainQueue.forEach((t, i) => {
-    html += `<div class="q-item ${i===0?'active-q':''}">
-      <div class="q-name">${t.troopName}</div>
-      ${i===0 ? `<div class="q-time">${formatTime(t.timeLeft)}</div>` : `<div class="q-paused">⏸</div>`}
-    </div>`;
-  });
-  panel.innerHTML = html;
-}
-
-function renderLeaderboard() {
-  const panel = document.getElementById('leaderboard-mini');
-  // Combine player + some bots for ranking
-  const all = [...WORLD.bots.slice(0,20).map(b=>({name:b.name, power:b.power, isBot:true}))];
-  const playerPower = GS.fields.reduce((s,f)=>s+f.level*50,0) + GS.buildings.reduce((s,b)=>s+b.level*70,0) + GS.population*5;
-  all.push({name:currentUser, power:playerPower, isBot:false});
-  all.sort((a,b)=>b.power-a.power);
-  const top = all.slice(0,8);
-  let html = '';
-  top.forEach((e,i) => {
-    const isMe = !e.isBot;
-    html += `<div style="display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px solid rgba(200,150,12,0.1); font-size:0.75rem; ${isMe?'color:var(--gold-light);':'color:var(--parchment);'}">
-      <span>${i+1}. ${e.name}${isMe?' ⭐':''}</span>
-      <span>${fmt(e.power)}</span>
-    </div>`;
-  });
-  panel.innerHTML = html || '<p class="text-muted">-</p>';
-}
-
-/* ============================================================
-   DRAW MAPS
-   ============================================================ */
-
-function drawDorf1() {
-  const map = document.getElementById('dorf1-map');
-  // Remove old slots (keep SVG)
-  map.querySelectorAll('.v-slot').forEach(e => e.remove());
-
-  const W = 560, H = 420;
-  DORF1_SLOTS.forEach(slot => {
-    const field = GS.fields.find(f => f.id === slot.id);
-    const type = field.type;
-    const level = field.level;
-    const inQueue = GS.buildQueue.find(t => t.targetId === slot.id);
-
-    const div = document.createElement('div');
-    div.className = 'v-slot ' + (level > 0 ? type : 'empty') + (inQueue ? ' under-construction' : '');
-    div.style.width = '40px';
-    div.style.height = '40px';
-    div.style.left = `calc(${slot.x}% - 20px)`;
-    div.style.top = `calc(${slot.y}% - 20px)`;
-    div.textContent = level > 0 ? level : '';
-    if (inQueue) div.title = '🔨 İnşaat devam ediyor - ' + formatTime(inQueue.timeLeft);
-    else div.title = (level>0?FIELD_TYPE_NAME[type]+' Seviye '+level:'Boş alan - tıkla');
-    div.onclick = () => openFieldModal(slot.id);
-    map.appendChild(div);
-  });
-}
-
-const FIELD_TYPE_NAME = {wood:'Oduncu', clay:'Tuğla Ocağı', iron:'Demir Madeni', crop:'Tarla'};
-
-function drawDorf2() {
-  const map = document.getElementById('dorf2-map');
-  map.querySelectorAll('.v-slot').forEach(e => e.remove());
-
-  DORF2_SLOTS.forEach(slot => {
-    const building = GS.buildings.find(b => b.id === slot.id);
-    const inQueue = GS.buildQueue.find(t => t.targetId === slot.id);
-
-    const div = document.createElement('div');
-    let cls = 'v-slot';
-    if (slot.isMain) cls += ' main-b';
-    else if (slot.isRally && building.level > 0) cls += ' rally-b';
-    else if (slot.isWall && building.level > 0) cls += ' wall-b';
-    else if (building.type && building.level > 0) cls += ' building';
-    else cls += ' empty';
-    if (inQueue) cls += ' under-construction';
-
-    div.className = cls;
-    div.style.width = slot.isMain ? '52px' : '40px';
-    div.style.height = slot.isMain ? '52px' : '40px';
-    div.style.left = `calc(${slot.x}% - ${slot.isMain?26:20}px)`;
-    div.style.top = `calc(${slot.y}% - ${slot.isMain?26:20}px)`;
-
-    if (building.level > 0 && building.type) {
-      const info = BUILDINGS[building.type];
-      div.textContent = (info?.icon || '🏠') + building.level;
-      div.title = (info?.name||building.type) + ' Seviye ' + building.level;
-    } else if (inQueue) {
-      div.textContent = '🔨';
-      div.title = 'İnşaat devam ediyor';
+  let html='';
+  v.buildQueue.forEach((t,i)=>{
+    let isActive=false;
+    if(GS.tribe==='Roman'){
+      if(t===v.buildQueue.find(x=>x.isField)||t===v.buildQueue.find(x=>!x.isField)) isActive=true;
     } else {
-      div.textContent = '+';
-      div.title = 'Boş alan - İnşa et';
+      if(i===0) isActive=true;
     }
-
-    div.onclick = () => openBuildingModal(slot.id);
-    map.appendChild(div);
+    html+=`<div class="queue-item ${isActive?'active':''}">
+      <span class="q-name">${t.name} Sv.${t.targetLevel}</span>
+      <span class="q-time">${isActive?formatTime(Math.max(0,t.timeLeft)):'⏸️'}</span>
+    </div>`;
   });
-}
-
-/* ============================================================
-   BUILD MODALS
-   ============================================================ */
-
-function openFieldModal(slotId) {
-  const field = GS.fields.find(f => f.id === slotId);
-  const slot = DORF1_SLOTS.find(s => s.id === slotId);
-  const type = field.type;
-  const typeName = FIELD_TYPE_NAME[type];
-  const inQueue = GS.buildQueue.find(t => t.targetId === slotId);
-
-  let body = '';
-  if (inQueue) {
-    body = `<div class="upgrade-box"><h3>${typeName} <span class="level-badge">Seviye ${field.level}</span></h3>
-    <p>İnşaat devam ediyor: ${formatTime(inQueue.timeLeft)}</p>
-    <button class="btn-gold" onclick="premiumInstantFinishSingle('${inQueue.qId}')">⚡ Anında Bitir (5 YDS)</button></div>`;
-  } else {
-    const maxLvl = 20;
-    if (field.level >= maxLvl) {
-      body = `<div class="upgrade-box"><h3>${typeName} <span class="level-badge">Seviye ${field.level} — MAX</span></h3><p>En yüksek seviyeye ulaştı!</p></div>`;
-    } else {
-      const nextLvl = field.level + 1;
-      const cost = getFieldCost(type, field.level);
-      const timeSec = getFieldTime(type, field.level);
-      const canAfford = GS.resources.wood >= cost[0] && GS.resources.clay >= cost[1] && GS.resources.iron >= cost[2] && GS.resources.crop >= cost[3];
-      const prod = FIELD_PRODUCTION[nextLvl] || FIELD_PRODUCTION[FIELD_PRODUCTION.length-1];
-
-      body = `<div class="upgrade-box">
-        <h3>${typeName} <span class="level-badge">Seviye ${field.level}</span></h3>
-        <p>Saatlik üretim: <strong style="color:var(--gold-light)">${fmt(FIELD_PRODUCTION[field.level]||0)}</strong> → 
-           <strong style="color:#90ee90">${fmt(prod)}</strong></p>
-        <h4 style="font-family:'Cinzel',serif; color:var(--parchment-dark); margin-bottom:8px">Seviye ${nextLvl} Maliyeti:</h4>
-        <div class="cost-row">
-          <span class="cost-chip ${GS.resources.wood>=cost[0]?'can-afford':'cant-afford'}"><span class="res-icon ico-wood" style="width:12px;height:12px"></span>${fmt(cost[0])}</span>
-          <span class="cost-chip ${GS.resources.clay>=cost[1]?'can-afford':'cant-afford'}"><span class="res-icon ico-clay" style="width:12px;height:12px"></span>${fmt(cost[1])}</span>
-          <span class="cost-chip ${GS.resources.iron>=cost[2]?'can-afford':'cant-afford'}"><span class="res-icon ico-iron" style="width:12px;height:12px"></span>${fmt(cost[2])}</span>
-          <span class="cost-chip ${GS.resources.crop>=cost[3]?'can-afford':'cant-afford'}"><span class="res-icon ico-crop" style="width:12px;height:12px"></span>${fmt(cost[3])}</span>
-          <span class="time-chip">⏱ ${formatTime(timeSec)}</span>
-        </div>
-        <div style="margin-top:14px">
-          <button class="btn-build" ${!canAfford?'disabled':''} onclick="issueFieldCommand(${slotId})">
-            ${canAfford ? '🔨 Geliştir (Seviye '+nextLvl+')' : '❌ Yeterli kaynak yok'}
-          </button>
-        </div>
+  // Troop queue
+  if(v.troopQueue&&v.troopQueue.length>0){
+    v.troopQueue.forEach(tq=>{
+      html+=`<div class="queue-item active">
+        <span class="q-name">🗡️ ${tq.count}x ${TROOPS[GS.tribe][tq.type]?.name||tq.type}</span>
+        <span class="q-time">${formatTime(Math.max(0,tq.timeLeft))}</span>
       </div>`;
-    }
-  }
-
-  showModal(typeName, body);
-}
-
-function openBuildingModal(slotId) {
-  const slot = DORF2_SLOTS.find(s => s.id === slotId);
-  const building = GS.buildings.find(b => b.id === slotId);
-  const inQueue = GS.buildQueue.find(t => t.targetId === slotId);
-
-  if (inQueue) {
-    const info = BUILDINGS[building.type] || {};
-    showModal(info.name || 'İnşaat', `<div class="upgrade-box">
-      <h3>${info.name||'Bina'} <span class="level-badge">Seviye ${building.level}</span></h3>
-      <p>İnşaat devam ediyor: ${formatTime(inQueue.timeLeft)}</p>
-      <button class="btn-gold" onclick="premiumInstantFinishSingle('${inQueue.qId}')">⚡ Anında Bitir (5 YDS)</button></div>`);
-    return;
-  }
-
-  // If building exists, show upgrade screen
-  if (building.type && building.level > 0) {
-    const info = BUILDINGS[building.type];
-    if (!info) return;
-    const maxLvl = info.maxLvl || 20;
-    if (building.level >= maxLvl) {
-      showModal(info.name, `<div class="upgrade-box"><h3>${info.icon} ${info.name} <span class="level-badge">MAX</span></h3><p>Bu bina maksimum seviyede!</p></div>`);
-      return;
-    }
-    const nextLvl = building.level + 1;
-    const cost = getBuildingCost(building.type, building.level);
-    const timeSec = getBuildingTime(building.type, building.level);
-    const canAfford = GS.resources.wood >= cost[0] && GS.resources.clay >= cost[1] && GS.resources.iron >= cost[2] && GS.resources.crop >= cost[3];
-
-    showModal(info.name, `<div class="upgrade-box">
-      <h3>${info.icon} ${info.name} <span class="level-badge">Seviye ${building.level}</span></h3>
-      <p style="font-style:italic">${info.desc}</p>
-      <h4 style="font-family:'Cinzel',serif; color:var(--parchment-dark); margin-bottom:8px">Seviye ${nextLvl} Maliyeti:</h4>
-      <div class="cost-row">
-        <span class="cost-chip ${GS.resources.wood>=cost[0]?'can-afford':'cant-afford'}"><span class="res-icon ico-wood" style="width:12px;height:12px"></span>${fmt(cost[0])}</span>
-        <span class="cost-chip ${GS.resources.clay>=cost[1]?'can-afford':'cant-afford'}"><span class="res-icon ico-clay" style="width:12px;height:12px"></span>${fmt(cost[1])}</span>
-        <span class="cost-chip ${GS.resources.iron>=cost[2]?'can-afford':'cant-afford'}"><span class="res-icon ico-iron" style="width:12px;height:12px"></span>${fmt(cost[2])}</span>
-        <span class="cost-chip ${GS.resources.crop>=cost[3]?'can-afford':'cant-afford'}"><span class="res-icon ico-crop" style="width:12px;height:12px"></span>${fmt(cost[3])}</span>
-        <span class="time-chip">⏱ ${formatTime(timeSec)}</span>
-      </div>
-      <div style="margin-top:14px">
-        <button class="btn-build" ${!canAfford?'disabled':''} onclick="issueBuildingCommand(${slotId}, '${building.type}')">
-          ${canAfford ? '🔨 Geliştir (Seviye '+nextLvl+')' : '❌ Yeterli kaynak yok'}
-        </button>
-      </div></div>`);
-    return;
-  }
-
-  // Empty slot: show available buildings
-  let body = '<h4 style="font-family:\'Cinzel\',serif; color:var(--gold-light); margin-bottom:12px">Yeni Bina İnşa Et</h4>';
-
-  for (const [type, info] of Object.entries(BUILDINGS)) {
-    // Wall only in wall slot, rally only in rally slot
-    if (slot.isWall && type !== 'wall') continue;
-    if (!slot.isWall && type === 'wall') continue;
-    if (slot.isRally && type !== 'rally') continue;
-    if (!slot.isRally && type === 'rally') continue;
-    if (type === 'center') continue; // Can't place center elsewhere
-
-    // Check if already built (single-instance buildings)
-    const singleInstance = ['center','embassy','rally','barracks','stable','workshop','academy','smithy','market','tavern','wall'];
-    if (singleInstance.includes(type) && GS.buildings.find(b => b.type === type && b.level > 0)) continue;
-
-    const cost = getBuildingCost(type, 0);
-    const timeSec = getBuildingTime(type, 0);
-    const canAfford = GS.resources.wood >= cost[0] && GS.resources.clay >= cost[1] && GS.resources.iron >= cost[2] && GS.resources.crop >= cost[3];
-
-    // Check requirements
-    let reqMet = true, reqText = '';
-    info.req.forEach(r => {
-      if (!hasBuildingAtLevel(r.b, r.l)) {
-        reqMet = false;
-        reqText += (BUILDINGS[r.b]?.name||r.b) + ' Seviye ' + r.l + ', ';
-      }
     });
+  }
+  el.innerHTML=html;
+}
 
-    body += `<div class="build-item ${(!reqMet)?'locked':''}">
-      <div class="build-info">
-        <h4>${info.icon} ${info.name}</h4>
-        <small>${info.desc}</small>
-        ${!reqMet ? `<div style="color:#ff8080; font-size:0.75rem; margin-top:4px">⛔ Gereksinim: ${reqText.slice(0,-2)}</div>` : ''}
-        <div class="cost-row">
-          <span class="cost-chip ${canAfford?'can-afford':'cant-afford'}"><span class="res-icon ico-wood" style="width:12px;height:12px"></span>${fmt(cost[0])}</span>
-          <span class="cost-chip ${canAfford?'can-afford':'cant-afford'}"><span class="res-icon ico-clay" style="width:12px;height:12px"></span>${fmt(cost[1])}</span>
-          <span class="cost-chip ${canAfford?'can-afford':'cant-afford'}"><span class="res-icon ico-iron" style="width:12px;height:12px"></span>${fmt(cost[2])}</span>
-          <span class="cost-chip ${canAfford?'can-afford':'cant-afford'}"><span class="res-icon ico-crop" style="width:12px;height:12px"></span>${fmt(cost[3])}</span>
-          <span class="time-chip">⏱ ${formatTime(timeSec)}</span>
+function renderTroopSummary(v){
+  const el=document.getElementById('troopSummary');
+  const tribeTroops=TROOPS[GS.tribe];
+  if(!v.troops||Object.keys(v.troops).length===0){
+    const hasBarracks=v.buildings.some(b=>b.type==='barracks'&&b.level>0);
+    el.innerHTML=`<div class="queue-empty">${hasBarracks?'Asker yok.':'Kışla gerekli'}</div>`;
+    return;
+  }
+  let html='';
+  Object.entries(v.troops).forEach(([k,count])=>{
+    if(count>0&&tribeTroops[k]){
+      html+=`<div class="troop-row">
+        <span class="troop-icon">${tribeTroops[k].icon}</span>
+        <div class="troop-info">
+          <div class="troop-name">${tribeTroops[k].name}</div>
+        </div>
+        <span class="troop-count">${count}</span>
+      </div>`;
+    }
+  });
+  el.innerHTML=html||'<div class="queue-empty">Asker yok.</div>';
+}
+
+function renderTroopMovements(){
+  const el=document.getElementById('troopMovements');
+  if(!GS.troopMovements||GS.troopMovements.length===0){
+    el.innerHTML='<div class="queue-empty">Hareket yok.</div>';
+    return;
+  }
+  let html='';
+  GS.troopMovements.forEach(mv=>{
+    const icon=mv.type==='attack'?'⚔️':'🏠';
+    const label=mv.type==='attack'?'Saldırı':'Dönüş';
+    html+=`<div class="queue-item active">
+      <span class="q-name">${icon} ${label}</span>
+      <span class="q-time">${formatTime(Math.max(0,mv.timeLeft))}</span>
+    </div>`;
+  });
+  el.innerHTML=html;
+}
+
+// ─── RENDER VILLAGE MAPS ───
+function renderDorf1(){
+  const v=GS.villages[GS.activeVillage];
+  const map=document.getElementById('dorf1Map');
+  let html='<div class="village-center-img">🏠</div>';
+  v.fields.forEach(f=>{
+    const layout=DORF1_LAYOUT.find(l=>l.id===f.id);
+    const cls=f.level>0?'s-'+f.type:'empty';
+    const label=f.level>0?f.level:'';
+    html+=`<div class="village-slot ${cls}" style="left:calc(${layout.x}% - 22px);top:calc(${layout.y}% - 22px);" onclick="openBuildModal(${f.id},'field')">${label}</div>`;
+  });
+  map.innerHTML=html;
+}
+
+function renderDorf2(){
+  const v=GS.villages[GS.activeVillage];
+  const map=document.getElementById('dorf2Map');
+  let html='<div class="village-center-img">🏰</div>';
+  v.buildings.forEach(b=>{
+    const layout=DORF2_LAYOUT.find(l=>l.id===b.id);
+    let cls='empty';
+    if(b.level>0){
+      if(b.type==='center') cls='s-main';
+      else if(layout.isRally) cls='s-rally';
+      else if(layout.isWall) cls='s-wall';
+      else cls='s-building';
+    }
+    if(layout.isWall) cls+=' s-wall';
+    const label=b.level>0?(layout.isWall?BUILDINGS[b.type]?.name+' '+b.level:b.level):'';
+    html+=`<div class="village-slot ${cls}" style="left:calc(${layout.x}% - ${layout.isWall?60:22}px);top:calc(${layout.y}% - ${layout.isWall?15:22}px);" onclick="openBuildModal(${b.id},'building')">${label}</div>`;
+  });
+  map.innerHTML=html;
+}
+
+// ─── BUILD MODAL ───
+function openBuildModal(id,mapType){
+  const v=GS.villages[GS.activeVillage];
+  let item;
+  if(mapType==='field') item=v.fields.find(f=>f.id===id);
+  else item=v.buildings.find(b=>b.id===id);
+  if(!item)return;
+
+  const modal=document.getElementById('gameModal');
+  const title=document.getElementById('modalTitle');
+  const body=document.getElementById('modalBody');
+
+  if(item.type&&item.type!=='empty'&&item.level>0){
+    // Upgrade existing
+    const info=BUILDINGS[item.type];
+    if(!info)return;
+    const nextLvl=item.level+1;
+    const costs=calcCost(info.cost,item.level);
+    const time=calcTime(info.time,item.level,v);
+    const canAfford=v.resources.wood>=costs[0]&&v.resources.clay>=costs[1]&&v.resources.iron>=costs[2]&&v.resources.crop>=costs[3];
+
+    title.textContent=info.name+' - Seviye '+item.level;
+    body.innerHTML=`
+      <div class="build-item" style="border:none;padding:0;">
+        <div class="b-icon" style="background:rgba(200,160,80,0.1);font-size:2rem;">${info.icon}</div>
+        <div class="b-info">
+          <div class="b-name" style="font-size:1.1rem;">${info.name} <span style="color:var(--text-dim);font-size:0.85rem;">Seviye ${item.level}</span></div>
+          <div class="b-desc">${info.desc}</div>
+          ${info.prodBase?`<div class="mt-1 fs-sm text-green">Üretim: ${Math.floor(info.prodBase*Math.pow(1.25,item.level-1)*SPEED/10)}/saat → ${Math.floor(info.prodBase*Math.pow(1.25,nextLvl-1)*SPEED/10)}/saat</div>`:''}
+          ${info.capBase?`<div class="mt-1 fs-sm text-green">Kapasite: ${800+item.level*400} → ${800+nextLvl*400}</div>`:''}
         </div>
       </div>
-      <button class="btn-build" ${(!reqMet || !canAfford)?'disabled':''} onclick="issueBuildingCommand(${slotId}, '${type}')">
-        ${!reqMet ? '🔒' : canAfford ? 'İnşa Et' : '❌'}
-      </button>
-    </div>`;
-  }
-
-  showModal('Yeni Bina İnşa Et', body);
-}
-
-/* ============================================================
-   BUILD COMMANDS
-   ============================================================ */
-
-function getFieldCost(type, currentLevel) {
-  const base = {wood:[40,100,50,60], clay:[80,40,80,50], iron:[100,80,30,60], crop:[70,90,70,20]};
-  const b = base[type] || [40,40,40,20];
-  const factor = Math.pow(1.67, currentLevel);
-  return b.map(v => Math.ceil(v * factor));
-}
-
-function getFieldTime(type, currentLevel) {
-  const mbLevel = getMainBuildingLevel();
-  const reduction = Math.max(0.5, 1 - mbLevel * 0.015);
-  return Math.ceil(BASE_FIELD_TIME * Math.pow(1.5, currentLevel) * reduction);
-}
-
-function getBuildingCost(type, currentLevel) {
-  const base = BUILDINGS[type]?.cost || [100,100,100,50];
-  const factor = Math.pow(1.28, currentLevel);
-  return base.map(v => Math.ceil(v * factor));
-}
-
-function getBuildingTime(type, currentLevel) {
-  const mbLevel = getMainBuildingLevel();
-  const reduction = Math.max(0.5, 1 - mbLevel * 0.015);
-  const base = BUILDINGS[type]?.timeBase || 200;
-  return Math.ceil(base * Math.pow(1.2, currentLevel) * reduction);
-}
-
-function issueFieldCommand(slotId) {
-  const field = GS.fields.find(f => f.id === slotId);
-  const cost = getFieldCost(field.type, field.level);
-  const time = getFieldTime(field.type, field.level);
-
-  if (!deductResources(cost)) { showNotification('❌ Yeterli kaynak yok!'); return; }
-
-  GS.buildQueue.push({
-    qId: Date.now() + Math.random(),
-    targetId: slotId,
-    type: field.type,
-    name: FIELD_TYPE_NAME[field.type],
-    timeLeft: time,
-    totalTime: time
-  });
-  closeBuildModal();
-  drawDorf1();
-  showNotification('🔨 ' + FIELD_TYPE_NAME[field.type] + ' geliştirme başladı!');
-  saveGS();
-}
-
-function issueBuildingCommand(slotId, buildType) {
-  const building = GS.buildings.find(b => b.id === slotId);
-  const currentLevel = building.level;
-  const cost = getBuildingCost(buildType, currentLevel);
-  const time = getBuildingTime(buildType, currentLevel);
-  const info = BUILDINGS[buildType];
-
-  if (!deductResources(cost)) { showNotification('❌ Yeterli kaynak yok!'); return; }
-
-  GS.buildQueue.push({
-    qId: Date.now() + Math.random(),
-    targetId: slotId,
-    type: buildType,
-    name: info.name,
-    timeLeft: time,
-    totalTime: time
-  });
-  closeBuildModal();
-  drawDorf2();
-  showNotification('🏗 ' + info.name + ' inşaatı başladı!');
-  saveGS();
-}
-
-function deductResources(cost) {
-  if (GS.resources.wood < cost[0] || GS.resources.clay < cost[1] || GS.resources.iron < cost[2] || GS.resources.crop < cost[3]) return false;
-  GS.resources.wood -= cost[0];
-  GS.resources.clay -= cost[1];
-  GS.resources.iron -= cost[2];
-  GS.resources.crop -= cost[3];
-  return true;
-}
-
-/* ============================================================
-   PREMIUM ACTIONS
-   ============================================================ */
-
-function useGold(amount) {
-  GS.ydsGold = parseInt(localStorage.getItem('yds_game_gold') || '0');
-  if (GS.ydsGold < amount) { showNotification('❌ Yeterli YDS puanı yok! Test çöz!'); return false; }
-  GS.ydsGold -= amount;
-  localStorage.setItem('yds_game_gold', GS.ydsGold);
-  return true;
-}
-
-function premiumInstantFinish() {
-  if (GS.buildQueue.length === 0) { showNotification('Kuyruk zaten boş!'); return; }
-  if (!useGold(5)) return;
-  const tasks = [...GS.buildQueue];
-  tasks.forEach(t => completeTask(t));
-  GS.buildQueue = [];
-  drawDorf1(); drawDorf2();
-  showNotification('⚡ Tüm inşaatlar tamamlandı!');
-  saveGS();
-}
-
-function premiumInstantFinishSingle(qId) {
-  if (!useGold(5)) return;
-  const t = GS.buildQueue.find(x => x.qId == qId);
-  if (t) { completeTask(t); }
-  closeBuildModal();
-  drawDorf1(); drawDorf2();
-  showNotification('⚡ İnşaat tamamlandı!');
-  saveGS();
-}
-
-function premiumNPC() {
-  if (!useGold(3)) return;
-  const total = GS.resources.wood + GS.resources.clay + GS.resources.iron + GS.resources.crop;
-  const avg = total / 4;
-  GS.resources = { wood: avg, clay: avg, iron: avg, crop: avg };
-  showNotification('↔ Kaynaklar dengelendi!');
-  saveGS();
-}
-
-function premiumBoost() {
-  if (!useGold(10)) return;
-  GS.prodBoostUntil = Date.now() + 24 * 3600 * 1000;
-  showNotification('📈 Üretim %25 artırıldı! (24 saat)');
-  saveGS();
-}
-
-function premiumSecondVillage() {
-  showNotification('🏘 İkinci köy özelliği yakında!');
-}
-
-/* ============================================================
-   WORLD MAP
-   ============================================================ */
-
-let mapData = { offsetX: 50, offsetY: 50, zoom: 6 };
-
-function initWorldMap() {
-  const canvas = document.getElementById('world-canvas');
-  canvas.addEventListener('mousemove', onMapMouseMove);
-  canvas.addEventListener('click', onMapClick);
-  drawWorldMap();
-}
-
-function drawWorldMap() {
-  const canvas = document.getElementById('world-canvas');
-  const ctx = canvas.getContext('2d');
-  const W = canvas.width, H = canvas.height;
-  const Z = mapData.zoom;
-
-  ctx.fillStyle = '#0d1a0d';
-  ctx.fillRect(0, 0, W, H);
-
-  // Draw grid lines
-  ctx.strokeStyle = 'rgba(40,80,40,0.3)';
-  ctx.lineWidth = 0.5;
-  const startCX = -Math.floor(mapData.offsetX / Z);
-  const startCY = -Math.floor(mapData.offsetY / Z);
-
-  for (let gx = Math.floor(mapData.offsetX % Z); gx < W; gx += Z) {
-    ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, H); ctx.stroke();
-  }
-  for (let gy = Math.floor(mapData.offsetY % Z); gy < H; gy += Z) {
-    ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(W, gy); ctx.stroke();
-  }
-
-  // Draw axis labels
-  const centerX = mapData.offsetX + W/2;
-  const centerY = mapData.offsetY + H/2;
-
-  // Draw bots
-  WORLD.bots.forEach(bot => {
-    const px = (bot.wx + 50) * Z - mapData.offsetX;
-    const py = (bot.wy + 50) * Z - mapData.offsetY;
-    if (px < -Z || px > W+Z || py < -Z || py > H+Z) return;
-
-    ctx.fillStyle = bot.tribe === 'Roman' ? '#8080ff' : bot.tribe === 'Teuton' ? '#ff8080' : '#ffaa40';
-    ctx.beginPath();
-    ctx.arc(px + Z/2, py + Z/2, Math.max(1.5, Z/3), 0, Math.PI*2);
-    ctx.fill();
-  });
-
-  // Draw player village
-  const ppx = (GS.wx + 50) * Z - mapData.offsetX;
-  const ppy = (GS.wy + 50) * Z - mapData.offsetY;
-  if (ppx >= -Z && ppx <= W+Z && ppy >= -Z && ppy <= H+Z) {
-    // Glowing circle for player
-    const grd = ctx.createRadialGradient(ppx+Z/2, ppy+Z/2, 0, ppx+Z/2, ppy+Z/2, Z);
-    grd.addColorStop(0, '#ffd700');
-    grd.addColorStop(1, 'rgba(255,215,0,0)');
-    ctx.fillStyle = grd;
-    ctx.beginPath(); ctx.arc(ppx+Z/2, ppy+Z/2, Z, 0, Math.PI*2); ctx.fill();
-
-    ctx.fillStyle = '#ffd700';
-    ctx.beginPath(); ctx.arc(ppx+Z/2, ppy+Z/2, Math.max(3, Z/2), 0, Math.PI*2); ctx.fill();
-
-    if (Z >= 5) {
-      ctx.fillStyle = '#fff';
-      ctx.font = `bold ${Math.max(8,Z-2)}px Cinzel, serif`;
-      ctx.textAlign = 'center';
-      ctx.fillText('⭐', ppx+Z/2, ppy+Z/2-Z/2-2);
-    }
-  }
-
-  // Coordinates in corner
-  ctx.fillStyle = 'rgba(200,150,12,0.7)';
-  ctx.font = '11px Cinzel, serif';
-  ctx.textAlign = 'left';
-  ctx.fillText(`Zoom: ${Z}x | Çift tıkla: Merkez`, 8, 16);
-}
-
-function onMapMouseMove(e) {
-  const canvas = document.getElementById('world-canvas');
-  const rect = canvas.getBoundingClientRect();
-  const mx = e.clientX - rect.left;
-  const my = e.clientY - rect.top;
-  const Z = mapData.zoom;
-  const wx = Math.floor((mx + mapData.offsetX) / Z) - 50;
-  const wy = Math.floor((my + mapData.offsetY) / Z) - 50;
-
-  // Find village at position
-  const tooltip = document.getElementById('map-tooltip');
-  const bot = WORLD.bots.find(b => b.wx === wx && b.wy === wy);
-  const isPlayer = (wx === GS.wx && wy === GS.wy);
-
-  if (bot || isPlayer) {
-    const data = isPlayer
-      ? {name: currentUser, tribe: GS.tribe, power: 'Sen', alliance: GS.alliance || 'Yok'}
-      : {name: bot.name, tribe: bot.tribe, power: bot.power, alliance: bot.alliance ? (WORLD.alliances.find(a=>a.id===bot.alliance)?.name||'Bilinmiyor') : 'Yok'};
-    const tribeName = data.tribe === 'Roman' ? '🦅 Romalı' : data.tribe === 'Teuton' ? '🪓 Cermen' : '🐎 Türk';
-    tooltip.innerHTML = `<strong style="color:var(--gold-light)">${data.name}</strong><br>${tribeName}<br>İttifak: ${data.alliance}<br>Güç: ${data.power !== 'Sen' ? fmt(data.power) : '⭐ Sen'}`;
-    tooltip.style.display = 'block';
-    tooltip.style.left = (e.clientX + 12) + 'px';
-    tooltip.style.top = (e.clientY - 10) + 'px';
+      <hr class="divider">
+      <h4 style="font-size:0.9rem;margin-bottom:8px;">Seviye ${nextLvl} için Gerekli:</h4>
+      <div class="flex gap-3 mb-2" style="flex-wrap:wrap;">
+        <div class="b-cost ${v.resources.wood<costs[0]?'insufficient':''}"><span class="res-dot wood"></span> ${formatNum(costs[0])}</div>
+        <div class="b-cost ${v.resources.clay<costs[1]?'insufficient':''}"><span class="res-dot clay"></span> ${formatNum(costs[1])}</div>
+        <div class="b-cost ${v.resources.iron<costs[2]?'insufficient':''}"><span class="res-dot iron"></span> ${formatNum(costs[2])}</div>
+        <div class="b-cost ${v.resources.crop<costs[3]?'insufficient':''}"><span class="res-dot crop"></span> ${formatNum(costs[3])}</div>
+        <div class="b-cost">⏱️ ${formatTime(time)}</div>
+      </div>
+      <div class="mt-2">
+        <button class="btn ${canAfford?'btn-green':'btn-red'} btn-block" ${canAfford?`onclick="issueUpgrade(${id},'${item.type}',${mapType==='field'},${nextLvl})"`:''}>
+          ${canAfford?'⬆️ Seviye '+nextLvl+' Yap':'❌ Yetersiz Kaynak'}
+        </button>
+      </div>
+      ${item.type==='barracks'||item.type==='stable'?`<hr class="divider"><button class="btn btn-gold btn-block" onclick="closeModal();openTroopModal('${item.type}')">🗡️ Asker Eğit</button>`:''}
+      ${item.type==='rally'?`<hr class="divider"><button class="btn btn-red btn-block" onclick="closeModal();openAttackModal()">⚔️ Saldırı Gönder</button>`:''}
+      ${item.type==='embassy'?`<hr class="divider"><button class="btn btn-green btn-block" onclick="closeModal();showView('alliance')">🛡️ İttifak Yönetimi</button>`:''}
+    `;
   } else {
-    tooltip.style.display = 'none';
-  }
-}
+    // Build new
+    const layout=mapType==='building'?DORF2_LAYOUT.find(l=>l.id===id):null;
+    title.textContent=mapType==='field'?'Kaynak Yükselt':'Yeni Bina İnşa Et';
 
-function onMapClick(e) {
-  const canvas = document.getElementById('world-canvas');
-  const rect = canvas.getBoundingClientRect();
-  const mx = e.clientX - rect.left;
-  const my = e.clientY - rect.top;
-  const Z = mapData.zoom;
-  const wx = Math.floor((mx + mapData.offsetX) / Z) - 50;
-  const wy = Math.floor((my + mapData.offsetY) / Z) - 50;
-
-  const bot = WORLD.bots.find(b => b.wx === wx && b.wy === wy);
-  if (bot) {
-    // Set as attack target
-    document.getElementById('attack-x').value = wx;
-    document.getElementById('attack-y').value = wy;
-    showNotification('🎯 ' + bot.name + ' hedef seçildi! Askerlik sekmesine git.');
-  }
-}
-
-function mapZoom(dir) {
-  mapData.zoom = Math.max(2, Math.min(20, mapData.zoom + dir * 2));
-  drawWorldMap();
-}
-
-function centerOnPlayer() {
-  const canvas = document.getElementById('world-canvas');
-  const W = canvas.width, H = canvas.height;
-  mapData.offsetX = (GS.wx + 50) * mapData.zoom - W/2;
-  mapData.offsetY = (GS.wy + 50) * mapData.zoom - H/2;
-  drawWorldMap();
-}
-
-/* ============================================================
-   MILITARY
-   ============================================================ */
-
-function renderMilitaryPanel() {
-  const troops = TROOPS[GS.tribe] || [];
-  const hasBarracks = hasBuildingAtLevel('barracks', 1);
-  const hasStable = hasBuildingAtLevel('stable', 1);
-  const hasWorkshop = hasBuildingAtLevel('workshop', 1);
-
-  // Train panel
-  let trainHtml = '';
-  troops.forEach(t => {
-    const canTrain = t.isCav ? hasStable : hasBarracks;
-    if (!canTrain) {
-      trainHtml += `<div class="troop-row" style="opacity:0.4">
-        <div><div class="troop-name">${t.icon} ${t.name}</div><small class="text-muted">${t.isCav?'Ahır gerekli':'Kışla gerekli'}</small></div>
-      </div>`;
-    } else {
-      const canAfford = GS.resources.wood >= t.wood && GS.resources.clay >= t.clay && GS.resources.iron >= t.iron && GS.resources.crop >= t.crop;
-      trainHtml += `<div class="troop-row">
-        <div>
-          <div class="troop-name">${t.icon} ${t.name}</div>
-          <div class="cost-row" style="margin-top:3px">
-            <span class="cost-chip ${GS.resources.wood>=t.wood?'can-afford':'cant-afford'}"><span class="res-icon ico-wood" style="width:10px;height:10px"></span>${t.wood}</span>
-            <span class="cost-chip ${GS.resources.clay>=t.clay?'can-afford':'cant-afford'}"><span class="res-icon ico-clay" style="width:10px;height:10px"></span>${t.clay}</span>
-            <span class="cost-chip ${GS.resources.iron>=t.iron?'can-afford':'cant-afford'}"><span class="res-icon ico-iron" style="width:10px;height:10px"></span>${t.iron}</span>
-            <span class="time-chip">⏱ ${formatTime(Math.ceil(t.time / SPEED * 6))}</span>
+    let html='';
+    if(mapType==='field'){
+      // Resource field - just upgrade from level 0
+      const fItem=v.fields.find(f=>f.id===id);
+      const info=BUILDINGS[fItem.type];
+      const costs=calcCost(info.cost,0);
+      const time=calcTime(info.time,0,v);
+      const canAfford=v.resources.wood>=costs[0]&&v.resources.clay>=costs[1]&&v.resources.iron>=costs[2]&&v.resources.crop>=costs[3];
+      html=`<div class="build-item">
+        <div class="b-icon" style="background:rgba(200,160,80,0.1);">${info.icon}</div>
+        <div class="b-info">
+          <div class="b-name">${info.name}</div>
+          <div class="b-desc">${info.desc}</div>
+          <div class="b-costs">
+            <div class="b-cost ${v.resources.wood<costs[0]?'insufficient':''}"><span class="res-dot wood"></span>${formatNum(costs[0])}</div>
+            <div class="b-cost ${v.resources.clay<costs[1]?'insufficient':''}"><span class="res-dot clay"></span>${formatNum(costs[1])}</div>
+            <div class="b-cost ${v.resources.iron<costs[2]?'insufficient':''}"><span class="res-dot iron"></span>${formatNum(costs[2])}</div>
+            <div class="b-cost ${v.resources.crop<costs[3]?'insufficient':''}"><span class="res-dot crop"></span>${formatNum(costs[3])}</div>
+            <div class="b-cost">⏱️${formatTime(time)}</div>
           </div>
         </div>
-        <div style="display:flex; gap:5px; align-items:center">
-          <input type="number" min="1" max="999" value="1" id="train-count-${t.id}" style="width:55px; padding:4px; background:rgba(0,0,0,0.4); border:1px solid var(--gold); border-radius:4px; color:var(--parchment); font-family:'Cinzel',serif; text-align:center">
-          <button class="btn-build" ${!canAfford?'disabled':''} onclick="trainTroop('${t.id}')">Eğit</button>
+        <div class="b-action"><button class="btn ${canAfford?'btn-green':'btn-red'} btn-sm" ${canAfford?`onclick="issueUpgrade(${id},'${fItem.type}',true,1)"`:''}>
+          ${canAfford?'İnşa Et':'Yetersiz'}
+        </button></div>
+      </div>`;
+    } else {
+      // Building list
+      const fieldTypes=['wood','clay','iron','crop'];
+      Object.entries(BUILDINGS).forEach(([type,info])=>{
+        if(fieldTypes.includes(type)) return;
+        // Special slot checks
+        if(layout&&layout.isWall&&type!=='wall') return;
+        if(layout&&!layout.isWall&&type==='wall') return;
+        if(layout&&layout.isRally&&type!=='rally') return;
+        if(layout&&!layout.isRally&&type==='rally') return;
+        // Check if already built (unique buildings)
+        const alreadyBuilt=v.buildings.some(b=>b.type===type&&b.level>0);
+        if(alreadyBuilt&&type!=='cranny'&&type!=='warehouse'&&type!=='granary') return;
+
+        // Check requirements
+        let canBuild=true;
+        let reqText='';
+        (info.req||[]).forEach(r=>{
+          const found=v.buildings.find(b=>b.type===r.b&&b.level>=r.lvl);
+          if(!found){canBuild=false;reqText+=BUILDINGS[r.b].name+' Sv.'+r.lvl+', ';}
+        });
+
+        const costs=info.cost;
+        const time=calcTime(info.time,0,v);
+        const canAfford=canBuild&&v.resources.wood>=costs[0]&&v.resources.clay>=costs[1]&&v.resources.iron>=costs[2]&&v.resources.crop>=costs[3];
+
+        html+=`<div class="build-item ${!canBuild?'disabled':''}">
+          <div class="b-icon" style="background:rgba(200,160,80,0.1);">${info.icon}</div>
+          <div class="b-info">
+            <div class="b-name">${info.name}</div>
+            <div class="b-desc">${info.desc}</div>
+            ${!canBuild?`<div class="req-text">❌ Gereksinim: ${reqText.slice(0,-2)}</div>`:''}
+            <div class="b-costs">
+              <div class="b-cost ${!canAfford?'insufficient':''}"><span class="res-dot wood"></span>${formatNum(costs[0])}</div>
+              <div class="b-cost ${!canAfford?'insufficient':''}"><span class="res-dot clay"></span>${formatNum(costs[1])}</div>
+              <div class="b-cost ${!canAfford?'insufficient':''}"><span class="res-dot iron"></span>${formatNum(costs[2])}</div>
+              <div class="b-cost ${!canAfford?'insufficient':''}"><span class="res-dot crop"></span>${formatNum(costs[3])}</div>
+              <div class="b-cost">⏱️${formatTime(time)}</div>
+            </div>
+          </div>
+          <div class="b-action">
+            ${canBuild&&canAfford?`<button class="btn btn-green btn-sm" onclick="issueConstruct(${id},'${type}')">İnşa Et</button>`:`<button class="btn btn-red btn-sm" disabled>❌</button>`}
+          </div>
+        </div>`;
+      });
+    }
+    body.innerHTML=html;
+  }
+  modal.classList.remove('hidden');
+}
+
+function issueUpgrade(id,type,isField,targetLevel){
+  const v=GS.villages[GS.activeVillage];
+  const info=BUILDINGS[type];
+  const item=isField?v.fields.find(f=>f.id===id):v.buildings.find(b=>b.id===id);
+  const costs=calcCost(info.cost,item.level);
+  const time=calcTime(info.time,item.level,v);
+
+  if(v.resources.wood<costs[0]||v.resources.clay<costs[1]||v.resources.iron<costs[2]||v.resources.crop<costs[3])return;
+
+  v.resources.wood-=costs[0];v.resources.clay-=costs[1];v.resources.iron-=costs[2];v.resources.crop-=costs[3];
+
+  v.buildQueue.push({
+    qId:Date.now()+Math.random(),
+    targetId:id,type:type,
+    name:info.name,
+    isField:isField,
+    timeLeft:time,totalTime:time,
+    targetLevel:targetLevel
+  });
+  closeModal();
+  updateUI();
+}
+
+function issueConstruct(id,type){
+  const v=GS.villages[GS.activeVillage];
+  const info=BUILDINGS[type];
+  const costs=info.cost;
+  const time=calcTime(info.time,0,v);
+
+  if(v.resources.wood<costs[0]||v.resources.clay<costs[1]||v.resources.iron<costs[2]||v.resources.crop<costs[3])return;
+
+  v.resources.wood-=costs[0];v.resources.clay-=costs[1];v.resources.iron-=costs[2];v.resources.crop-=costs[3];
+
+  // Set building type
+  const b=v.buildings.find(x=>x.id===id);
+  if(b) b.type=type;
+
+  v.buildQueue.push({
+    qId:Date.now()+Math.random(),
+    targetId:id,type:type,
+    name:info.name,
+    isField:false,
+    timeLeft:time,totalTime:time,
+    targetLevel:1
+  });
+  closeModal();
+  renderDorf2();
+  updateUI();
+}
+
+// ─── TROOP TRAINING MODAL ───
+function openTroopModal(buildingType){
+  const tribeTroops=TROOPS[GS.tribe];
+  const v=GS.villages[GS.activeVillage];
+  const title_=document.getElementById('modalTitle');
+  const body_=document.getElementById('modalBody');
+
+  title_.textContent=buildingType==='barracks'?'⚔️ Kışla - Asker Eğit':'🐴 Ahır - Süvari Eğit';
+
+  let html='';
+  Object.entries(tribeTroops).forEach(([key,troop])=>{
+    // Barracks = infantry (t1,t2,t3), Stable = cavalry (t4,t5)
+    if(buildingType==='barracks'&&['t4','t5','ram','senator','chief','bey'].includes(key))return;
+    if(buildingType==='stable'&&['t1','t2','t3'].includes(key))return;
+
+    const canAfford=v.resources.wood>=troop.cost[0]&&v.resources.clay>=troop.cost[1]&&v.resources.iron>=troop.cost[2]&&v.resources.crop>=troop.cost[3];
+
+    html+=`<div class="build-item">
+      <div class="b-icon" style="background:rgba(200,160,80,0.1);font-size:1.5rem;">${troop.icon}</div>
+      <div class="b-info">
+        <div class="b-name">${troop.name}</div>
+        <div class="b-desc">Saldırı:${troop.att} | Savunma:${troop.defI}/${troop.defC} | Hız:${troop.speed} | Taşıma:${troop.carry}</div>
+        <div class="b-costs">
+          <div class="b-cost"><span class="res-dot wood"></span>${troop.cost[0]}</div>
+          <div class="b-cost"><span class="res-dot clay"></span>${troop.cost[1]}</div>
+          <div class="b-cost"><span class="res-dot iron"></span>${troop.cost[2]}</div>
+          <div class="b-cost"><span class="res-dot crop"></span>${troop.cost[3]}</div>
+          <div class="b-cost">⏱️${formatTime(Math.floor(troop.time/SPEED*10))}</div>
         </div>
+      </div>
+      <div class="b-action flex gap-1 items-center">
+        <input type="number" id="train_${key}" value="1" min="1" max="100" style="width:60px;">
+        <button class="btn btn-green btn-sm" onclick="trainTroops('${key}')">Eğit</button>
+      </div>
+    </div>`;
+  });
+  body_.innerHTML=html;
+  document.getElementById('gameModal').classList.remove('hidden');
+}
+
+function trainTroops(troopKey){
+  const v=GS.villages[GS.activeVillage];
+  const troop=TROOPS[GS.tribe][troopKey];
+  const countEl=document.getElementById('train_'+troopKey);
+  let count=parseInt(countEl.value)||1;
+
+  // Max affordable
+  const maxW=Math.floor(v.resources.wood/troop.cost[0]);
+  const maxC=Math.floor(v.resources.clay/troop.cost[1]);
+  const maxI=Math.floor(v.resources.iron/troop.cost[2]);
+  const maxR=Math.floor(v.resources.crop/troop.cost[3]);
+  count=Math.min(count,maxW,maxC,maxI,maxR);
+  if(count<=0){alert('Yetersiz kaynak!');return;}
+
+  v.resources.wood-=troop.cost[0]*count;
+  v.resources.clay-=troop.cost[1]*count;
+  v.resources.iron-=troop.cost[2]*count;
+  v.resources.crop-=troop.cost[3]*count;
+
+  if(!v.troopQueue) v.troopQueue=[];
+  v.troopQueue.push({
+    type:troopKey,
+    count:count,
+    timeLeft:Math.floor(troop.time*count/SPEED*10),
+    totalTime:Math.floor(troop.time*count/SPEED*10)
+  });
+
+  closeModal();
+  addInfo(count+'x '+troop.name+' eğitimi başladı!','⚔️');
+  updateUI();
+}
+
+// ─── ATTACK MODAL ───
+function openAttackModal(){
+  const title_=document.getElementById('modalTitle');
+  const body_=document.getElementById('modalBody');
+  title_.textContent='⚔️ Saldırı Gönder';
+
+  const v=GS.villages[GS.activeVillage];
+  const tribeTroops=TROOPS[GS.tribe];
+
+  let troopInputs='';
+  Object.entries(v.troops).forEach(([k,count])=>{
+    if(count>0&&tribeTroops[k]){
+      troopInputs+=`<div class="flex items-center gap-2 mb-1">
+        <span>${tribeTroops[k].icon} ${tribeTroops[k].name} (${count})</span>
+        <input type="number" id="att_${k}" value="0" min="0" max="${count}" style="width:70px;">
       </div>`;
     }
   });
-  document.getElementById('troop-train-panel').innerHTML = trainHtml || '<p class="text-muted">Kışla inşa et.</p>';
 
-  // Count panel
-  let countHtml = '';
-  let hasAny = false;
-  troops.forEach(t => {
-    const count = GS.troops[t.id] || 0;
-    if (count > 0) { hasAny = true; }
-    countHtml += `<div class="troop-row">
-      <div class="troop-name">${t.icon} ${t.name}</div>
-      <div class="troop-count">${count}</div>
-    </div>`;
-  });
-  document.getElementById('troop-count-panel').innerHTML = countHtml || '<p class="text-muted">Asker yok.</p>';
-
-  // Attack troop select
-  let atkHtml = '<div style="margin-bottom:10px; font-size:0.85rem; color:var(--parchment-dark)">Kaç asker gönderilsin?</div>';
-  troops.forEach(t => {
-    const count = GS.troops[t.id] || 0;
-    if (count > 0) {
-      atkHtml += `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px">
-        <span style="color:var(--parchment); font-size:0.82rem">${t.icon} ${t.name} (${count})</span>
-        <input type="number" min="0" max="${count}" value="0" id="attack-${t.id}" style="width:70px; padding:4px; background:rgba(0,0,0,0.4); border:1px solid var(--gold); border-radius:4px; color:var(--parchment); font-family:'Cinzel',serif; text-align:center">
-      </div>`;
-    }
-  });
-  document.getElementById('attack-troop-select').innerHTML = hasAny ? atkHtml : '<p class="text-muted">Saldırmak için asker topla.</p>';
-
-  // Moving troops
-  let movHtml = '';
-  GS.movingTroops.forEach(mt => {
-    movHtml += `<div style="padding:6px 0; border-bottom:1px solid rgba(200,150,12,0.1); font-size:0.82rem; color:var(--parchment)">
-      ${mt.isReturn ? '🔙' : '⚔'} ${mt.targetName} → ${formatTime(mt.timeLeft)}
-    </div>`;
-  });
-  document.getElementById('moving-troops').innerHTML = movHtml || '<p class="text-muted">Hareket eden birlik yok.</p>';
-}
-
-function trainTroop(troopId) {
-  const troop = TROOPS[GS.tribe].find(t => t.id === troopId);
-  if (!troop) return;
-  const countInput = document.getElementById('train-count-' + troopId);
-  const count = parseInt(countInput?.value || 1);
-  if (count < 1) return;
-
-  if (GS.resources.wood < troop.wood*count || GS.resources.clay < troop.clay*count || GS.resources.iron < troop.iron*count || GS.resources.crop < troop.crop*count) {
-    showNotification('❌ Yeterli kaynak yok!'); return;
-  }
-
-  GS.resources.wood -= troop.wood * count;
-  GS.resources.clay -= troop.clay * count;
-  GS.resources.iron -= troop.iron * count;
-  GS.resources.crop -= troop.crop * count;
-
-  const timePerUnit = Math.ceil(troop.time / SPEED * 6);
-  for (let i = 0; i < count; i++) {
-    GS.trainQueue.push({
-      troopId, troopName: troop.name,
-      timeLeft: timePerUnit,
-      totalTime: timePerUnit
-    });
-  }
-  showNotification('⚔ ' + count + 'x ' + troop.name + ' eğitim kuyruğuna eklendi!');
-  saveGS();
-  renderMilitaryPanel();
-}
-
-function sendAttack() {
-  const tx = parseInt(document.getElementById('attack-x').value);
-  const ty = parseInt(document.getElementById('attack-y').value);
-  if (isNaN(tx) || isNaN(ty)) { showNotification('❌ Koordinat gir!'); return; }
-  if (tx === GS.wx && ty === GS.wy) { showNotification('❌ Kendi köyüne saldıramazsın!'); return; }
-
-  const troops = TROOPS[GS.tribe];
-  let totalTroops = 0, atk = 0;
-  const sentTroops = {};
-  troops.forEach(t => {
-    const el = document.getElementById('attack-' + t.id);
-    const n = el ? parseInt(el.value || 0) : 0;
-    if (n > 0 && (GS.troops[t.id] || 0) >= n) {
-      sentTroops[t.id] = n;
-      totalTroops += n;
-      atk += t.atk * n;
-    }
-  });
-
-  if (totalTroops === 0) { showNotification('❌ En az 1 asker seç!'); return; }
-
-  // Deduct troops
-  for (const [id, n] of Object.entries(sentTroops)) GS.troops[id] -= n;
-
-  // Calculate travel time (based on distance, slowest troop speed)
-  const dist = Math.sqrt((tx - GS.wx)**2 + (ty - GS.wy)**2);
-  const minSpeed = Math.min(...TROOPS[GS.tribe].filter(t => sentTroops[t.id]).map(t => t.speed));
-  const travelTime = Math.max(30, Math.floor(dist * 3600 / minSpeed / SPEED));
-
-  const target = WORLD.bots.find(b => b.wx === tx && b.wy === ty);
-  const targetName = target ? target.name : `(${tx}|${ty})`;
-
-  GS.movingTroops.push({
-    id: Date.now(),
-    targetX: tx, targetY: ty, targetName,
-    sentTroops, atk,
-    isReturn: false,
-    timeLeft: travelTime,
-    totalTime: travelTime
-  });
-
-  showNotification('⚔ ' + totalTroops + ' asker ' + targetName + "'a yola çıktı!");
-  saveGS();
-  renderMilitaryPanel();
-}
-
-function sendReinforce() {
-  showNotification('🛡 Takviye özelliği yakında gelecek!');
-}
-
-function resolveCombat(mt) {
-  if (mt.isReturn) {
-    // Troops returning
-    for (const [id, n] of Object.entries(mt.sentTroops)) {
-      GS.troops[id] = (GS.troops[id] || 0) + n;
-    }
-    showNotification('🏠 Birlikler geri döndü!');
-    addReport({type:'return', text:'Birlikler köye döndü.', time: Date.now()});
+  if(!troopInputs){
+    body_.innerHTML='<div class="queue-empty">Saldırı gönderecek askerin yok!</div>';
+    document.getElementById('gameModal').classList.remove('hidden');
     return;
   }
 
-  // Attack resolution
-  const target = WORLD.bots.find(b => b.wx === mt.targetX && b.wy === mt.targetY);
-  let def = 0, loot = {wood:0,clay:0,iron:0,crop:0};
+  body_.innerHTML=`
+    <div class="mb-2">
+      <label class="fs-sm fw-700" style="color:var(--accent);">Hedef Koordinat:</label>
+      <div class="flex gap-2 mt-1">
+        <div>X: <input type="number" id="attX" value="0" style="width:70px;"></div>
+        <div>Y: <input type="number" id="attY" value="0" style="width:70px;"></div>
+      </div>
+    </div>
+    <hr class="divider">
+    <div class="mb-2">
+      <label class="fs-sm fw-700" style="color:var(--accent);">Gönderilecek Askerler:</label>
+      <div class="mt-1">${troopInputs}</div>
+    </div>
+    <button class="btn btn-red btn-block" onclick="sendAttack()">⚔️ Saldırıya Gönder!</button>
+  `;
+  document.getElementById('gameModal').classList.remove('hidden');
+}
 
-  if (target) {
-    def = target.troops * 20; // bot defense
-    const result = mt.atk > def;
-    const survived = Math.floor(Object.entries(mt.sentTroops).reduce((s,[id,n]) => {
-      const t = TROOPS[GS.tribe].find(t=>t.id===id);
-      return s + (result ? Math.floor(n * (0.5 + Math.random()*0.5)) : Math.floor(n * Math.random()*0.3));
-    }, 0));
+function sendAttack(){
+  const v=GS.villages[GS.activeVillage];
+  const x=parseInt(document.getElementById('attX').value)||0;
+  const y=parseInt(document.getElementById('attY').value)||0;
 
-    if (result) {
-      // Win!
-      const lootCap = Object.entries(mt.sentTroops).reduce((s,[id,n])=>{
-        return s + (TROOPS[GS.tribe].find(t=>t.id===id)?.cap||0)*n;
-      },0);
-      loot.wood = Math.min(Math.floor(target.power * 2), lootCap/4);
-      loot.clay = loot.wood; loot.iron = loot.wood; loot.crop = loot.wood;
-      GS.resources.wood = Math.min(99999, GS.resources.wood + loot.wood);
-      GS.resources.clay = Math.min(99999, GS.resources.clay + loot.clay);
-      GS.resources.iron = Math.min(99999, GS.resources.iron + loot.iron);
-      GS.resources.crop = Math.min(99999, GS.resources.crop + loot.crop);
-      target.power = Math.max(100, target.power - Math.floor(mt.atk/10));
-      target.troops = Math.max(0, target.troops - Math.floor(def/20*0.5));
-      GS.hero.xp += Math.floor(mt.atk / 20);
+  // Find target
+  const target=GS.bots.find(b=>b.x===x&&b.y===y);
+  if(!target){alert('Bu koordinatta köy bulunamadı!');return;}
 
-      addReport({type:'win', title:'⚔ Saldırı Başarılı!',
-        text:`${target.name} köyüne saldırın başarılı! Ganimet: ${fmt(loot.wood)} Odun, ${fmt(loot.clay)} Tuğla, ${fmt(loot.iron)} Demir, ${fmt(loot.crop)} Tahıl`, time:Date.now()});
-      showNotification('🏆 ' + target.name + "'a saldırı başarılı! Ganimet alındı!");
+  const troops={};
+  let hasAny=false;
+  const tribeTroops=TROOPS[GS.tribe];
 
-      // Return survivors with loot
-      const retTroops = {};
-      let retCount = 0;
-      for (const [id, n] of Object.entries(mt.sentTroops)) {
-        const surv = Math.max(0, Math.floor(n * (0.4 + Math.random()*0.5)));
-        if (surv > 0) { retTroops[id] = surv; retCount += surv; }
+  Object.entries(v.troops).forEach(([k,count])=>{
+    const sendCount=parseInt(document.getElementById('att_'+k)?.value)||0;
+    if(sendCount>0&&sendCount<=count){
+      troops[k]=sendCount;
+      v.troops[k]-=sendCount;
+      hasAny=true;
+    }
+  });
+
+  if(!hasAny){alert('En az 1 asker seçmelisin!');return;}
+
+  // Calculate travel time
+  const dist=Math.sqrt(Math.pow(v.x-x,2)+Math.pow(v.y-y,2));
+  let minSpeed=Infinity;
+  Object.entries(troops).forEach(([k])=>{
+    if(tribeTroops[k]) minSpeed=Math.min(minSpeed,tribeTroops[k].speed);
+  });
+  const travelTime=Math.max(10,Math.floor(dist*100/(minSpeed*SPEED)));
+
+  GS.troopMovements.push({
+    type:'attack',
+    troops:troops,
+    targetId:target.id,
+    villageId:v.id,
+    fromX:v.x, fromY:v.y,
+    timeLeft:travelTime,
+    totalTime:travelTime
+  });
+
+  closeModal();
+  addInfo('Saldırı gönderildi! Varış: '+formatTime(travelTime),'⚔️');
+  updateUI();
+}
+
+// ─── VIEW SWITCHING ───
+function showView(view){
+  ['dorf1','dorf2','map','stats','reports','alliance'].forEach(v=>{
+    document.getElementById('view-'+v).classList.toggle('hidden',v!==view);
+    document.getElementById('nav-'+v)?.classList.toggle('active',v===view);
+  });
+  if(view==='stats') renderStats();
+  if(view==='reports') renderReports();
+  if(view==='alliance') renderAlliance();
+  if(view==='map') setTimeout(()=>initMap(),100);
+}
+
+// ─── WORLD MAP ───
+let mapInitialized=false;
+function initMap(){
+  if(mapInitialized) return;
+  mapInitialized=true;
+  const container=document.getElementById('mapContainer');
+  const grid=document.getElementById('mapGrid');
+  const cellSize=40;
+  const visibleRange=25; // show -25 to +25 around player
+  const v=GS.villages[GS.activeVillage];
+  const centerX=v.x||0;
+  const centerY=v.y||0;
+
+  const viewRange=visibleRange;
+  const gridSize=(viewRange*2+1)*cellSize;
+  grid.style.width=gridSize+'px';
+  grid.style.height=gridSize+'px';
+
+  let html='';
+  // Background terrain
+  for(let dy=-viewRange;dy<=viewRange;dy++){
+    for(let dx=-viewRange;dx<=viewRange;dx++){
+      const wx=centerX+dx;
+      const wy=centerY+dy;
+      const px=(dx+viewRange)*cellSize;
+      const py=(dy+viewRange)*cellSize;
+
+      // Terrain coloring
+      const noise=Math.sin(wx*0.3)*Math.cos(wy*0.3);
+      const isForest=noise>0.5;
+      const isMountain=noise<-0.6;
+      const isWater=Math.sin(wx*0.1+wy*0.15)>0.85;
+      let bg=isWater?'#4a90d9':isForest?'#3a7a15':isMountain?'#8a7a60':'#5a9a25';
+      // Slight variation
+      const vary=Math.floor(Math.sin(wx*7+wy*13)*8);
+      html+=`<div class="map-cell" style="left:${px}px;top:${py}px;background:${bg};opacity:${0.85+Math.random()*0.15};" data-x="${wx}" data-y="${wy}">`;
+
+      // Check for villages
+      // Player village
+      if(wx===v.x&&wy===v.y){
+        html+=`<div class="map-village player" title="${v.name}" onclick="showVillageInfo(0,'player')">🏠</div>`;
+      } else {
+        const bot=GS.bots.find(b=>b.x===wx&&b.y===wy);
+        if(bot){
+          const cls='bot-'+bot.tribe.toLowerCase();
+          const icon=bot.tribe==='Roman'?'🏛️':bot.tribe==='Teuton'?'🪓':'🏇';
+          html+=`<div class="map-village ${cls}" title="${bot.name} (${bot.tribe})" onclick="showVillageInfo(${bot.id},'bot')">${icon}</div>`;
+        } else if(isWater){
+          html+='<span style="font-size:0.6rem;opacity:0.5;">🌊</span>';
+        } else if(isForest){
+          html+='<span style="font-size:0.6rem;opacity:0.4;">🌲</span>';
+        } else if(isMountain){
+          html+='<span style="font-size:0.6rem;opacity:0.4;">⛰️</span>';
+        }
       }
-      if (retCount > 0) {
-        GS.movingTroops.push({...mt, sentTroops:retTroops, isReturn:true, timeLeft:mt.totalTime});
-      }
-    } else {
-      // Loss
-      addReport({type:'loss', title:'💀 Saldırı Başarısız!',
-        text:`${target.name} köyüne saldırın başarısız oldu. Tüm askerler kaybedildi.`, time:Date.now()});
-      showNotification('💀 ' + target.name + "'a saldırı başarısız! Askerler kaybedildi!");
+      html+=`</div>`;
     }
   }
+  grid.innerHTML=html;
 
-  renderMilitaryPanel();
-  renderReports();
-  saveWorld();
-  saveGS();
+  // Center on player
+  const playerPx=(viewRange)*cellSize;
+  const playerPy=(viewRange)*cellSize;
+  container.scrollLeft=playerPx-container.clientWidth/2;
+  container.scrollTop=playerPy-container.clientHeight/2;
+
+  // Drag to scroll
+  container.onmousedown=function(e){
+    mapDragState.dragging=true;
+    mapDragState.startX=e.clientX;
+    mapDragState.startY=e.clientY;
+    mapDragState.scrollX=container.scrollLeft;
+    mapDragState.scrollY=container.scrollTop;
+    grid.style.cursor='grabbing';
+  };
+  document.onmousemove=function(e){
+    if(!mapDragState.dragging)return;
+    container.scrollLeft=mapDragState.scrollX-(e.clientX-mapDragState.startX);
+    container.scrollTop=mapDragState.scrollY-(e.clientY-mapDragState.startY);
+  };
+  document.onmouseup=function(){
+    mapDragState.dragging=false;
+    grid.style.cursor='grab';
+  };
+
+  // Track coordinates
+  container.onscroll=function(){
+    const cx=Math.floor((container.scrollLeft+container.clientWidth/2)/cellSize)-viewRange+centerX;
+    const cy=Math.floor((container.scrollTop+container.clientHeight/2)/cellSize)-viewRange+centerY;
+    document.getElementById('mapCoordX').textContent=cx;
+    document.getElementById('mapCoordY').textContent=cy;
+  };
 }
 
-function addReport(r) {
-  GS.reports.unshift(r);
-  if (GS.reports.length > 50) GS.reports.pop();
-  const notif = document.getElementById('notif-reports');
-  notif.style.display = 'flex';
+function mapGoto(){
+  // Reset map and reinit
+  mapInitialized=false;
+  const x=parseInt(document.getElementById('mapGotoX').value)||0;
+  const y=parseInt(document.getElementById('mapGotoY').value)||0;
+  // We'll just scroll to approximate position
+  initMap();
 }
 
-function renderReports() {
-  const panel = document.getElementById('reports-list');
-  if (GS.reports.length === 0) { panel.innerHTML = '<p class="text-muted">Henüz rapor yok.</p>'; return; }
-  let html = '';
-  GS.reports.forEach(r => {
-    html += `<div class="report-item report-${r.type==='win'?'win':'loss'}">
-      <div class="report-title">${r.title || r.text}</div>
-      ${r.title ? `<div style="color:var(--parchment-dark); font-size:0.78rem; margin-top:3px">${r.text}</div>` : ''}
-      <div class="report-time">${new Date(r.time).toLocaleTimeString('tr-TR')}</div>
+function showVillageInfo(id,type){
+  const title_=document.getElementById('modalTitle');
+  const body_=document.getElementById('modalBody');
+
+  if(type==='player'){
+    const v=GS.villages[0];
+    title_.textContent='🏠 '+v.name;
+    body_.innerHTML=`
+      <div class="fs-sm">Koordinat: (${v.x}, ${v.y})</div>
+      <div class="fs-sm">Nüfus: ${GS.population}</div>
+      <div class="fs-sm">Kabile: ${GS.tribe}</div>
+      <div class="mt-2"><button class="btn btn-green btn-sm" onclick="closeModal();showView('dorf1')">Köye Git</button></div>
+    `;
+  } else {
+    const bot=GS.bots.find(b=>b.id===id);
+    if(!bot)return;
+    const alliance=bot.alliance!==null?GS.botAlliances.find(a=>a.id===bot.alliance):null;
+    const tribeNames={Roman:'Romalılar',Teuton:'Cermenler',Turk:'Türkler'};
+    title_.textContent='🏘️ '+bot.name;
+
+    let troopHTML='';
+    const tribeTroops=TROOPS[bot.tribe];
+    Object.entries(bot.troops).forEach(([k,c])=>{
+      if(c>0&&tribeTroops[k]) troopHTML+=`<div class="troop-row"><span class="troop-icon">${tribeTroops[k].icon}</span><div class="troop-info"><div class="troop-name">${tribeTroops[k].name}</div></div><span class="troop-count">~${Math.floor(c*0.7)}+</span></div>`;
+    });
+
+    body_.innerHTML=`
+      <div class="flex gap-2 items-center mb-2"><span style="font-size:1.5rem;">${bot.tribe==='Roman'?'🏛️':bot.tribe==='Teuton'?'🪓':'🏇'}</span><b>${tribeNames[bot.tribe]}</b></div>
+      <div class="fs-sm mb-1">Koordinat: (${bot.x}, ${bot.y})</div>
+      <div class="fs-sm mb-1">Nüfus: ~${bot.pop}</div>
+      ${alliance?`<div class="fs-sm mb-1">İttifak: 🛡️ ${alliance.name}</div>`:''}
+      <hr class="divider">
+      <h4 style="font-size:0.9rem;">Keşif Bilgisi (Tahmini):</h4>
+      <div class="mt-1">${troopHTML||'<div class="fs-sm text-dim">Bilgi yok</div>'}</div>
+      <hr class="divider">
+      <div class="flex gap-2">
+        <button class="btn btn-red btn-sm" onclick="closeModal();prefillAttack(${bot.x},${bot.y})">⚔️ Saldır</button>
+      </div>
+    `;
+  }
+  document.getElementById('gameModal').classList.remove('hidden');
+}
+
+function prefillAttack(x,y){
+  openAttackModal();
+  setTimeout(()=>{
+    const xEl=document.getElementById('attX');
+    const yEl=document.getElementById('attY');
+    if(xEl)xEl.value=x;
+    if(yEl)yEl.value=y;
+  },100);
+}
+
+// ─── STATISTICS ───
+function renderStats(){
+  const el=document.getElementById('statsContent');
+  // Combine player + bots and sort by population
+  let allPlayers=[{name:GS.playerName,tribe:GS.tribe,pop:GS.population,isPlayer:true,alliance:GS.alliance}];
+  GS.bots.forEach(b=>{
+    allPlayers.push({name:b.name,tribe:b.tribe,pop:b.pop,isPlayer:false,alliance:b.alliance!==null?GS.botAlliances.find(a=>a.id===b.alliance)?.name:null});
+  });
+  allPlayers.sort((a,b)=>b.pop-a.pop);
+
+  let html='<table class="stats-table"><thead><tr><th>#</th><th>Oyuncu</th><th>Kabile</th><th>İttifak</th><th>Nüfus</th></tr></thead><tbody>';
+  allPlayers.slice(0,100).forEach((p,i)=>{
+    const tribeIcons={Roman:'🏛️',Teuton:'🪓',Turk:'🏇'};
+    html+=`<tr style="${p.isPlayer?'background:rgba(255,215,0,0.1);font-weight:700;':''}">
+      <td>${i+1}</td>
+      <td>${tribeIcons[p.tribe]||''} ${p.name}${p.isPlayer?' ⭐':''}</td>
+      <td>${p.tribe}</td>
+      <td>${p.alliance||'-'}</td>
+      <td>${p.pop}</td>
+    </tr>`;
+  });
+  html+='</tbody></table>';
+  el.innerHTML=html;
+}
+
+function showStatTab(tab){
+  document.querySelectorAll('#view-stats .tab-btn').forEach((b,i)=>{
+    b.classList.toggle('active',
+      (tab==='players'&&i===0)||(tab==='alliances'&&i===1)||(tab==='attackers'&&i===2));
+  });
+  const el=document.getElementById('statsContent');
+
+  if(tab==='alliances'){
+    let html='<table class="stats-table"><thead><tr><th>#</th><th>İttifak</th><th>Üye Sayısı</th><th>Toplam Nüfus</th></tr></thead><tbody>';
+    const sorted=[...GS.botAlliances].map(a=>{
+      let totalPop=0;
+      a.members.forEach(mid=>{
+        const bot=GS.bots.find(b=>b.id===mid);
+        if(bot) totalPop+=bot.pop;
+      });
+      return{...a,totalPop};
+    }).sort((a,b)=>b.totalPop-a.totalPop);
+    sorted.forEach((a,i)=>{
+      html+=`<tr><td>${i+1}</td><td>🛡️ ${a.name}</td><td>${a.members.length}</td><td>${a.totalPop}</td></tr>`;
+    });
+    html+='</tbody></table>';
+    el.innerHTML=html;
+  } else if(tab==='attackers'){
+    let attackers=[...GS.bots].sort((a,b)=>{
+      const aAtt=Object.values(a.troops).reduce((s,c)=>s+c,0);
+      const bAtt=Object.values(b.troops).reduce((s,c)=>s+c,0);
+      return bAtt-aAtt;
+    }).slice(0,50);
+
+    let html='<table class="stats-table"><thead><tr><th>#</th><th>Oyuncu</th><th>Kabile</th><th>Asker Gücü</th></tr></thead><tbody>';
+    attackers.forEach((b,i)=>{
+      const total=Object.values(b.troops).reduce((s,c)=>s+c,0);
+      html+=`<tr><td>${i+1}</td><td>${b.name}</td><td>${b.tribe}</td><td>${total}</td></tr>`;
+    });
+    html+='</tbody></table>';
+    el.innerHTML=html;
+  } else {
+    renderStats();
+  }
+}
+
+// ─── REPORTS ───
+function renderReports(){
+  const el=document.getElementById('reportsContent');
+  if(!GS.reports||GS.reports.length===0){
+    el.innerHTML='<div class="queue-empty" style="padding:30px;">Henüz rapor yok.</div>';
+    return;
+  }
+  let html='';
+  GS.reports.forEach((r,i)=>{
+    const date=new Date(r.time);
+    const timeStr=String(date.getHours()).padStart(2,'0')+':'+String(date.getMinutes()).padStart(2,'0');
+    html+=`<div class="report-item" onclick="showReport(${i})">
+      <div class="flex justify-between">
+        <span class="r-result ${r.won?'win':'loss'}">${r.won?'⚔️ Zafer':'💀 Yenilgi'}</span>
+        <span class="fs-sm" style="color:var(--text-dim)">${timeStr}</span>
+      </div>
+      <div class="fs-sm">Hedef: ${r.target} (${r.targetCoord.x},${r.targetCoord.y})</div>
+      ${r.loot?`<div class="fs-sm text-green">Yağma: 🪵${r.loot.wood} 🧱${r.loot.clay} ⛏️${r.loot.iron} 🌾${r.loot.crop}</div>`:''}
     </div>`;
   });
-  panel.innerHTML = html;
+  el.innerHTML=html;
 }
 
-/* ============================================================
-   ALLIANCE SYSTEM
-   ============================================================ */
+function showReport(idx){
+  const r=GS.reports[idx];
+  if(!r)return;
+  const title_=document.getElementById('modalTitle');
+  const body_=document.getElementById('modalBody');
+  title_.textContent=(r.won?'⚔️ Zafer':'💀 Yenilgi')+' - '+r.target;
 
-function renderAlliancePanel() {
-  const panel = document.getElementById('alliance-panel');
+  let attLossHTML='';
+  Object.entries(r.attLosses||{}).forEach(([k,c])=>{
+    if(c>0) attLossHTML+=`<div class="fs-sm text-red">-${c} ${TROOPS[GS.tribe][k]?.name||k}</div>`;
+  });
 
-  if (!GS.alliance) {
-    // Create or join
-    let html = `<div class="alliance-card">
-      <h4>İttifak Kur</h4>
-      <input type="text" id="new-alliance-name" placeholder="İttifak adı" style="width:100%; padding:8px; background:rgba(0,0,0,0.4); border:1px solid var(--gold); border-radius:4px; color:var(--parchment); margin-bottom:8px; font-family:'Cinzel',serif">
-      <input type="text" id="new-alliance-tag" placeholder="Etiket (3 harf)" maxlength="4" style="width:100%; padding:8px; background:rgba(0,0,0,0.4); border:1px solid var(--gold); border-radius:4px; color:var(--parchment); margin-bottom:8px; font-family:'Cinzel',serif">
-      <button class="btn-gold" style="width:100%" onclick="createAlliance()">Kurucusu Ol (Elçilik Seviye 1 Gerekli)</button>
-    </div>
-    <div class="alliance-card">
-      <h4>AI İttifakları</h4>
-      <p class="text-muted" style="margin-bottom:10px">Bir AI ittifakına katılabilirsin.</p>`;
-    WORLD.alliances.slice(0,10).forEach(a => {
-      html += `<div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid rgba(200,150,12,0.1)">
-        <span style="color:var(--parchment); font-size:0.85rem">[${a.tag}] ${a.name} <span style="color:#888; font-size:0.75rem">(${a.members.length} üye)</span></span>
-        <button class="btn-blue" style="padding:4px 10px; font-size:0.75rem" onclick="joinAlliance('${a.id}')">Katıl</button>
+  body_.innerHTML=`
+    <div class="mb-2"><b>Hedef:</b> ${r.target} (${r.targetCoord.x}, ${r.targetCoord.y})</div>
+    <div class="mb-2"><b>Sonuç:</b> <span class="${r.won?'text-green':'text-red'}">${r.won?'ZAFER':'YENİLGİ'}</span></div>
+    ${r.loot?`<div class="mb-2"><b>Yağma:</b> 🪵${r.loot.wood} 🧱${r.loot.clay} ⛏️${r.loot.iron} 🌾${r.loot.crop}</div>`:''}
+    <hr class="divider">
+    <div class="mb-1"><b>Kayıplarımız:</b></div>
+    ${attLossHTML||'<div class="fs-sm text-green">Kayıp yok</div>'}
+  `;
+  document.getElementById('gameModal').classList.remove('hidden');
+}
+
+// ─── ALLIANCE ───
+function renderAlliance(){
+  const el=document.getElementById('allianceContent');
+  const v=GS.villages[GS.activeVillage];
+  const hasEmbassy=v.buildings.some(b=>b.type==='embassy'&&b.level>0);
+
+  if(!hasEmbassy){
+    el.innerHTML=`<div class="panel"><div class="panel-body text-center" style="padding:30px;">
+      <div style="font-size:3rem;">🏴</div>
+      <h3 class="mt-2">Elçilik Gerekli</h3>
+      <p class="fs-sm" style="color:var(--text-dim)">İttifak kurmak veya katılmak için önce Elçilik binası inşa etmelisin.</p>
+    </div></div>`;
+    return;
+  }
+
+  if(!GS.alliance){
+    // Show available alliances to join
+    let html=`<div class="panel"><div class="panel-header">🛡️ İttifak Kur / Katıl</div><div class="panel-body">
+      <div class="mb-2">
+        <input type="text" id="newAllianceName" placeholder="İttifak adı..." style="width:100%;padding:8px;background:var(--bg-dark);border:1px solid var(--border);border-radius:4px;color:var(--text);">
+        <button class="btn btn-green btn-block mt-1" onclick="createAlliance()">🛡️ Yeni İttifak Kur</button>
+      </div>
+      <hr class="divider">
+      <h4 style="font-size:0.9rem;margin-bottom:8px;">Mevcut İttifaklar:</h4>`;
+
+    GS.botAlliances.slice(0,10).forEach(a=>{
+      html+=`<div class="flex justify-between items-center mb-1" style="padding:6px;border:1px solid var(--border);border-radius:4px;">
+        <span class="fs-sm fw-700">🛡️ ${a.name} (${a.members.length} üye)</span>
+        <button class="btn btn-green btn-sm" onclick="joinAlliance(${a.id})">Katıl</button>
       </div>`;
     });
-    html += '</div>';
-    panel.innerHTML = html;
+    html+='</div></div>';
+    el.innerHTML=html;
   } else {
-    const isAIAlliance = GS.alliance.startsWith('ai_');
-    const allianceData = isAIAlliance
-      ? WORLD.alliances[parseInt(GS.alliance.split('_')[1])]
-      : { name: GS.alliance, tag: GS.alliance.substring(0,3).toUpperCase(), members: [] };
+    // Show alliance info
+    const a=GS.alliance;
+    let html=`<div class="panel"><div class="panel-header">🛡️ ${a.name}</div><div class="panel-body">
+      <div class="mb-2 fs-sm">Üye Sayısı: <b>${a.members.length+1}</b></div>
+      <h4 style="font-size:0.9rem;margin-bottom:8px;">Üyeler:</h4>
+      <div class="alliance-member"><b>⭐ ${GS.playerName} (Sen)</b><span>${GS.population} nüfus</span></div>`;
 
-    let html = `<div class="alliance-card">
-      <h4>[${allianceData?.tag||'???'}] ${allianceData?.name||GS.alliance}</h4>
-      <div style="display:flex; gap:10px; margin-top:8px">
-        <button class="btn-red" style="padding:6px 12px; font-size:0.8rem" onclick="leaveAlliance()">İttifaktan Ayrıl</button>
-        <button class="btn-blue" style="padding:6px 12px; font-size:0.8rem" onclick="openDiplomacyModal()">🤝 Diplomasi</button>
-      </div>
-    </div>
-    <div class="alliance-card">
-      <h4>Üyeler (${isAIAlliance ? allianceData?.members?.length||0 : 1})</h4>`;
+    a.members.forEach(mid=>{
+      const bot=GS.bots.find(b=>b.id===mid);
+      if(bot) html+=`<div class="alliance-member"><span>${bot.name}</span><span>${bot.pop} nüfus</span></div>`;
+    });
 
-    if (isAIAlliance && allianceData) {
-      allianceData.members.slice(0,10).forEach(memberId => {
-        const bot = WORLD.bots.find(b => b.id === memberId);
-        if (bot) {
-          html += `<div class="alliance-member">
-            <span>${bot.name}</span><span style="color:var(--gold-light)">${fmt(bot.power)}</span>
-          </div>`;
-        }
-      });
-    }
-    html += `<div class="alliance-member" style="color:var(--gold-light)">
-      <span>⭐ ${currentUser} (Sen)</span><span>-</span>
-    </div></div>`;
-    panel.innerHTML = html;
+    html+=`<hr class="divider"><button class="btn btn-red btn-sm" onclick="leaveAlliance()">İttifaktan Ayrıl</button>`;
+    html+='</div></div>';
+    el.innerHTML=html;
   }
 }
 
-function createAlliance() {
-  if (!hasBuildingAtLevel('embassy', 1)) {
-    showNotification('❌ Elçilik Seviye 1 gerekli!'); return;
+function createAlliance(){
+  const name=document.getElementById('newAllianceName')?.value?.trim();
+  if(!name||name.length<2){alert('İttifak adı gerekli!');return;}
+  GS.alliance={name:name,members:[],created:Date.now()};
+  addInfo('İttifak kuruldu: '+name,'🛡️');
+  renderAlliance();
+}
+
+function joinAlliance(id){
+  const a=GS.botAlliances.find(x=>x.id===id);
+  if(!a)return;
+  GS.alliance={name:a.name,members:a.members.slice(0,20),created:Date.now()};
+  addInfo(a.name+' ittifakına katıldın!','🛡️');
+  renderAlliance();
+}
+
+function leaveAlliance(){
+  GS.alliance=null;
+  addInfo('İttifaktan ayrıldın.','🛡️');
+  renderAlliance();
+}
+
+// ─── GOLD ACTIONS ───
+function goldAction(type){
+  const v=GS.villages[GS.activeVillage];
+  if(type==='finish'){
+    if(v.buildQueue.length===0){alert('Kuyruk boş!');return;}
+    if(!useGold(5))return;
+    [...v.buildQueue].forEach(t=>completeConstruction(v,t));
+    v.buildQueue=[];
+    renderDorf1(); renderDorf2();
+  } else if(type==='npc'){
+    if(!useGold(3))return;
+    const total=v.resources.wood+v.resources.clay+v.resources.iron+v.resources.crop;
+    const avg=total/4;
+    v.resources={wood:Math.min(v.warehouse,avg),clay:Math.min(v.warehouse,avg),iron:Math.min(v.warehouse,avg),crop:Math.min(v.granary,avg)};
+  } else if(type==='boost'){
+    if(!useGold(10))return;
+    GS.prodBoostUntil=Date.now()+(24*3600*1000);
+    addInfo('Üretim %25 arttırıldı! (24 saat)','📈');
   }
-  const name = document.getElementById('new-alliance-name')?.value?.trim();
-  const tag = document.getElementById('new-alliance-tag')?.value?.trim().toUpperCase();
-  if (!name || name.length < 2) { showNotification('❌ Geçerli ittifak adı gir!'); return; }
-  if (!tag || tag.length < 2) { showNotification('❌ Geçerli etiket gir!'); return; }
-  GS.alliance = name;
-  showNotification('🤝 İttifak kuruldu: [' + tag + '] ' + name);
-  saveGS();
-  renderAlliancePanel();
+  updateUI();
 }
 
-function joinAlliance(id) {
-  GS.alliance = id;
-  const alliance = WORLD.alliances.find(a => a.id === id);
-  showNotification('🤝 ' + (alliance?.name||id) + ' ittifakına katıldın!');
-  saveGS();
-  renderAlliancePanel();
-}
-
-function leaveAlliance() {
-  GS.alliance = null;
-  showNotification('👋 İttifaktan ayrıldın.');
-  saveGS();
-  renderAlliancePanel();
-}
-
-function openDiplomacyModal() {
-  const allianceId = GS.alliance;
-  const isAI = allianceId?.startsWith('ai_');
-
-  let body = `<div class="alliance-card">
-    <h4>Diplomasi Merkezi</h4>
-    <p class="text-muted">İttifak olarak diğer ittifaklarla anlaşma yap veya savaş ilan et.</p>`;
-
-  WORLD.alliances.slice(0, 10).forEach(a => {
-    if (a.id === allianceId) return;
-    const status = 'Nötr';
-    body += `<div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid rgba(200,150,12,0.1)">
-      <span style="color:var(--parchment)">[${a.tag}] ${a.name}</span>
-      <div style="display:flex; gap:5px">
-        <button class="btn-blue" style="padding:4px 10px; font-size:0.75rem" onclick="proposePeace('${a.id}')">✌ Barış Teklif Et</button>
-        <button class="btn-red" style="padding:4px 10px; font-size:0.75rem" onclick="declareWar('${a.id}')">⚔ Savaş İlan Et</button>
-      </div>
-    </div>`;
-  });
-  body += '</div>';
-  showModal('Diplomasi', body);
-}
-
-function proposePeace(id) {
-  const a = WORLD.alliances.find(x => x.id === id);
-  showNotification('✌ ' + (a?.name||id) + "'e barış teklif edildi!");
-  closeBuildModal();
-}
-
-function declareWar(id) {
-  const a = WORLD.alliances.find(x => x.id === id);
-  showNotification('⚔ ' + (a?.name||id) + "'e savaş ilan edildi! 👊");
-  addReport({type:'win', title:'⚔ Savaş İlanı', text:(a?.name||id)+" ile savaş durumuna girildi!", time:Date.now()});
-  closeBuildModal();
-}
-
-/* ============================================================
-   TABS
-   ============================================================ */
-
-function switchTab(tab) {
-  currentTab = tab;
-  document.querySelectorAll('.tab-content').forEach(e => e.classList.remove('active'));
-  document.querySelectorAll('.nav-tab').forEach(e => e.classList.remove('active'));
-  document.getElementById('tab-' + tab).classList.add('active');
-  document.querySelectorAll('.nav-tab')[['dorf1','dorf2','map','military','alliance','reports'].indexOf(tab)].classList.add('active');
-
-  if (tab === 'map') { drawWorldMap(); centerOnPlayer(); }
-  if (tab === 'reports') {
-    renderReports();
-    document.getElementById('notif-reports').style.display = 'none';
+function useGold(amount){
+  // Also check quiz gold
+  const quizGold=parseInt(localStorage.getItem('yds_game_gold'))||0;
+  if(quizGold>GS.gold) GS.gold=quizGold;
+  if(GS.gold>=amount){
+    GS.gold-=amount;
+    localStorage.setItem('yds_game_gold',GS.gold);
+    return true;
   }
-  if (tab === 'alliance') renderAlliancePanel();
-  if (tab === 'military') renderMilitaryPanel();
+  alert('Yeterli altının yok! Test çözerek altın kazanmalısın. (Mevcut: '+GS.gold+')');
+  return false;
 }
 
-/* ============================================================
-   MODAL HELPERS
-   ============================================================ */
-
-function showModal(title, body) {
-  document.getElementById('modal-title').textContent = title;
-  document.getElementById('modal-body').innerHTML = body;
-  document.getElementById('build-modal').classList.add('show');
+// ─── HELPERS ───
+function calcCost(baseCost,level){
+  const mult=Math.pow(1.28,level);
+  return baseCost.map(c=>Math.floor(c*mult));
 }
 
-function closeBuildModal() {
-  document.getElementById('build-modal').classList.remove('show');
+function calcTime(baseTime,level,v){
+  let time=Math.floor(baseTime*Math.pow(1.2,level));
+  // Main building reduces time
+  const mb=v.buildings.find(b=>b.type==='center');
+  if(mb&&mb.level>1) time=Math.floor(time*(1-mb.level*0.03));
+  return Math.max(5, Math.floor(time / SPEED * 10));
 }
 
-function closeAttackModal() {
-  document.getElementById('attack-modal').classList.remove('show');
+function formatTime(sec){
+  sec=Math.max(0,Math.floor(sec));
+  const h=Math.floor(sec/3600);
+  const m=Math.floor((sec%3600)/60);
+  const s=sec%60;
+  if(h>0) return h+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+  return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
 }
 
-// Close modal on overlay click
-document.getElementById('build-modal').addEventListener('click', function(e) {
-  if (e.target === this) closeBuildModal();
+function formatNum(n){
+  if(n>=1000000) return (n/1000000).toFixed(1)+'M';
+  if(n>=10000) return (n/1000).toFixed(1)+'K';
+  return n.toLocaleString('tr-TR');
+}
+
+function closeModal(){
+  document.getElementById('gameModal').classList.add('hidden');
+}
+
+let infoMessages=[];
+function addInfo(msg,icon='ℹ️'){
+  infoMessages.unshift({msg,icon,time:Date.now()});
+  if(infoMessages.length>10) infoMessages.pop();
+  const el=document.getElementById('infoBox');
+  el.innerHTML=infoMessages.map(m=>`<div class="fs-sm mb-1">${m.icon} ${m.msg}</div>`).join('');
+}
+
+// ─── KEYBOARD SHORTCUTS ───
+document.addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT')return;
+  if(e.key==='1') showView('dorf1');
+  if(e.key==='2') showView('dorf2');
+  if(e.key==='3') showView('map');
+  if(e.key==='4') showView('stats');
+  if(e.key==='5') showView('reports');
+  if(e.key==='Escape') closeModal();
 });
 
-/* ============================================================
-   NOTIFICATION
-   ============================================================ */
-
-let notifTimeout = null;
-function showNotification(msg) {
-  const el = document.getElementById('notification');
-  el.textContent = msg;
-  el.style.display = 'block';
-  if (notifTimeout) clearTimeout(notifTimeout);
-  notifTimeout = setTimeout(() => { el.style.display = 'none'; }, 3500);
-}
-
-/* ============================================================
-   TRIBE BUTTON HELPERS
-   ============================================================ */
-document.querySelectorAll('.tribe-btn').forEach(btn => {
-  btn.addEventListener('click', function() {
-    const t = this.className.includes('roman') ? 'Roman' : this.className.includes('teuton') ? 'Teuton' : 'Turk';
-    document.querySelectorAll('.tribe-btn').forEach(b => b.style.outline = 'none');
-    this.style.outline = '3px solid var(--gold)';
-    setTribe(t);
-  });
+// ─── AUTO LOGIN CHECK ───
+window.addEventListener('load',()=>{
+  // Check if already logged in
+  const lastUser=localStorage.getItem('yds_last_user');
+  if(lastUser){
+    document.getElementById('loginUser').value=lastUser;
+  }
 });
 
-// Actually re-add since we overwrite with onclick
-function setTribe(t) {
-  selectedTribe = t;
-  const btn = document.getElementById('btn-register');
-  btn.disabled = false;
-  btn.style.opacity = '1';
-  const names = {Roman:'🦅 Romalı', Teuton:'🪓 Cermen', Turk:'🐎 Türk'};
-  btn.textContent = 'Oyuna Başla — ' + names[t];
-}
-
-/* ============================================================
-   STARTUP
-   ============================================================ */
-
-// Check if already logged in via session
-window.onload = function() {
-  const lastUser = sessionStorage.getItem('yds_current_user');
-  if (lastUser) {
-    const users = JSON.parse(localStorage.getItem('yds_wars_users') || '{}');
-    if (users[lastUser]) {
-      currentUser = lastUser;
-      loadGame();
-      return;
-    }
-  }
+// Save last user on login
+const origLogin=doLogin;
+doLogin=function(){
+  origLogin();
+  if(currentUser) localStorage.setItem('yds_last_user',currentUser);
 };
-
-// Session save and map init happen inside loadGame itself
-
+const origRegister=doRegister;
+doRegister=function(){
+  origRegister();
+  if(currentUser) localStorage.setItem('yds_last_user',currentUser);
+};
 </script>
 </body>
 </html>
