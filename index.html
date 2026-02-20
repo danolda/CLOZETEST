@@ -3,6 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0d6efd">
+    <link rel="manifest" href="manifest.json">
     <title>YDS Mega Test (MelihBABA Edition)</title>
     <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -27,7 +31,6 @@
         }, 2000);
     });
     </script>
-    
     <!-- Bu satırı <head> içine, diğer linklerin altına ekle -->
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
     
@@ -1267,8 +1270,12 @@ let dailyScoreData = JSON.parse(localStorage.getItem('yds_daily_score_v2')) || {
 (async function checkDayReset() {
     const today = new Date().toLocaleDateString();
     if (dailyScoreData.date !== today) {
-        // Eski günün birincisini haftalık tabloya yaz
-        await recordDailyWinner();
+        // Çift kayıt engelleme
+        const lastRecDay = localStorage.getItem('yds_last_winner_recorded') || "";
+        if (lastRecDay !== dailyScoreData.date && dailyScoreData.score > 0) {
+            await recordDailyWinner();
+            localStorage.setItem('yds_last_winner_recorded', dailyScoreData.date);
+        }
         dailyScoreData = { date: today, score: 0 };
         localStorage.setItem('yds_daily_score_v2', JSON.stringify(dailyScoreData));
         previousLeader = "";
@@ -1422,14 +1429,11 @@ function addScorePoints(amount) {
     localStorage.setItem('yds_daily_score_v2', JSON.stringify(dailyScoreData));
     showScoreToast(`+${amount} PUAN!`);
     syncScoreToCloud(amount);
-
     // ═══ YDS WARS ALTIN SİSTEMİ ═══
-    // Her doğru cevap = oyunda altın kazanma
-    var goldEarned = Math.max(1, Math.floor(amount / 2)); // Her 2 puan = 1 altın
+    var goldEarned = Math.max(1, Math.floor(amount / 2));
     var currentGold = parseInt(localStorage.getItem('yds_game_gold')) || 0;
     currentGold += goldEarned;
     localStorage.setItem('yds_game_gold', currentGold);
-    showScoreToast(`+${goldEarned} 🪙 Oyun Altını!`);
 }
 
 // 6. BULUT SENKRONİZASYON (avatar + ntfy channel dahil)
@@ -1562,6 +1566,7 @@ async function recordDailyWinner() {
     const url = `https://getpantry.cloud/apiv1/pantry/${PANTRY_ID}/basket/${BUCKET_NAME}`;
     const weeklyUrl = `https://getpantry.cloud/apiv1/pantry/${PANTRY_ID}/basket/${WEEKLY_BUCKET}`;
     const weekKey = getWeekKey();
+    const yesterdayStr = dailyScoreData.date; // Eski günün tarihi
 
     try {
         // Günlük veriyi oku
@@ -1576,7 +1581,7 @@ async function recordDailyWinner() {
         if (winner.score === 0) return; // 0 puanla birinci olmaz
 
         // Haftalık veriyi oku/oluştur
-        let weeklyData = { week: weekKey, winners: [] };
+        let weeklyData = { week: weekKey, winners: [], recordedDays: [] };
         try {
             let wr = await fetch(weeklyUrl, { method: "GET", headers: { "Content-Type": "application/json" } });
             if (wr.ok) {
@@ -1586,6 +1591,15 @@ async function recordDailyWinner() {
         } catch(e) {}
 
         if (!weeklyData.winners) weeklyData.winners = [];
+        if (!weeklyData.recordedDays) weeklyData.recordedDays = [];
+
+        // ═══ ÇIFT KAYIT ENGELLEME (BULUT TARAFLI) ═══
+        // Bu gün zaten kaydedilmişse tekrar kaydetme
+        if (weeklyData.recordedDays.includes(yesterdayStr)) {
+            console.log("Bu gün zaten kaydedilmiş:", yesterdayStr);
+            return;
+        }
+        weeklyData.recordedDays.push(yesterdayStr);
 
         // Gün birincisine +1
         let wIdx = weeklyData.winners.findIndex(w => w.name === winner.name);
@@ -12058,6 +12072,16 @@ async function getAiTip(questionId) {
 </script>
     
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// PWA Service Worker + Bildirim
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(e => console.log('SW:', e));
+}
+// Native bildirim izni iste
+if ('Notification' in window && Notification.permission === 'default') {
+    setTimeout(() => Notification.requestPermission(), 5000);
+}
+</script>
     <!-- SABİT YUVARLAK HEDEF BUTONU -->
 <button class="floating-btn" onclick="openDailyGoals()" title="Günlük Hedefler">
     <i class="bi bi-bullseye"></i>
