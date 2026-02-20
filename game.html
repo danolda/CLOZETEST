@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YDS Wars - Strateji & Gelişim</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #e9ecef; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .top-bar { background-color: #2c3e50; color: white; padding: 10px 0; border-bottom: 3px solid #f1c40f; }
+        .res-box { display: flex; align-items: center; gap: 5px; font-weight: bold; }
+        .gold-text { color: #f1c40f; font-weight: 900; font-size: 1.2rem; }
+        
+        .nav-tabs .nav-link { color: #2c3e50; font-weight: bold; }
+        .nav-tabs .nav-link.active { background-color: #2c3e50; color: white; border-color: #2c3e50; }
+        
+        .village-area { background: #8fbc8f; min-height: 400px; border-radius: 10px; position: relative; padding: 20px; border: 5px solid #556b2f;}
+        .center-area { background: #d3d3d3; min-height: 400px; border-radius: 10px; position: relative; padding: 20px; border: 5px solid #a9a9a9;}
+        
+        .building-spot {
+            background: rgba(255,255,255,0.8); border: 2px solid #333; border-radius: 50%;
+            width: 60px; height: 60px; display: inline-flex; flex-direction: column; 
+            align-items: center; justify-content: center; cursor: pointer;
+            margin: 10px; font-size: 0.8rem; font-weight: bold; transition: 0.2s;
+        }
+        .building-spot:hover { transform: scale(1.1); background: #f1c40f; }
+        .lvl-badge { background: #dc3545; color: white; border-radius: 50%; padding: 2px 6px; position: absolute; top: -5px; right: -5px; font-size: 0.7rem;}
+        
+        .queue-box { background: white; border-radius: 8px; padding: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .premium-btn { background: linear-gradient(to bottom, #f1c40f, #f39c12); color: #000; border: none; font-weight: bold; }
+        .premium-btn:hover { background: linear-gradient(to bottom, #f39c12, #e67e22); }
+    </style>
+</head>
+<body>
+
+<!-- Irk Seçim Modalı -->
+<div class="modal fade" id="tribeModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white"><h5 class="modal-title">Irkını Seç, Savaşa Başla!</h5></div>
+            <div class="modal-body text-center">
+                <p>Oyun 10x Hızındadır. YDS Puanların Altın yerine geçer.</p>
+                <div class="d-grid gap-3">
+                    <button class="btn btn-outline-danger btn-lg" onclick="selectTribe('Turk')"><b>TÜRKLER</b><br><small>Hızlı atlılar, mükemmel yağma, yüksek saldırı gücü.</small></button>
+                    <button class="btn btn-outline-primary btn-lg" onclick="selectTribe('Roman')"><b>ROMALILAR</b><br><small>Aynı anda 2 inşaat (1 tarla, 1 bina) yapabilirler.</small></button>
+                    <button class="btn btn-outline-success btn-lg" onclick="selectTribe('Teuton')"><b>CERMENLER</b><br><small>Ucuz ve kalabalık piyadeler, agresif oyun tarzı.</small></button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Üst Bar (Kaynaklar ve Altın) -->
+<div class="top-bar sticky-top shadow-sm">
+    <div class="container d-flex justify-content-between align-items-center flex-wrap">
+        <div class="d-flex gap-4">
+            <div class="res-box" title="Odun"><i class="bi bi-tree-fill text-success"></i> <span id="res-wood">0</span></div>
+            <div class="res-box" title="Tuğla"><i class="bi bi-bricks text-danger"></i> <span id="res-clay">0</span></div>
+            <div class="res-box" title="Demir"><i class="bi bi-nut-fill text-secondary"></i> <span id="res-iron">0</span></div>
+            <div class="res-box" title="Tahıl"><i class="bi bi-flower1 text-warning"></i> <span id="res-crop">0</span></div>
+        </div>
+        <div class="d-flex align-items-center gap-3">
+            <div class="gold-text" title="YDS Altını"><i class="bi bi-coin"></i> <span id="gold-amount">0</span> Altın</div>
+            <button class="btn btn-sm btn-light" onclick="refreshGold()"><i class="bi bi-arrow-clockwise"></i> YDS'den Çek</button>
+        </div>
+    </div>
+</div>
+
+<div class="container mt-4">
+    <div class="row">
+        <!-- SOL MENÜ -->
+        <div class="col-md-3">
+            <div class="card mb-3">
+                <div class="card-header bg-dark text-white fw-bold">Köy Bilgileri</div>
+                <div class="card-body">
+                    <p class="mb-1"><b>Irk:</b> <span id="tribe-name" class="text-primary">-</span></p>
+                    <p class="mb-1"><b>Nüfus:</b> <span id="population">2</span></p>
+                    <hr>
+                    <h6 class="fw-bold text-success">Saatlik Üretim (10x)</h6>
+                    <ul class="list-unstyled small">
+                        <li>Odun: <span id="prod-wood">1000</span> /sa</li>
+                        <li>Tuğla: <span id="prod-clay">1000</span> /sa</li>
+                        <li>Demir: <span id="prod-iron">1000</span> /sa</li>
+                        <li>Tahıl: <span id="prod-crop">1000</span> /sa</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- PREMIUM ÖZELLİKLER (ALTIN KULLANIMI) -->
+            <div class="card border-warning mb-3">
+                <div class="card-header bg-warning text-dark fw-bold"><i class="bi bi-star-fill"></i> Premium (YDS)</div>
+                <div class="card-body d-grid gap-2">
+                    <button class="btn premium-btn btn-sm" onclick="instantFinish()"><i class="bi bi-lightning-charge-fill"></i> İnşaatları Bitir (5 <i class="bi bi-coin"></i>)</button>
+                    <button class="btn premium-btn btn-sm" onclick="npcMerchant()"><i class="bi bi-arrow-left-right"></i> NPC Tüccar (3 <i class="bi bi-coin"></i>)</button>
+                    <button class="btn premium-btn btn-sm" onclick="boostProduction()"><i class="bi bi-graph-up-arrow"></i> +25% Üretim (10 <i class="bi bi-coin"></i>)</button>
+                </div>
+            </div>
+
+            <!-- İNŞAAT KUYRUĞU -->
+            <div class="queue-box">
+                <h6 class="fw-bold border-bottom pb-2">İnşaat Emri (Sınırsız)</h6>
+                <div id="build-queue">
+                    <small class="text-muted">Kuyruk boş.</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- OYUN ALANI -->
+        <div class="col-md-9">
+            <ul class="nav nav-tabs mb-3" id="gameTabs">
+                <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#resources"><i class="bi bi-globe"></i> Kaynaklar (Dorf1)</a></li>
+                <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#village"><i class="bi bi-house-door-fill"></i> Köy Merkezi (Dorf2)</a></li>
+                <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#map"><i class="bi bi-map-fill"></i> Harita</a></li>
+            </ul>
+
+            <div class="tab-content">
+                <!-- KAYNAKLAR -->
+                <div class="tab-pane fade show active" id="resources">
+                    <div class="village-area text-center" id="resource-fields">
+                        <!-- JS ile doldurulacak -->
+                    </div>
+                </div>
+
+                <!-- KÖY MERKEZİ -->
+                <div class="tab-pane fade" id="village">
+                    <div class="center-area text-center" id="village-buildings">
+                        <!-- JS ile doldurulacak -->
+                    </div>
+                </div>
+
+                <!-- HARİTA -->
+                <div class="tab-pane fade" id="map">
+                    <div class="card p-5 text-center">
+                        <h3>Dünya Haritası (Çok Yakında)</h3>
+                        <p>1000 Bot ve Gemini Yapay Zeka Diplomasisi bu sekmede aktifleşecek. (Faz 3)</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    /* ================= OYUN MOTORU (JAVASCRIPT) ================= */
+    
+    // Temel Oyun Değişkenleri
+    let gameState = JSON.parse(localStorage.getItem('yds_game_state')) || null;
+    let ydsGold = parseInt(localStorage.getItem('yds_game_gold')) || 0;
+    
+    // Tarlalar ve Binalar İsimleri
+    const fieldNames = { wood: "Oduncu", clay: "Tuğla Ocağı", iron: "Demir Madeni", crop: "Tarlalar" };
+    
+    // Saniye Bazlı Motor
+    let gameLoop;
+
+    window.onload = function() {
+        document.getElementById('gold-amount').innerText = ydsGold;
+
+        if (!gameState) {
+            // İlk kez giren için Irk Seçimi Göster
+            new bootstrap.Modal(document.getElementById('tribeModal')).show();
+        } else {
+            initGame();
+        }
+    };
+
+    function selectTribe(tribe) {
+        // Yeni Oyun Kurulumu
+        gameState = {
+            tribe: tribe,
+            population: 2,
+            resources: { wood: 750, clay: 750, iron: 750, crop: 750 },
+            productionBoost: 0, // Kalan saniye
+            fields:,
+            buildings:,
+            buildQueue:[],
+            lastUpdate: Date.now()
+        };
+        localStorage.setItem('yds_game_state', JSON.stringify(gameState));
+        
+        bootstrap.Modal.getInstance(document.getElementById('tribeModal')).hide();
+        initGame();
+    }
+
+    function initGame() {
+        document.getElementById('tribe-name').innerText = gameState.tribe === 'Turk' ? 'Türkler' : (gameState.tribe === 'Roman' ? 'Romalılar' : 'Cermenler');
+        renderFields();
+        renderBuildings();
+        
+        // Offline geçen süreyi hesapla ve kaynak ekle
+        let now = Date.now();
+        let diffSec = Math.floor((now - gameState.lastUpdate) / 1000);
+        if(diffSec > 0) {
+            addOfflineResources(diffSec);
+        }
+        
+        gameState.lastUpdate = Date.now();
+        
+        // Oyun Döngüsünü Başlat (Her saniye)
+        gameLoop = setInterval(updateEngine, 1000);
+    }
+
+    // GÖRÜNÜMÜ ÇİZ
+    function renderFields() {
+        const area = document.getElementById('resource-fields');
+        area.innerHTML = "";
+        gameState.fields.forEach(f => {
+            let icon = f.type === 'wood' ? 'tree-fill text-success' : (f.type === 'clay' ? 'bricks text-danger' : (f.type === 'iron' ? 'nut-fill text-secondary' : 'flower1 text-warning'));
+            area.innerHTML += `
+            <div class="building-spot position-relative" onclick="upgradeTarget(${f.id}, 'resource')">
+                <i class="bi bi-${icon} fs-4"></i>
+                <span class="lvl-badge">${f.level}</span>
+            </div>`;
+        });
+    }
+
+    function renderBuildings() {
+        const area = document.getElementById('village-buildings');
+        area.innerHTML = "";
+        gameState.buildings.forEach(b => {
+            area.innerHTML += `
+            <div class="building-spot position-relative" onclick="upgradeTarget(${b.id}, 'building')">
+                <i class="bi bi-house-door-fill text-primary fs-4"></i>
+                <span class="lvl-badge">${b.level}</span>
+            </div>`;
+        });
+    }
+
+    // YÜKSELTME EMRİ VER
+    function upgradeTarget(id, category) {
+        let cost = 150; // Basitlik için sabit maliyet
+        
+        if (gameState.resources.wood < cost || gameState.resources.clay < cost || gameState.resources.iron < cost) {
+            alert("Yeterli hammeddeniz yok!");
+            return;
+        }
+
+        // Kaynakları Düş
+        gameState.resources.wood -= cost;
+        gameState.resources.clay -= cost;
+        gameState.resources.iron -= cost;
+        gameState.resources.crop -= cost/2;
+
+        // Kuyruğa Ekle (Sınırsız)
+        let buildTime = 30; // 10x Hızında her bina şimdilik 30 saniye
+        gameState.buildQueue.push({
+            qId: Date.now(),
+            targetId: id,
+            category: category,
+            timeLeft: buildTime,
+            name: category === 'resource' ? 'Tarla' : 'Bina'
+        });
+
+        saveState();
+        updateUI();
+    }
+
+    // OYUN MOTORU (HER SANİYE ÇALIŞIR)
+    function updateEngine() {
+        // 1. Üretimi Hesapla (Saatlik üretim: 1000 + seviye * 500)
+        let baseProd = 1000;
+        let boostMulti = gameState.productionBoost > 0 ? 1.25 : 1;
+        
+        let woodProd = baseProd * boostMulti;
+        let clayProd = baseProd * boostMulti;
+        let ironProd = baseProd * boostMulti;
+        let cropProd = baseProd * boostMulti;
+
+        // 2. Saniyelik olarak kaynaklara ekle (Saatte 1000 -> Saniyede 1000/3600)
+        gameState.resources.wood += woodProd / 3600;
+        gameState.resources.clay += clayProd / 3600;
+        gameState.resources.iron += ironProd / 3600;
+        gameState.resources.crop += cropProd / 3600;
+
+        // 3. Boost süresini düşür
+        if (gameState.productionBoost > 0) gameState.productionBoost--;
+
+        // 4. İNŞAAT KUYRUĞUNU İŞLE (KRİTİK MANTIK)
+        if (gameState.buildQueue.length > 0) {
+            let activeTasks =[];
+            
+            // ROMALI KURALI (Aynı anda 1 tarla, 1 bina)
+            if (gameState.tribe === 'Roman') {
+                let resTask = gameState.buildQueue.find(t => t.category === 'resource');
+                let buildTask = gameState.buildQueue.find(t => t.category === 'building');
+                if (resTask) activeTasks.push(resTask);
+                if (buildTask) activeTasks.push(buildTask);
+            } else {
+                // Diğer ırklar sadece en baştakini yapar
+                activeTasks.push(gameState.buildQueue);
+            }
+
+            // Aktif görevlerin süresini düşür
+            activeTasks.forEach(task => {
+                task.timeLeft--;
+                if (task.timeLeft <= 0) {
+                    finishConstruction(task);
+                }
+            });
+        }
+
+        gameState.lastUpdate = Date.now();
+        saveState();
+        updateUI();
+    }
+
+    function finishConstruction(task) {
+        // Seviye atlat
+        if (task.category === 'resource') {
+            let f = gameState.fields.find(f => f.id === task.targetId);
+            if(f) f.level++;
+            renderFields();
+        } else {
+            let b = gameState.buildings.find(b => b.id === task.targetId);
+            if(b) b.level++;
+            renderBuildings();
+        }
+        // Kuyruktan Sil
+        gameState.buildQueue = gameState.buildQueue.filter(t => t.qId !== task.qId);
+        gameState.population += 2;
+    }
+
+    function addOfflineResources(seconds) {
+        let baseProd = 1000;
+        gameState.resources.wood += (baseProd / 3600) * seconds;
+        gameState.resources.clay += (baseProd / 3600) * seconds;
+        gameState.resources.iron += (baseProd / 3600) * seconds;
+        gameState.resources.crop += (baseProd / 3600) * seconds;
+    }
+
+    // ARAYÜZÜ GÜNCELLE
+    function updateUI() {
+        document.getElementById('res-wood').innerText = Math.floor(gameState.resources.wood);
+        document.getElementById('res-clay').innerText = Math.floor(gameState.resources.clay);
+        document.getElementById('res-iron').innerText = Math.floor(gameState.resources.iron);
+        document.getElementById('res-crop').innerText = Math.floor(gameState.resources.crop);
+        document.getElementById('population').innerText = gameState.population;
+        
+        let boostTxt = gameState.productionBoost > 0 ? ' <span class="text-success">(+%25 Altın Bonusu)</span>' : '';.forEach(res => {
+            document.getElementById('prod-'+res).innerHTML = "1000" + boostTxt;
+        });
+
+        // Kuyruğu Çiz
+        let qArea = document.getElementById('build-queue');
+        if (gameState.buildQueue.length === 0) {
+            qArea.innerHTML = '<small class="text-muted">Kuyruk boş.</small>';
+        } else {
+            let qHtml = "";
+            gameState.buildQueue.forEach((t, index) => {
+                // Romalı aktif mi belirtmek için
+                let isActive = false;
+                if(gameState.tribe === 'Roman') {
+                    if (t === gameState.buildQueue.find(x => x.category === 'resource') || 
+                        t === gameState.buildQueue.find(x => x.category === 'building')) isActive = true;
+                } else {
+                    if (index === 0) isActive = true;
+                }
+
+                let color = isActive ? 'text-primary fw-bold' : 'text-muted';
+                let spin = isActive ? '<div class="spinner-border spinner-border-sm"></div>' : 'Bekliyor';
+                qHtml += `<div class="d-flex justify-content-between small border-bottom mb-1 pb-1 ${color}">
+                            <span>${t.name} Seviye Yükseltme</span>
+                            <span>${isActive ? t.timeLeft + ' sn' : spin}</span>
+                          </div>`;
+            });
+            qArea.innerHTML = qHtml;
+        }
+    }
+
+    /* ================= ALTIN (PREMIUM) FONKSİYONLARI ================= */
+    
+    function refreshGold() {
+        ydsGold = parseInt(localStorage.getItem('yds_game_gold')) || 0;
+        document.getElementById('gold-amount').innerText = ydsGold;
+    }
+
+    function spendGold(amount) {
+        refreshGold();
+        if (ydsGold >= amount) {
+            ydsGold -= amount;
+            localStorage.setItem('yds_game_gold', ydsGold);
+            document.getElementById('gold-amount').innerText = ydsGold;
+            return true;
+        } else {
+            alert("Yeterli YDS Altınınız yok! Lütfen İngilizce sorusu çözerek altın kazanın.");
+            return false;
+        }
+    }
+
+    // 1. ANINDA BİTİR (5 ALTIN)
+    function instantFinish() {
+        if(gameState.buildQueue.length === 0) { alert("İnşaat kuyruğu zaten boş."); return; }
+        if(spendGold(5)) {
+            // Hepsini anında bitir
+            let tasks =;
+            tasks.forEach(t => finishConstruction(t));
+        }
+    }
+
+    // 2. ÜRETİM BONUSU (10 ALTIN)
+    function boostProduction() {
+        if(spendGold(10)) {
+            gameState.productionBoost += 86400; // 24 Saat (saniye cinsinden)
+            alert("Üretimler %25 arttırıldı!");
+        }
+    }
+
+    // 3. NPC TÜCCAR (3 ALTIN) - Tüm kaynakları eşitler
+    function npcMerchant() {
+        if(spendGold(3)) {
+            let total = gameState.resources.wood + gameState.resources.clay + gameState.resources.iron + gameState.resources.crop;
+            let avg = total / 4;
+            gameState.resources = { wood: avg, clay: avg, iron: avg, crop: avg };
+            alert("Tüm hammaddeler NPC Tüccar tarafından eşitlendi!");
+            updateUI();
+        }
+    }
+
+    function saveState() {
+        localStorage.setItem('yds_game_state', JSON.stringify(gameState));
+    }
+</script>
+</body>
+</html>
