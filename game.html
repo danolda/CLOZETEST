@@ -3,138 +3,199 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YDS Wars - Strateji & Gelişim</title>
+    <title>YDS Wars - Köy Görünümü</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <style>
-        body { background-color: #e9ecef; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .top-bar { background-color: #2c3e50; color: white; padding: 10px 0; border-bottom: 3px solid #f1c40f; }
-        .res-box { display: flex; align-items: center; gap: 5px; font-weight: bold; }
-        .gold-text { color: #f1c40f; font-weight: 900; font-size: 1.2rem; }
+        body { background-color: #f4f6f8; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select: none; }
         
-        .nav-tabs .nav-link { color: #2c3e50; font-weight: bold; }
-        .nav-tabs .nav-link.active { background-color: #2c3e50; color: white; border-color: #2c3e50; }
-        
-        .village-area { background: #8fbc8f; min-height: 400px; border-radius: 10px; position: relative; padding: 20px; border: 5px solid #556b2f;}
-        .center-area { background: #d3d3d3; min-height: 400px; border-radius: 10px; position: relative; padding: 20px; border: 5px solid #a9a9a9;}
-        
-        .building-spot {
-            background: rgba(255,255,255,0.8); border: 2px solid #333; border-radius: 50%;
-            width: 60px; height: 60px; display: inline-flex; flex-direction: column; 
-            align-items: center; justify-content: center; cursor: pointer;
-            margin: 10px; font-size: 0.8rem; font-weight: bold; transition: 0.2s;
+        /* --- ÜST BAR (KAYNAKLAR VE ALTIN) --- */
+        .top-bar { background-color: #ffffff; border-bottom: 3px solid #b8860b; padding: 8px 0; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .res-box { display: flex; align-items: center; gap: 5px; font-weight: bold; font-size: 1.1rem; border-right: 1px solid #ddd; padding-right: 15px; }
+        .gold-text { color: #d4af37; font-weight: 900; font-size: 1.2rem; text-shadow: 1px 1px 0 #000; }
+
+        /* --- KÖY HARİTASI (DORF 1 & DORF 2) --- */
+        .map-container {
+            width: 600px; height: 600px; margin: 0 auto; position: relative;
+            background: radial-gradient(circle, #8bc34a 30%, #558b2f 100%);
+            border-radius: 50%; border: 8px solid #33691e; box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            overflow: hidden;
         }
-        .building-spot:hover { transform: scale(1.1); background: #f1c40f; }
-        .lvl-badge { background: #dc3545; color: white; border-radius: 50%; padding: 2px 6px; position: absolute; top: -5px; right: -5px; font-size: 0.7rem;}
+        .map-container.dorf2 {
+            background: radial-gradient(circle, #dcedc8 20%, #aed581 80%);
+        }
         
-        .queue-box { background: white; border-radius: 8px; padding: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .premium-btn { background: linear-gradient(to bottom, #f1c40f, #f39c12); color: #000; border: none; font-weight: bold; }
+        /* Ortadaki Nehir Efekti (Sadece Görsel) */
+        .river { position: absolute; background: #4fc3f7; width: 100%; height: 40px; top: 50%; transform: translateY(-50%) rotate(15deg); opacity: 0.5; }
+
+        /* --- TIKLANABİLİR YUVARLAKLAR (SLOTLAR) --- */
+        .slot {
+            position: absolute; width: 44px; height: 44px; border-radius: 50%;
+            background: white; border: 3px solid #333; 
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold; font-size: 0.9rem; cursor: pointer;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.5); transition: 0.2s; z-index: 10;
+        }
+        .slot:hover { transform: scale(1.2); box-shadow: 0 0 15px #fff; z-index: 20; }
+        .slot.empty { background: rgba(255,255,255,0.6); border-color: #888; color: #555; }
+        .slot.empty:hover { background: #f1c40f; border-color: #000; color: #000; }
+        
+        /* Kaynak Renkleri */
+        .wood { border-color: #27ae60; color: #27ae60; background: #e8f8f5; }
+        .clay { border-color: #d35400; color: #d35400; background: #fbeee6; }
+        .iron { border-color: #7f8c8d; color: #7f8c8d; background: #f2f4f4; }
+        .crop { border-color: #f39c12; color: #f39c12; background: #fef9e7; }
+        .building { border-color: #2980b9; color: #2980b9; background: #eaf2f8; }
+        .main-building { border-color: #8e44ad; color: #8e44ad; width: 60px; height: 60px; font-size: 1.2rem; }
+
+        /* --- SAĞ / SOL MENÜLER --- */
+        .side-box { background: white; border: 1px solid #ccc; border-radius: 5px; margin-bottom: 15px; }
+        .side-box-header { background: #34495e; color: white; padding: 8px; font-weight: bold; text-align: center; border-radius: 5px 5px 0 0; }
+        .side-box-content { padding: 10px; font-size: 0.9rem; }
+        
+        /* Premium Butonları */
+        .premium-btn { width: 100%; text-align: left; margin-bottom: 5px; background: linear-gradient(to bottom, #f1c40f, #f39c12); border: 1px solid #b8860b; font-weight: bold; }
         .premium-btn:hover { background: linear-gradient(to bottom, #f39c12, #e67e22); }
+        .premium-btn i { font-size: 1.2rem; margin-right: 5px; }
+
+        /* Kuyruk */
+        .q-item { display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding: 5px 0; }
+        .q-item.active { color: #2980b9; font-weight: bold; }
+
+        .nav-tabs { border-bottom: 2px solid #34495e; justify-content: center; margin-bottom: 20px;}
+        .nav-tabs .nav-link { color: #555; font-weight: bold; font-size: 1.1rem; border: none; }
+        .nav-tabs .nav-link.active { color: #fff; background: #34495e; border-radius: 5px 5px 0 0; }
     </style>
 </head>
 <body>
 
 <!-- Irk Seçim Modalı -->
-<div class="modal fade" id="tribeModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
+<div class="modal fade" id="tribeModal" data-bs-backdrop="static" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header bg-dark text-white"><h5 class="modal-title">Irkını Seç, Savaşa Başla!</h5></div>
+            <div class="modal-header bg-dark text-white"><h5 class="modal-title">Irkını Seç, Köyünü Kur!</h5></div>
             <div class="modal-body text-center">
-                <p>Oyun 10x Hızındadır. YDS Puanların Altın yerine geçer.</p>
+                <p>Oyun <b>10x Hızında</b> akar. YDS Puanların <b>Altın</b> yerine geçer.</p>
                 <div class="d-grid gap-3">
-                    <button class="btn btn-outline-danger btn-lg" onclick="selectTribe('Turk')"><b>TÜRKLER</b><br><small>Hızlı atlılar, mükemmel yağma, yüksek saldırı gücü.</small></button>
-                    <button class="btn btn-outline-primary btn-lg" onclick="selectTribe('Roman')"><b>ROMALILAR</b><br><small>Aynı anda 2 inşaat (1 tarla, 1 bina) yapabilirler.</small></button>
-                    <button class="btn btn-outline-success btn-lg" onclick="selectTribe('Teuton')"><b>CERMENLER</b><br><small>Ucuz ve kalabalık piyadeler, agresif oyun tarzı.</small></button>
+                    <button class="btn btn-outline-danger btn-lg" onclick="selectTribe('Turk')"><b>TÜRKLER</b><br><small>Hızlı atlılar, mükemmel yağma.</small></button>
+                    <button class="btn btn-outline-primary btn-lg" onclick="selectTribe('Roman')"><b>ROMALILAR</b><br><small>Aynı anda 1 tarla, 1 bina basabilir.</small></button>
+                    <button class="btn btn-outline-success btn-lg" onclick="selectTribe('Teuton')"><b>CERMENLER</b><br><small>Ucuz piyadeler, agresif oyun.</small></button>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Üst Bar (Kaynaklar ve Altın) -->
-<div class="top-bar sticky-top shadow-sm">
+<!-- Yükseltme / Yeni Bina Modalı -->
+<div class="modal fade" id="buildModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title" id="buildModalTitle">İnşaat</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="buildModalBody">
+                <!-- JS İçeriği Buraya Gelecek -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ÜST BAR -->
+<div class="top-bar sticky-top">
     <div class="container d-flex justify-content-between align-items-center flex-wrap">
-        <div class="d-flex gap-4">
-            <div class="res-box" title="Odun"><i class="bi bi-tree-fill text-success"></i> <span id="res-wood">0</span></div>
-            <div class="res-box" title="Tuğla"><i class="bi bi-bricks text-danger"></i> <span id="res-clay">0</span></div>
-            <div class="res-box" title="Demir"><i class="bi bi-nut-fill text-secondary"></i> <span id="res-iron">0</span></div>
-            <div class="res-box" title="Tahıl"><i class="bi bi-flower1 text-warning"></i> <span id="res-crop">0</span></div>
+        <div class="d-flex align-items-center gap-3">
+            <div class="res-box" title="Odun"><i class="bi bi-tree-fill" style="color:#27ae60;"></i> <span id="res-wood">0</span></div>
+            <div class="res-box" title="Tuğla"><i class="bi bi-bricks" style="color:#d35400;"></i> <span id="res-clay">0</span></div>
+            <div class="res-box" title="Demir"><i class="bi bi-nut-fill" style="color:#7f8c8d;"></i> <span id="res-iron">0</span></div>
+            <div class="res-box" title="Tahıl"><i class="bi bi-flower1" style="color:#f39c12;"></i> <span id="res-crop">0</span> <span class="fs-6 fw-normal text-muted ms-1" id="res-crop-free"></span></div>
         </div>
         <div class="d-flex align-items-center gap-3">
             <div class="gold-text" title="YDS Altını"><i class="bi bi-coin"></i> <span id="gold-amount">0</span> Altın</div>
-            <button class="btn btn-sm btn-light" onclick="refreshGold()"><i class="bi bi-arrow-clockwise"></i> YDS'den Çek</button>
+            <button class="btn btn-sm btn-outline-secondary" onclick="refreshGold()"><i class="bi bi-arrow-clockwise"></i> YDS'den Çek</button>
         </div>
     </div>
 </div>
 
-<div class="container mt-4">
+<div class="container mt-3">
     <div class="row">
-        <!-- SOL MENÜ -->
+        <!-- SOL MENÜ (Saatlik Üretim) -->
         <div class="col-md-3">
-            <div class="card mb-3">
-                <div class="card-header bg-dark text-white fw-bold">Köy Bilgileri</div>
-                <div class="card-body">
-                    <p class="mb-1"><b>Irk:</b> <span id="tribe-name" class="text-primary">-</span></p>
-                    <p class="mb-1"><b>Nüfus:</b> <span id="population">2</span></p>
-                    <hr>
-                    <h6 class="fw-bold text-success">Saatlik Üretim (10x)</h6>
-                    <ul class="list-unstyled small">
-                        <li>Odun: <span id="prod-wood">1000</span> /sa</li>
-                        <li>Tuğla: <span id="prod-clay">1000</span> /sa</li>
-                        <li>Demir: <span id="prod-iron">1000</span> /sa</li>
-                        <li>Tahıl: <span id="prod-crop">1000</span> /sa</li>
-                    </ul>
+            <div class="side-box">
+                <div class="side-box-header">Köy Profili</div>
+                <div class="side-box-content text-center">
+                    <h5 class="fw-bold text-primary mb-0" id="tribe-name">-</h5>
+                    <small class="text-muted">Nüfus: <b id="population">2</b></small>
                 </div>
             </div>
 
-            <!-- PREMIUM ÖZELLİKLER (ALTIN KULLANIMI) -->
-            <div class="card border-warning mb-3">
-                <div class="card-header bg-warning text-dark fw-bold"><i class="bi bi-star-fill"></i> Premium (YDS)</div>
-                <div class="card-body d-grid gap-2">
-                    <button class="btn premium-btn btn-sm" onclick="instantFinish()"><i class="bi bi-lightning-charge-fill"></i> İnşaatları Bitir (5 <i class="bi bi-coin"></i>)</button>
-                    <button class="btn premium-btn btn-sm" onclick="npcMerchant()"><i class="bi bi-arrow-left-right"></i> NPC Tüccar (3 <i class="bi bi-coin"></i>)</button>
-                    <button class="btn premium-btn btn-sm" onclick="boostProduction()"><i class="bi bi-graph-up-arrow"></i> +25% Üretim (10 <i class="bi bi-coin"></i>)</button>
+            <div class="side-box">
+                <div class="side-box-header">Saatlik Üretim</div>
+                <div class="side-box-content fw-bold">
+                    <div class="d-flex justify-content-between mb-1"><span style="color:#27ae60;"><i class="bi bi-tree-fill"></i> Odun:</span> <span id="prod-wood">100</span></div>
+                    <div class="d-flex justify-content-between mb-1"><span style="color:#d35400;"><i class="bi bi-bricks"></i> Tuğla:</span> <span id="prod-clay">100</span></div>
+                    <div class="d-flex justify-content-between mb-1"><span style="color:#7f8c8d;"><i class="bi bi-nut-fill"></i> Demir:</span> <span id="prod-iron">100</span></div>
+                    <div class="d-flex justify-content-between"><span style="color:#f39c12;"><i class="bi bi-flower1"></i> Tahıl:</span> <span id="prod-crop">100</span></div>
                 </div>
             </div>
-
-            <!-- İNŞAAT KUYRUĞU -->
-            <div class="queue-box">
-                <h6 class="fw-bold border-bottom pb-2">İnşaat Emri (Sınırsız)</h6>
-                <div id="build-queue">
-                    <small class="text-muted">Kuyruk boş.</small>
+            
+            <div class="side-box border-warning">
+                <div class="side-box-header bg-warning text-dark"><i class="bi bi-star-fill"></i> Premium / Altın</div>
+                <div class="side-box-content p-2">
+                    <button class="btn premium-btn" onclick="instantFinish()"><i class="bi bi-lightning-charge"></i> Hemen Bitir <span class="badge bg-dark">5</span></button>
+                    <button class="btn premium-btn" onclick="npcMerchant()"><i class="bi bi-arrow-left-right"></i> NPC Tüccar <span class="badge bg-dark">3</span></button>
+                    <button class="btn premium-btn" onclick="boostProduction()"><i class="bi bi-graph-up-arrow"></i> %25 Üretim <span class="badge bg-dark">10</span></button>
                 </div>
             </div>
         </div>
 
-        <!-- OYUN ALANI -->
-        <div class="col-md-9">
-            <ul class="nav nav-tabs mb-3" id="gameTabs">
-                <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#resources"><i class="bi bi-globe"></i> Kaynaklar (Dorf1)</a></li>
-                <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#village"><i class="bi bi-house-door-fill"></i> Köy Merkezi (Dorf2)</a></li>
-                <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#map"><i class="bi bi-map-fill"></i> Harita</a></li>
+        <!-- OYUN ALANI (Ortası) -->
+        <div class="col-md-6">
+            <ul class="nav nav-tabs" id="gameTabs">
+                <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#dorf1">Kaynaklar (Dorf1)</a></li>
+                <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#dorf2">Şehir Merkezi (Dorf2)</a></li>
+                <li class="nav-item"><a class="nav-link text-success" data-bs-toggle="tab" href="#map"><i class="bi bi-globe"></i> Harita</a></li>
             </ul>
 
             <div class="tab-content">
                 <!-- KAYNAKLAR -->
-                <div class="tab-pane fade show active" id="resources">
-                    <div class="village-area text-center" id="resource-fields">
-                        <!-- JS ile doldurulacak -->
+                <div class="tab-pane fade show active" id="dorf1">
+                    <div class="map-container" id="dorf1-map">
+                        <!-- Kaynak Yuvarlakları JS ile basılacak -->
                     </div>
                 </div>
 
-                <!-- KÖY MERKEZİ -->
-                <div class="tab-pane fade" id="village">
-                    <div class="center-area text-center" id="village-buildings">
-                        <!-- JS ile doldurulacak -->
+                <!-- ŞEHİR MERKEZİ -->
+                <div class="tab-pane fade" id="dorf2">
+                    <div class="map-container dorf2" id="dorf2-map">
+                        <!-- Bina Yuvarlakları JS ile basılacak -->
                     </div>
                 </div>
 
                 <!-- HARİTA -->
                 <div class="tab-pane fade" id="map">
-                    <div class="card p-5 text-center">
-                        <h3>Dünya Haritası (Çok Yakında)</h3>
-                        <p>1000 Bot ve Gemini Yapay Zeka Diplomasisi bu sekmede aktifleşecek. (Faz 3)</p>
+                    <div class="card p-5 text-center mt-5 shadow-sm border-success">
+                        <h3 class="text-success"><i class="bi bi-shield-lock-fill"></i> Dünya Haritası</h3>
+                        <p class="mt-3"><b>1000 Adet AI Bot</b> ve <b>Gemini Diplomasisi</b> 3. Fazda (Bir sonraki aşama) buraya eklenecek.</p>
+                        <p>Köyünü geliştirip asker üretmeye başla, savaş yakında başlıyor!</p>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SAĞ MENÜ (İnşaat Emirleri) -->
+        <div class="col-md-3">
+            <div class="side-box border-primary">
+                <div class="side-box-header bg-primary"><i class="bi bi-hammer"></i> İnşaat Kuyruğu</div>
+                <div class="side-box-content" id="build-queue">
+                    <div class="text-muted text-center py-3">Kuyruk boş.</div>
+                </div>
+            </div>
+            
+            <div class="side-box">
+                <div class="side-box-header bg-danger"><i class="bi bi-shield-sword"></i> Askerler</div>
+                <div class="side-box-content text-center py-2">
+                    <p class="mb-0 text-muted">Henüz Kışla Yok</p>
                 </div>
             </div>
         </div>
@@ -143,23 +204,37 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    /* ================= OYUN MOTORU (JAVASCRIPT) ================= */
+    /* ================= OYUN VERİLERİ VE KOORDİNATLAR ================= */
     
-    // Temel Oyun Değişkenleri
+    // Tarlalar (Dorf1) - 4 Odun, 4 Tuğla, 4 Demir, 6 Tahıl
+    // Koordinatlar ekranın %'sine göre (left, top)
+    const dorf1Layout =;
+
+    // Binalar (Dorf2) - Merkez bina 19, Askeri üs 39, Sur 40
+    const dorf2Layout =;
+
+    // Bina Listesi ve Temel Bilgileri
+    const buildingInfo = {
+        'wood': { name: "Oduncu", cost:, baseProd: 10, time: 20 },
+        'clay': { name: "Tuğla Ocağı", cost:, baseProd: 10, time: 20 },
+        'iron': { name: "Demir Madeni", cost:, baseProd: 10, time: 20 },
+        'crop': { name: "Tarla", cost:, baseProd: 10, time: 20 },
+        'center': { name: "Merkez Bina", cost:, time: 30, desc: "Köyün kalbi. İnşaat sürelerini kısaltır." },
+        'warehouse': { name: "Depo", cost:, time: 40, desc: "Hammadde kapasitesini artırır." },
+        'granary': { name: "Tahıl Ambarı", cost:, time: 32, desc: "Tahıl kapasitesini artırır." },
+        'barracks': { name: "Kışla", cost:, time: 50, desc: "Piyade asker eğitilir." },
+        'rally': { name: "Askeri Üs", cost:, time: 13, desc: "Askerleri yönlendirir." }
+    };
+
+    /* ================= MOTOR ================= */
     let gameState = JSON.parse(localStorage.getItem('yds_game_state')) || null;
     let ydsGold = parseInt(localStorage.getItem('yds_game_gold')) || 0;
-    
-    // Tarlalar ve Binalar İsimleri
-    const fieldNames = { wood: "Oduncu", clay: "Tuğla Ocağı", iron: "Demir Madeni", crop: "Tarlalar" };
-    
-    // Saniye Bazlı Motor
     let gameLoop;
+    let selectedSlotId = null;
 
     window.onload = function() {
-        document.getElementById('gold-amount').innerText = ydsGold;
-
+        refreshGold();
         if (!gameState) {
-            // İlk kez giren için Irk Seçimi Göster
             new bootstrap.Modal(document.getElementById('tribeModal')).show();
         } else {
             initGame();
@@ -167,260 +242,297 @@
     };
 
     function selectTribe(tribe) {
-        // Yeni Oyun Kurulumu
         gameState = {
-            tribe: tribe,
-            population: 2,
-            resources: { wood: 750, clay: 750, iron: 750, crop: 750 },
-            productionBoost: 0, // Kalan saniye
-            fields:,
-            buildings:,
+            tribe: tribe, population: 2,
+            resources: { wood: 800, clay: 800, iron: 800, crop: 800 },
+            prodBoostUntil: 0,
+            fields: dorf1Layout.map(f => ({ id: f.id, type: f.type, level: 0 })),
+            buildings: dorf2Layout.map(b => ({ id: b.id, type: b.type, level: b.isMain ? 1 : 0 })),
             buildQueue:[],
             lastUpdate: Date.now()
         };
-        localStorage.setItem('yds_game_state', JSON.stringify(gameState));
-        
+        saveState();
         bootstrap.Modal.getInstance(document.getElementById('tribeModal')).hide();
         initGame();
     }
 
     function initGame() {
         document.getElementById('tribe-name').innerText = gameState.tribe === 'Turk' ? 'Türkler' : (gameState.tribe === 'Roman' ? 'Romalılar' : 'Cermenler');
-        renderFields();
-        renderBuildings();
         
-        // Offline geçen süreyi hesapla ve kaynak ekle
         let now = Date.now();
         let diffSec = Math.floor((now - gameState.lastUpdate) / 1000);
-        if(diffSec > 0) {
-            addOfflineResources(diffSec);
-        }
+        if(diffSec > 0) calculateOfflineProduction(diffSec);
         
-        gameState.lastUpdate = Date.now();
-        
-        // Oyun Döngüsünü Başlat (Her saniye)
+        drawMaps();
         gameLoop = setInterval(updateEngine, 1000);
     }
 
-    // GÖRÜNÜMÜ ÇİZ
-    function renderFields() {
-        const area = document.getElementById('resource-fields');
-        area.innerHTML = "";
+    /* ================= ÇİZİM FONKSİYONLARI ================= */
+    function drawMaps() {
+        const map1 = document.getElementById('dorf1-map');
+        const map2 = document.getElementById('dorf2-map');
+        map1.innerHTML = ''; map2.innerHTML = '';
+
+        // Dorf1 Çiz
         gameState.fields.forEach(f => {
-            let icon = f.type === 'wood' ? 'tree-fill text-success' : (f.type === 'clay' ? 'bricks text-danger' : (f.type === 'iron' ? 'nut-fill text-secondary' : 'flower1 text-warning'));
-            area.innerHTML += `
-            <div class="building-spot position-relative" onclick="upgradeTarget(${f.id}, 'resource')">
-                <i class="bi bi-${icon} fs-4"></i>
-                <span class="lvl-badge">${f.level}</span>
-            </div>`;
+            let layout = dorf1Layout.find(l => l.id === f.id);
+            let cls = f.type;
+            let html = `<div class="slot ${cls}" style="left:${layout.x}%; top:${layout.y}%;" onclick="openBuildModal(${f.id}, 'field')">
+                            ${f.level > 0 ? f.level : ''}
+                        </div>`;
+            map1.innerHTML += html;
         });
-    }
 
-    function renderBuildings() {
-        const area = document.getElementById('village-buildings');
-        area.innerHTML = "";
+        // Dorf2 Çiz
         gameState.buildings.forEach(b => {
-            area.innerHTML += `
-            <div class="building-spot position-relative" onclick="upgradeTarget(${b.id}, 'building')">
-                <i class="bi bi-house-door-fill text-primary fs-4"></i>
-                <span class="lvl-badge">${b.level}</span>
-            </div>`;
+            let layout = dorf2Layout.find(l => l.id === b.id);
+            let cls = b.type === 'empty' ? 'empty' : 'building';
+            if(b.type === 'center') cls = 'building main-building';
+            let html = `<div class="slot ${cls}" style="left:${layout.x}%; top:${layout.y}%;" onclick="openBuildModal(${b.id}, 'building')">
+                            ${b.level > 0 ? b.level : '+'}
+                        </div>`;
+            map2.innerHTML += html;
         });
     }
 
-    // YÜKSELTME EMRİ VER
-    function upgradeTarget(id, category) {
-        let cost = 150; // Basitlik için sabit maliyet
+    /* ================= MODAL (İnşaat Ekranı) ================= */
+    function openBuildModal(id, mapType) {
+        selectedSlotId = id;
+        const modalBody = document.getElementById('buildModalBody');
+        let item = mapType === 'field' ? gameState.fields.find(f => f.id === id) : gameState.buildings.find(b => b.id === id);
         
-        if (gameState.resources.wood < cost || gameState.resources.clay < cost || gameState.resources.iron < cost) {
-            alert("Yeterli hammeddeniz yok!");
-            return;
+        let info = buildingInfo;
+
+        if (item.type !== 'empty') {
+            // MEVCUT BİNA YÜKSELTME EKRANI (Attığın HTML'in Modern Hali)
+            let nextLevel = item.level + 1;
+            let cost = info.cost.map(c => Math.floor(c * Math.pow(1.2, item.level)));
+            let time = Math.floor(info.time * Math.pow(1.1, item.level));
+
+            modalBody.innerHTML = `
+                <div class="row align-items-center mb-3 border-bottom pb-3">
+                    <div class="col-8">
+                        <h4 class="text-primary">${info.name} <span class="badge bg-secondary fs-6">Seviye ${item.level}</span></h4>
+                        <p class="text-muted small">${info.desc || 'Hammadde üretir. Seviyesi arttıkça üretim artar.'}</p>
+                    </div>
+                </div>
+                
+                <h6 class="fw-bold">Geliştirme Masrafları (Seviye ${nextLevel}):</h6>
+                <div class="d-flex justify-content-between bg-light p-3 rounded mb-3 border">
+                    <div><i class="bi bi-tree-fill text-success"></i> ${cost}</div>
+                    <div><i class="bi bi-bricks text-danger"></i> ${cost}</div>
+                    <div><i class="bi bi-nut-fill text-secondary"></i> ${cost}</div>
+                    <div><i class="bi bi-flower1 text-warning"></i> ${cost}</div>
+                    <div><i class="bi bi-clock"></i> ${time} sn</div>
+                </div>
+                
+                <div class="text-center">
+                    <button class="btn btn-success btn-lg px-5 fw-bold" onclick="issueBuildCommand(${id}, '${item.type}', ${cost}, ${cost}, ${cost}, ${cost}, ${time})">
+                        <i class="bi bi-hammer"></i> Seviye ${nextLevel} Olarak Geliştir
+                    </button>
+                </div>
+            `;
+        } else {
+            // BOŞ ALAN - YENİ BİNA DİKME EKRANI
+            let options =;
+            let html = '<h5 class="mb-3">Yeni Bina İnşa Et</h5><div class="list-group">';
+            
+            options.forEach(type => {
+                let inf = buildingInfo;
+                html += `
+                <div class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1 text-primary fw-bold">${inf.name}</h6>
+                        <small class="text-muted">${inf.desc}</small>
+                        <div class="d-flex gap-2 mt-1 small">
+                            <span class="text-success"><i class="bi bi-tree-fill"></i> ${inf.cost}</span>
+                            <span class="text-danger"><i class="bi bi-bricks"></i> ${inf.cost}</span>
+                            <span class="text-secondary"><i class="bi bi-nut-fill"></i> ${inf.cost}</span>
+                            <span class="text-warning"><i class="bi bi-flower1"></i> ${inf.cost}</span>
+                        </div>
+                    </div>
+                    <button class="btn btn-outline-success" onclick="issueBuildCommand(${id}, '${type}', ${inf.cost}, ${inf.cost}, ${inf.cost}, ${inf.cost}, ${inf.time})">İnşa Et</button>
+                </div>`;
+            });
+            html += '</div>';
+            modalBody.innerHTML = html;
         }
 
-        // Kaynakları Düş
-        gameState.resources.wood -= cost;
-        gameState.resources.clay -= cost;
-        gameState.resources.iron -= cost;
-        gameState.resources.crop -= cost/2;
+        new bootstrap.Modal(document.getElementById('buildModal')).show();
+    }
 
-        // Kuyruğa Ekle (Sınırsız)
-        let buildTime = 30; // 10x Hızında her bina şimdilik 30 saniye
+    function issueBuildCommand(id, type, cw, cc, ci, cr, time) {
+        if (gameState.resources.wood < cw || gameState.resources.clay < cc || gameState.resources.iron < ci || gameState.resources.crop < cr) {
+            alert("Yetersiz Hammadde!"); return;
+        }
+        
+        gameState.resources.wood -= cw;
+        gameState.resources.clay -= cc;
+        gameState.resources.iron -= ci;
+        gameState.resources.crop -= cr;
+
+        let bName = buildingInfo.name;
+        let isField =.includes(type);
+
         gameState.buildQueue.push({
-            qId: Date.now(),
-            targetId: id,
-            category: category,
-            timeLeft: buildTime,
-            name: category === 'resource' ? 'Tarla' : 'Bina'
+            qId: Date.now(), targetId: id, type: type, name: bName, isField: isField, timeLeft: time
         });
 
-        saveState();
+        bootstrap.Modal.getInstance(document.getElementById('buildModal')).hide();
         updateUI();
     }
 
-    // OYUN MOTORU (HER SANİYE ÇALIŞIR)
+    /* ================= OYUN MOTORU (HER SANİYE) ================= */
     function updateEngine() {
-        // 1. Üretimi Hesapla (Saatlik üretim: 1000 + seviye * 500)
-        let baseProd = 1000;
-        let boostMulti = gameState.productionBoost > 0 ? 1.25 : 1;
+        let now = Date.now();
         
-        let woodProd = baseProd * boostMulti;
-        let clayProd = baseProd * boostMulti;
-        let ironProd = baseProd * boostMulti;
-        let cropProd = baseProd * boostMulti;
+        // 1. Üretim (10x Server -> Saatte 1000 base. Seviye * 100 ekle)
+        let boost = (gameState.prodBoostUntil > now) ? 1.25 : 1;
+        
+        let prods = { wood: 50, clay: 50, iron: 50, crop: 50 }; // Base (10x Server base)
+        
+        gameState.fields.forEach(f => {
+            if(f.level > 0) prods += (f.level * 150); // Her seviye saatte +150 verir
+        });
 
-        // 2. Saniyelik olarak kaynaklara ekle (Saatte 1000 -> Saniyede 1000/3600)
-        gameState.resources.wood += woodProd / 3600;
-        gameState.resources.clay += clayProd / 3600;
-        gameState.resources.iron += ironProd / 3600;
-        gameState.resources.crop += cropProd / 3600;
+        // Saniyelik Ekleme
+        gameState.resources.wood += (prods.wood * boost) / 3600;
+        gameState.resources.clay += (prods.clay * boost) / 3600;
+        gameState.resources.iron += (prods.iron * boost) / 3600;
+        gameState.resources.crop += (prods.crop * boost) / 3600;
 
-        // 3. Boost süresini düşür
-        if (gameState.productionBoost > 0) gameState.productionBoost--;
+        // UI Üretim Yazılarını Güncelle
+        document.getElementById('prod-wood').innerText = Math.floor(prods.wood * boost);
+        document.getElementById('prod-clay').innerText = Math.floor(prods.clay * boost);
+        document.getElementById('prod-iron').innerText = Math.floor(prods.iron * boost);
+        document.getElementById('prod-crop').innerText = Math.floor(prods.crop * boost);
 
-        // 4. İNŞAAT KUYRUĞUNU İŞLE (KRİTİK MANTIK)
+        // 2. İnşaat Kuyruğu (ROMALI KURALI BURADA)
         if (gameState.buildQueue.length > 0) {
             let activeTasks =[];
             
-            // ROMALI KURALI (Aynı anda 1 tarla, 1 bina)
             if (gameState.tribe === 'Roman') {
-                let resTask = gameState.buildQueue.find(t => t.category === 'resource');
-                let buildTask = gameState.buildQueue.find(t => t.category === 'building');
-                if (resTask) activeTasks.push(resTask);
-                if (buildTask) activeTasks.push(buildTask);
+                let fTask = gameState.buildQueue.find(t => t.isField);
+                let bTask = gameState.buildQueue.find(t => !t.isField);
+                if (fTask) activeTasks.push(fTask);
+                if (bTask) activeTasks.push(bTask);
             } else {
-                // Diğer ırklar sadece en baştakini yapar
-                activeTasks.push(gameState.buildQueue);
+                activeTasks.push(gameState.buildQueue); // Diğerleri 1 tane yapar
             }
 
-            // Aktif görevlerin süresini düşür
             activeTasks.forEach(task => {
                 task.timeLeft--;
-                if (task.timeLeft <= 0) {
-                    finishConstruction(task);
-                }
+                if (task.timeLeft <= 0) completeTask(task);
             });
         }
 
-        gameState.lastUpdate = Date.now();
+        gameState.lastUpdate = now;
         saveState();
         updateUI();
     }
 
-    function finishConstruction(task) {
-        // Seviye atlat
-        if (task.category === 'resource') {
-            let f = gameState.fields.find(f => f.id === task.targetId);
-            if(f) f.level++;
-            renderFields();
+    function completeTask(task) {
+        if (task.isField) {
+            let f = gameState.fields.find(x => x.id === task.targetId);
+            f.level++;
         } else {
-            let b = gameState.buildings.find(b => b.id === task.targetId);
-            if(b) b.level++;
-            renderBuildings();
+            let b = gameState.buildings.find(x => x.id === task.targetId);
+            b.type = task.type; // Empty ise type değişir
+            b.level++;
         }
-        // Kuyruktan Sil
+        gameState.population += Math.floor(Math.random() * 3) + 1;
         gameState.buildQueue = gameState.buildQueue.filter(t => t.qId !== task.qId);
-        gameState.population += 2;
+        drawMaps();
     }
 
-    function addOfflineResources(seconds) {
-        let baseProd = 1000;
-        gameState.resources.wood += (baseProd / 3600) * seconds;
-        gameState.resources.clay += (baseProd / 3600) * seconds;
-        gameState.resources.iron += (baseProd / 3600) * seconds;
-        gameState.resources.crop += (baseProd / 3600) * seconds;
+    function calculateOfflineProduction(seconds) {
+        // Çevrimdışı kalınan süreyi hesapla ve toptan ekle (Basit versiyon)
+        gameState.resources.wood += (1000 / 3600) * seconds;
+        gameState.resources.clay += (1000 / 3600) * seconds;
+        gameState.resources.iron += (1000 / 3600) * seconds;
+        gameState.resources.crop += (1000 / 3600) * seconds;
     }
 
-    // ARAYÜZÜ GÜNCELLE
     function updateUI() {
         document.getElementById('res-wood').innerText = Math.floor(gameState.resources.wood);
         document.getElementById('res-clay').innerText = Math.floor(gameState.resources.clay);
         document.getElementById('res-iron').innerText = Math.floor(gameState.resources.iron);
         document.getElementById('res-crop').innerText = Math.floor(gameState.resources.crop);
         document.getElementById('population').innerText = gameState.population;
-        
-        let boostTxt = gameState.productionBoost > 0 ? ' <span class="text-success">(+%25 Altın Bonusu)</span>' : '';.forEach(res => {
-            document.getElementById('prod-'+res).innerHTML = "1000" + boostTxt;
-        });
 
-        // Kuyruğu Çiz
-        let qArea = document.getElementById('build-queue');
+        // Kuyruk UI
+        const qBox = document.getElementById('build-queue');
         if (gameState.buildQueue.length === 0) {
-            qArea.innerHTML = '<small class="text-muted">Kuyruk boş.</small>';
+            qBox.innerHTML = '<div class="text-muted text-center py-3">Kuyruk boş.</div>';
         } else {
-            let qHtml = "";
-            gameState.buildQueue.forEach((t, index) => {
-                // Romalı aktif mi belirtmek için
+            let html = "";
+            gameState.buildQueue.forEach((t, i) => {
                 let isActive = false;
-                if(gameState.tribe === 'Roman') {
-                    if (t === gameState.buildQueue.find(x => x.category === 'resource') || 
-                        t === gameState.buildQueue.find(x => x.category === 'building')) isActive = true;
+                if (gameState.tribe === 'Roman') {
+                    if (t === gameState.buildQueue.find(x => x.isField) || t === gameState.buildQueue.find(x => !x.isField)) isActive = true;
                 } else {
-                    if (index === 0) isActive = true;
+                    if (i === 0) isActive = true;
                 }
-
-                let color = isActive ? 'text-primary fw-bold' : 'text-muted';
-                let spin = isActive ? '<div class="spinner-border spinner-border-sm"></div>' : 'Bekliyor';
-                qHtml += `<div class="d-flex justify-content-between small border-bottom mb-1 pb-1 ${color}">
-                            <span>${t.name} Seviye Yükseltme</span>
-                            <span>${isActive ? t.timeLeft + ' sn' : spin}</span>
-                          </div>`;
+                html += `<div class="q-item ${isActive ? 'active' : ''}">
+                            <span>${t.name}</span>
+                            <span>${isActive ? formatTime(t.timeLeft) : 'Bekliyor'}</span>
+                         </div>`;
             });
-            qArea.innerHTML = qHtml;
+            qBox.innerHTML = html;
         }
     }
 
-    /* ================= ALTIN (PREMIUM) FONKSİYONLARI ================= */
-    
+    function formatTime(sec) {
+        let m = Math.floor(sec / 60); let s = sec % 60;
+        return (m < 10 ? '0'+m : m) + ':' + (s < 10 ? '0'+s : s);
+    }
+
+    /* ================= PREMIUM ÖZELLİKLER (ALTIN KULLANIMI) ================= */
     function refreshGold() {
         ydsGold = parseInt(localStorage.getItem('yds_game_gold')) || 0;
         document.getElementById('gold-amount').innerText = ydsGold;
     }
 
-    function spendGold(amount) {
+    function useGold(amount) {
         refreshGold();
         if (ydsGold >= amount) {
             ydsGold -= amount;
             localStorage.setItem('yds_game_gold', ydsGold);
             document.getElementById('gold-amount').innerText = ydsGold;
             return true;
-        } else {
-            alert("Yeterli YDS Altınınız yok! Lütfen İngilizce sorusu çözerek altın kazanın.");
-            return false;
         }
+        alert("Yeterli YDS Altının yok! Test çözerek altın kazanmalısın.");
+        return false;
     }
 
-    // 1. ANINDA BİTİR (5 ALTIN)
+    // 1. Hemen Bitir
     function instantFinish() {
-        if(gameState.buildQueue.length === 0) { alert("İnşaat kuyruğu zaten boş."); return; }
-        if(spendGold(5)) {
-            // Hepsini anında bitir
+        if(gameState.buildQueue.length === 0) { alert("Kuyruk boş!"); return; }
+        if(useGold(5)) {
             let tasks =;
-            tasks.forEach(t => finishConstruction(t));
+            tasks.forEach(t => completeTask(t));
         }
     }
 
-    // 2. ÜRETİM BONUSU (10 ALTIN)
-    function boostProduction() {
-        if(spendGold(10)) {
-            gameState.productionBoost += 86400; // 24 Saat (saniye cinsinden)
-            alert("Üretimler %25 arttırıldı!");
-        }
-    }
-
-    // 3. NPC TÜCCAR (3 ALTIN) - Tüm kaynakları eşitler
+    // 2. NPC Tüccar (Eşitle)
     function npcMerchant() {
-        if(spendGold(3)) {
+        if(useGold(3)) {
             let total = gameState.resources.wood + gameState.resources.clay + gameState.resources.iron + gameState.resources.crop;
             let avg = total / 4;
             gameState.resources = { wood: avg, clay: avg, iron: avg, crop: avg };
-            alert("Tüm hammaddeler NPC Tüccar tarafından eşitlendi!");
             updateUI();
         }
     }
 
-    function saveState() {
-        localStorage.setItem('yds_game_state', JSON.stringify(gameState));
+    // 3. Üretim Bonusu
+    function boostProduction() {
+        if(useGold(10)) {
+            gameState.prodBoostUntil = Date.now() + (24 * 60 * 60 * 1000); // 24 saat
+            alert("%25 Üretim bonusu 24 saatliğine aktif!");
+        }
     }
+
+    function saveState() { localStorage.setItem('yds_game_state', JSON.stringify(gameState)); }
 </script>
 </body>
 </html>
