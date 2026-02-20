@@ -1260,14 +1260,15 @@ function installPWA() {
         deferredPrompt.prompt();
         deferredPrompt.userChoice.then((choiceResult) => {
             if (choiceResult.outcome === 'accepted') {
-                document.getElementById('install-app-container').classList.add('d-none');
+                const installBtn = document.getElementById('install-app-container');
+                if(installBtn) installBtn.classList.add('d-none');
             }
             deferredPrompt = null;
         });
     }
 }
 
-/* ================= ONLINE LEADERBOARD & PUAN SİSTEMİ (V3 - BUG FIX & NATIVE PUSH) ================= */
+/* ================= ONLINE LEADERBOARD & PUAN SİSTEMİ (V3) ================= */
 
 // Sabit Tarih Fonksiyonu (Farklı telefonlardaki saat/tarih bug'ını çözer)
 function getTodayStr() {
@@ -1295,16 +1296,14 @@ let dailyScoreData = JSON.parse(localStorage.getItem('yds_daily_score_v3')) || {
 (async function checkDayReset() {
     const today = getTodayStr();
     if (dailyScoreData.date !== today) {
-        // Eski günün birincisini haftalık tabloya yaz (SADECE BİR KERE!)
         await recordDailyWinner(dailyScoreData.date);
-        
         dailyScoreData = { date: today, score: 0 };
         localStorage.setItem('yds_daily_score_v3', JSON.stringify(dailyScoreData));
         previousLeader = "";
         localStorage.setItem('yds_prev_leader', "");
     }
     myLocalScore = dailyScoreData.score;
-})();
+})();;
     
 // 2. AVATAR SİSTEMİ
 function handleAvatarUpload(event) {
@@ -1361,7 +1360,7 @@ function generateNotifChannel(username) {
 
 async function requestNativeNotifications() {
     if (!("Notification" in window)) {
-        alert("Tarayıcınız bildirimleri desteklemiyor.");
+        alert("Tarayıcınız bildirimleri desteklemiyor. Lütfen Chrome veya Safari kullanın.");
         return;
     }
     const perm = await Notification.requestPermission();
@@ -1413,7 +1412,7 @@ function setupNotificationListener() {
 // Sayfa yüklendiğinde listener'ı başlat
 setTimeout(setupNotificationListener, 2000);
 
-// Rakibi geçtiğinde bildirim atma isteği (Pantry değil ntfy üzerinden gönderiyoruz)
+// Rakibi geçtiğinde bildirim atma isteği
 async function sendOvertakeNotification(overtakenPlayerName, overtakenChannel, myName) {
     if (!overtakenChannel) return;
     try {
@@ -1455,7 +1454,7 @@ function addScorePoints(amount) {
     syncScoreToCloud(amount);
 }
 
-// 6. BULUT SENKRONİZASYON (Güncellendi)
+// 6. BULUT SENKRONİZASYON 
 async function syncScoreToCloud(pointsToAdd) {
     const url = `https://getpantry.cloud/apiv1/pantry/${PANTRY_ID}/basket/${BUCKET_NAME}`;
     const todayStr = getTodayStr();
@@ -1469,8 +1468,9 @@ async function syncScoreToCloud(pointsToAdd) {
             }
         } catch(e) {}
 
-        // Geri kalan kodun aynı kalıyor...
-        if (!data.players) data.players = [];
+        if (!data.players) data.players =[];
+        
+        // Eski Sıralama
         let sortedBefore =.sort((a,b) => b.score - a.score);
         let oldLeader = sortedBefore.length > 0 ? sortedBefore.name : "";
 
@@ -1485,6 +1485,7 @@ async function syncScoreToCloud(pointsToAdd) {
         if (idx > -1) data.players = playerObj;
         else data.players.push(playerObj);
 
+        // Yeni Sıralama
         let sortedAfter =.sort((a,b) => b.score - a.score);
         let newLeader = sortedAfter?.name || "";
 
